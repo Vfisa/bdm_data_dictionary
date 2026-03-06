@@ -145,6 +145,26 @@ const FK_SEARCH_ORDER = ['REF_', 'DIM_', 'FCTH_', 'FCT_', 'MAP_', 'AUX_']; // FK
 
 ---
 
+## 12. Array Indexing Returns `T | undefined` in Strict TypeScript (Step 11)
+
+**Problem:** `payload.split('.')[0]` has type `string | undefined` in strict mode, but was passed to a function expecting `string`.
+
+**Root cause:** With `noUncheckedIndexedAccess` or strict array types, accessing an array element by index returns `T | undefined` because the index might be out of bounds.
+
+**Fix:** Add a nullish coalescing fallback: `payload.split('.')[0] ?? payload`.
+
+**Lesson:** Always provide a fallback when accessing array elements by index in TypeScript strict mode. Use `array[0] ?? fallback` or check with `if (array[0] !== undefined)`.
+
+---
+
+## 13. cmdk Bundle Size Impact (Step 11)
+
+**Observation:** Adding cmdk (command palette) pulled in `@radix-ui/react-dialog` as a transitive dependency, adding ~53 KB to the JS bundle (from 476 KB to 530 KB).
+
+**Lesson:** cmdk is lightweight itself but its dialog mode depends on Radix Dialog. For apps already near size limits, consider using cmdk without the Dialog wrapper and implementing a custom modal. For this project, the trade-off is acceptable since cmdk provides excellent fuzzy search via command-score.
+
+---
+
 ## General Principles Discovered
 
 1. **Build early, build often** — Run `npm run build` after every file creation, not just at step completion. Catches errors when context is fresh.

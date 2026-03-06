@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { ErdCanvas } from '@/components/erd/ErdCanvas'
 import { TableDetailPanel } from '@/components/table-detail/TableDetailPanel'
 import type { MetadataResponse } from '@/lib/types'
@@ -22,6 +22,16 @@ export function ErdPage({ metadata, isRefreshing, onRefresh }: ErdPageProps) {
 
   const handleNavigateToTable = useCallback((tableName: string) => {
     setSelectedTable(tableName)
+  }, [])
+
+  // Listen for selectTable events from CommandPalette
+  useEffect(() => {
+    function handleSelectEvent(e: Event) {
+      const { tableName } = (e as CustomEvent).detail
+      if (tableName) setSelectedTable(tableName)
+    }
+    window.addEventListener('selectTable', handleSelectEvent)
+    return () => window.removeEventListener('selectTable', handleSelectEvent)
   }, [])
 
   return (

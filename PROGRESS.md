@@ -262,3 +262,33 @@
 **Test:** `npm run build` succeeds. Zero TypeScript errors.
 
 **Result:** PASS — Build: `index.html` (0.47 KB), `index.css` (45.20 KB / 8.67 KB gzip), `index.js` (476.48 KB / 154.53 KB gzip). Zero errors.
+
+---
+
+## Step 11: Global Search (Cmd+K)
+**Status:** DONE
+
+**Files created:**
+- `src/components/search/useSearch.ts` — builds flat index of tables + columns from metadata for cmdk to search
+- `src/components/search/CommandPalette.tsx` — modal dialog using cmdk with grouped results (Tables / Columns), fuzzy search, keyboard navigation
+
+**Files modified:**
+- `src/App.tsx` — added Cmd+K / Ctrl+K global shortcut, search open state, CommandPalette rendering, search-to-table navigation
+- `src/pages/ErdPage.tsx` — listens for `selectTable` custom event from search to open detail panel
+- `vite.config.ts` — increased `chunkSizeWarningLimit` to 600 KB (React Flow + cmdk + Radix push bundle past 500 KB)
+
+**Features:**
+- **Cmd+K / Ctrl+K** opens the command palette from anywhere in the app
+- **Grouped results:** Tables (with database icon, category badge, description) and Columns (with table name, type)
+- **Fuzzy matching:** Powered by cmdk's built-in `command-score` library
+- **Navigation:** Select a table → switches to ERD page and opens detail panel; select a column → navigates to its parent table
+- **Keyboard:** ↑↓ to navigate, ↵ to select, Escape to close
+- **Footer:** Keyboard shortcut hints
+
+**Errors fixed:**
+- Unused `useEffect` import in CommandPalette
+- `payload.split('.')[0]` returns `string | undefined` — added `?? payload` fallback
+
+**Test:** `npm run build` succeeds. Zero TypeScript errors.
+
+**Result:** PASS — Build: `index.html` (0.47 KB), `index.css` (48.13 KB / 9.08 KB gzip), `index.js` (529.62 KB / 171.33 KB gzip). cmdk + Radix adds ~53 KB JS. Zero errors.
