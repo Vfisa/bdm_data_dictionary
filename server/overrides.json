@@ -1,0 +1,22 @@
+{
+  "alias": {
+    "CREATED_BY_USER_ID": { "target": "REF_OPERATOR", "targetColumn": "OPERATOR_ID" },
+    "HANDLED_BY_USER_ID": { "target": "REF_OPERATOR", "targetColumn": "OPERATOR_ID" },
+    "USER_ID": { "target": "REF_OPERATOR", "targetColumn": "OPERATOR_ID" },
+    "CREATED_BY_ID": { "target": "REF_OPERATOR", "targetColumn": "OPERATOR_ID" },
+    "DESTINATION_ID": { "target": "REF_LOCATION", "targetColumn": "LOCATION_ID" },
+    "ORIGIN_ID": { "target": "REF_LOCATION", "targetColumn": "LOCATION_ID" },
+    "PICKUP_COUNTRY_ID": { "target": "REF_COUNTRY", "targetColumn": "COUNTRY_ID" },
+    "ORDER_VALUE_CURRENCY_ID": { "target": "REF_CURRENCY", "targetColumn": "CURRENCY_ID" },
+    "DEPARTMENT_ID": { "target": "REF_OPS_DEPARTMENT", "targetColumn": "OPS_DEPARTMENT_ID" },
+    "DEPT_ID": { "target": "REF_OPS_DEPARTMENT", "targetColumn": "OPS_DEPARTMENT_ID" },
+    "QUOTE_DISPATCH_ID": { "target": "AUX_QUOTE_DISPATCH", "targetColumn": "QUOTE_DISPATCH_ID" },
+    "PARENT_CLIENT_ID": { "target": "REF_CLIENT", "targetColumn": "CLIENT_ID" }
+  },
+  "skip": [
+    "EXTERNAL_SYSTEM_ID",
+    "EXTERNAL_ORDER_ID"
+  ],
+  "add": [],
+  "remove": []
+}

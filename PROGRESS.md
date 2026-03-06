@@ -68,3 +68,38 @@
 **Test:** 28 tests via mock HTTP server — normalization, auth header, multi-bucket parallel fetch, error handling (404), default bucket IDs. Verified against real Keboola project data (51 tables in out.c-bdm + 7 in out.c-bdm_aux = 58 total).
 
 **Result:** PASS — All 28 unit/integration tests pass. Column metadata correctly extracted from Keboola metadata arrays.
+
+---
+
+## Step 5: FK Inference Engine
+**Status:** DONE
+
+**Files created:**
+- `server/inference.js` — `inferRelationships(tables, overridesPath)` → `{ edges[], categories{}, stats{} }`
+- `server/overrides.json` — alias mappings (12), skip list (2), add/remove (empty)
+
+**Algorithm (priority order):**
+1. Check `overrides.skip` (suppress EXTERNAL_SYSTEM_ID, EXTERNAL_ORDER_ID)
+2. Check `overrides.alias` (CREATED_BY_USER_ID→REF_OPERATOR, DESTINATION_ID→REF_LOCATION, etc.)
+3. Own-PK skip (FCT_ORDER.ORDER_ID doesn't self-ref)
+4. Direct entity match: CLIENT_ID → REF_CLIENT (searches REF_→DIM_→FCTH_→FCT_→MAP_→AUX_)
+5. Progressive prefix strip: INITIAL_STOCK_LOCATION_ID → strip INITIAL_ → STOCK_LOCATION → strip STOCK_ → LOCATION → REF_LOCATION
+6. Category assignment: FCTH_ checked before FCT_ (prefix overlap)
+
+**Key design decisions:**
+- FK search order prefers REF_ over FCT_ (INVOICE_ID → REF_INVOICE, not FCT_INVOICE)
+- Category detection order: FCTH_ before FCT_ (separate from FK search)
+- Each FK column produces a separate labeled edge (no merging)
+- Self-referencing alias allowed (PARENT_CLIENT_ID → REF_CLIENT within REF_CLIENT)
+- Edge metadata includes `inferenceMethod`: direct | compound | alias | manual
+
+**Overrides (12 aliases):**
+- USER→OPERATOR: CREATED_BY_USER_ID, HANDLED_BY_USER_ID, USER_ID, CREATED_BY_ID
+- Location aliases: DESTINATION_ID, ORIGIN_ID → REF_LOCATION
+- PICKUP_COUNTRY_ID → REF_COUNTRY, ORDER_VALUE_CURRENCY_ID → REF_CURRENCY
+- DEPARTMENT_ID, DEPT_ID → REF_OPS_DEPARTMENT
+- QUOTE_DISPATCH_ID → AUX_QUOTE_DISPATCH, PARENT_CLIENT_ID → REF_CLIENT
+
+**Test:** 89 tests covering all inference methods, category assignment, self-ref skipping, AUX bridges, REF chains, FCTH, cross-table references, edge metadata, uniqueness. Mock data based on real Keboola project structure.
+
+**Result:** PASS — 89/89. Produces 84 edges (63 direct, 4 compound, 17 alias). Only 1 unmatched _ID column out of 146 scanned.
