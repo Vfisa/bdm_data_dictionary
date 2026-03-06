@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import { Command } from 'cmdk'
 import { Database, Columns3, Search } from 'lucide-react'
 import { useSearch } from './useSearch'
 import { CATEGORY_CONFIG } from '@/lib/constants'
 import type { MetadataResponse, Category } from '@/lib/types'
+
+type SearchFilter = 'both' | 'tables' | 'columns'
 
 interface CommandPaletteProps {
   open: boolean
@@ -18,6 +21,10 @@ export function CommandPalette({
   onSelectTable,
 }: CommandPaletteProps) {
   const { tableResults, columnResults } = useSearch(metadata)
+  const [filter, setFilter] = useState<SearchFilter>('both')
+
+  const showTables = filter === 'both' || filter === 'tables'
+  const showColumns = filter === 'both' || filter === 'columns'
 
   // Handle selection
   const handleSelect = (value: string) => {
@@ -62,6 +69,25 @@ export function CommandPalette({
             />
           </div>
 
+          {/* Filter toggles */}
+          <div className="flex items-center gap-1 px-3 py-1.5 border-b border-[var(--border)]">
+            {(['both', 'tables', 'columns'] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`
+                  px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors
+                  ${filter === f
+                    ? 'bg-[var(--foreground)] text-[var(--background)]'
+                    : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)]'
+                  }
+                `}
+              >
+                {f === 'both' ? 'Both' : f === 'tables' ? 'Tables Only' : 'Columns Only'}
+              </button>
+            ))}
+          </div>
+
           {/* Results */}
           <Command.List className="max-h-[300px] overflow-y-auto p-2">
             <Command.Empty className="py-6 text-center text-sm text-[var(--muted-foreground)]">
@@ -69,7 +95,7 @@ export function CommandPalette({
             </Command.Empty>
 
             {/* Tables group */}
-            <Command.Group
+            {showTables && <Command.Group
               heading="Tables"
               className="[&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:text-[var(--muted-foreground)] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5"
             >
@@ -107,10 +133,10 @@ export function CommandPalette({
                   </Command.Item>
                 )
               })}
-            </Command.Group>
+            </Command.Group>}
 
             {/* Columns group */}
-            <Command.Group
+            {showColumns && <Command.Group
               heading="Columns"
               className="[&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:text-[var(--muted-foreground)] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5"
             >
@@ -139,7 +165,7 @@ export function CommandPalette({
                   </span>
                 </Command.Item>
               ))}
-            </Command.Group>
+            </Command.Group>}
           </Command.List>
 
           {/* Footer hint */}
