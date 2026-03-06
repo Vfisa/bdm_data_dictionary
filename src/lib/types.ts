@@ -67,5 +67,11 @@ export interface MetadataResponse {
   stats: InferenceStats
 }
 
+/** Description update payload for PUT /api/descriptions */
+export interface DescriptionUpdate {
+  itemId: string
+  description: string
+}
+
 /** App navigation page */
 export type Page = 'erd' | 'tables'

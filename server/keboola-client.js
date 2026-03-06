@@ -146,9 +146,64 @@ export function createClient(kbcUrl, kbcToken) {
     return tables;
   }
 
+  /**
+   * Update a table description via Keboola metadata API.
+   * @param {string} tableId - e.g. "out.c-bdm.REF_CLIENT"
+   * @param {string} description - New description text
+   */
+  async function updateTableDescription(tableId, description) {
+    const url = `${baseUrl}/v2/storage/tables/${encodeURIComponent(tableId)}/metadata`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'X-StorageApi-Token': token,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        'provider': 'user',
+        'metadata[0][key]': 'KBC.description',
+        'metadata[0][value]': description,
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`Failed to update table description: ${res.status} ${res.statusText}\n${body}`);
+    }
+    return res.json();
+  }
+
+  /**
+   * Update a column description via Keboola metadata API.
+   * @param {string} tableId - e.g. "out.c-bdm.REF_CLIENT"
+   * @param {string} columnName - e.g. "CLIENT_ID"
+   * @param {string} description - New description text
+   */
+  async function updateColumnDescription(tableId, columnName, description) {
+    const url = `${baseUrl}/v2/storage/tables/${encodeURIComponent(tableId)}/column/${encodeURIComponent(columnName)}/metadata`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'X-StorageApi-Token': token,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        'provider': 'user',
+        'metadata[0][key]': 'KBC.description',
+        'metadata[0][value]': description,
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`Failed to update column description: ${res.status} ${res.statusText}\n${body}`);
+    }
+    return res.json();
+  }
+
   return {
     listBucketTables,
     getTable,
     listAllTables,
+    updateTableDescription,
+    updateColumnDescription,
   };
 }

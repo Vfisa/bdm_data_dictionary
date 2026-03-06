@@ -11,9 +11,10 @@ import type { MetadataResponse, Category } from '@/lib/types'
 
 interface TableBrowserPageProps {
   metadata: MetadataResponse
+  onDescriptionUpdated?: () => void
 }
 
-export function TableBrowserPage({ metadata }: TableBrowserPageProps) {
+export function TableBrowserPage({ metadata, onDescriptionUpdated }: TableBrowserPageProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [visibleCategories, setVisibleCategories] = useState<Set<Category>>(
     () => new Set(CATEGORY_ORDER),
@@ -171,6 +172,7 @@ export function TableBrowserPage({ metadata }: TableBrowserPageProps) {
           metadata={metadata}
           onClose={handleCloseDetail}
           onNavigate={handleSelectTable}
+          onDescriptionUpdated={onDescriptionUpdated}
         />
       )}
     </div>

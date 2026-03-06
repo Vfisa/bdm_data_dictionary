@@ -90,6 +90,54 @@ app.get('/api/table/:tableId', (req, res) => {
   res.json(table);
 });
 
+// Update descriptions — propagates to Keboola Storage API
+app.put('/api/descriptions', async (req, res) => {
+  if (!cache) {
+    return res.status(503).json({
+      error: 'Metadata not available — KBC_TOKEN or KBC_URL not configured',
+    });
+  }
+
+  const { updates } = req.body;
+  if (!Array.isArray(updates) || updates.length === 0) {
+    return res.status(400).json({ error: 'Missing or empty updates array' });
+  }
+
+  const results = [];
+  for (const update of updates) {
+    const { itemId, description } = update;
+    if (!itemId || typeof description !== 'string') {
+      results.push({ itemId, success: false, error: 'Invalid itemId or description' });
+      continue;
+    }
+
+    try {
+      // Determine if this is a table or column update based on itemId format
+      // Table: "out.c-bdm.TABLE_NAME" (3 dot-separated parts)
+      // Column: "out.c-bdm.TABLE_NAME.COLUMN_NAME" (4 dot-separated parts)
+      const parts = itemId.split('.');
+      if (parts.length === 3) {
+        // Table description update
+        await cache.updateDescription(itemId, null, description);
+        results.push({ itemId, success: true });
+      } else if (parts.length === 4) {
+        // Column description update
+        const tableId = parts.slice(0, 3).join('.');
+        const columnName = parts[3];
+        await cache.updateDescription(tableId, columnName, description);
+        results.push({ itemId, success: true });
+      } else {
+        results.push({ itemId, success: false, error: 'Invalid itemId format' });
+      }
+    } catch (err) {
+      results.push({ itemId, success: false, error: err.message });
+    }
+  }
+
+  const allSuccess = results.every((r) => r.success);
+  res.status(allSuccess ? 200 : 207).json({ results });
+});
+
 // Manual refresh trigger
 app.post('/api/refresh', async (_req, res) => {
   if (!cache) {

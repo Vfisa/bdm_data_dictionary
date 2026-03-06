@@ -7,9 +7,10 @@ interface ErdPageProps {
   metadata: MetadataResponse
   isRefreshing: boolean
   onRefresh: () => void
+  onDescriptionUpdated?: () => void
 }
 
-export function ErdPage({ metadata, isRefreshing, onRefresh }: ErdPageProps) {
+export function ErdPage({ metadata, isRefreshing, onRefresh, onDescriptionUpdated }: ErdPageProps) {
   const [selectedTable, setSelectedTable] = useState<string | null>(null)
 
   const handleSelectTable = useCallback((tableName: string) => {
@@ -53,6 +54,7 @@ export function ErdPage({ metadata, isRefreshing, onRefresh }: ErdPageProps) {
           metadata={metadata}
           onClose={handleCloseDetail}
           onNavigate={handleNavigateToTable}
+          onDescriptionUpdated={onDescriptionUpdated}
         />
       )}
     </div>

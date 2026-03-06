@@ -13,7 +13,7 @@ function App() {
   const [currentPage, setCurrentPage] = useState<Page>('erd')
   const [searchOpen, setSearchOpen] = useState(false)
   const { isDark, toggleTheme } = useTheme()
-  const { data, isLoading, error, refresh, isRefreshing } = useMetadata()
+  const { data, isLoading, error, refresh, refetch, isRefreshing } = useMetadata()
 
   // Global Cmd+K / Ctrl+K shortcut
   useEffect(() => {
@@ -89,10 +89,11 @@ function App() {
             metadata={data}
             isRefreshing={isRefreshing}
             onRefresh={refresh}
+            onDescriptionUpdated={refetch}
           />
         )}
         {currentPage === 'tables' && (
-          <TableBrowserPage metadata={data} />
+          <TableBrowserPage metadata={data} onDescriptionUpdated={refetch} />
         )}
       </Layout>
 

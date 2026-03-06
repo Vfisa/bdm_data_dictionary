@@ -179,6 +179,36 @@ export class MetadataCache {
   }
 
   /**
+   * Update a table or column description.
+   * Pushes to Keboola API, then updates in-memory cache optimistically.
+   *
+   * @param {string} tableId - e.g. "out.c-bdm.REF_CLIENT"
+   * @param {string|null} columnName - null for table description, column name for column
+   * @param {string} description - New description text
+   */
+  async updateDescription(tableId, columnName, description) {
+    // Push to Keboola API
+    if (columnName) {
+      await this.client.updateColumnDescription(tableId, columnName, description);
+    } else {
+      await this.client.updateTableDescription(tableId, description);
+    }
+
+    // Optimistic in-memory update
+    if (this._data) {
+      const table = this._data.tables.find((t) => t.id === tableId);
+      if (table) {
+        if (columnName) {
+          const col = table.columns.find((c) => c.name === columnName);
+          if (col) col.description = description;
+        } else {
+          table.description = description;
+        }
+      }
+    }
+  }
+
+  /**
    * Get cache status for health checks.
    */
   getStatus() {

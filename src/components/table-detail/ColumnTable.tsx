@@ -1,15 +1,23 @@
-import { Key, CircleDot, Info } from 'lucide-react'
+import { Key, CircleDot, Info, Pencil } from 'lucide-react'
+import { useState } from 'react'
 import { TypeBadge } from './TypeBadge'
+import { InlineEditor } from '@/components/ui/InlineEditor'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { useDescriptionEditor } from '@/hooks/useDescriptionEditor'
 import type { Column } from '@/lib/types'
 import { NOVALUE_SENTINEL } from '@/lib/qa-stats'
 
 interface ColumnTableProps {
   columns: Column[]
   primaryKey: string[]
+  tableId?: string
+  onDescriptionUpdated?: () => void
 }
 
-export function ColumnTable({ columns, primaryKey }: ColumnTableProps) {
+export function ColumnTable({ columns, primaryKey, tableId, onDescriptionUpdated }: ColumnTableProps) {
   const pkSet = new Set(primaryKey)
+  const editor = useDescriptionEditor()
+  const [editingColumn, setEditingColumn] = useState<string | null>(null)
 
   return (
     <div className="overflow-auto max-h-[500px]">
@@ -50,10 +58,47 @@ export function ColumnTable({ columns, primaryKey }: ColumnTableProps) {
                       </span>
                     )}
                   </div>
-                  {col.description && (
-                    <p className="text-[11px] text-[var(--muted-foreground)] mt-0.5 line-clamp-2">
-                      {col.description}
-                    </p>
+                  {tableId && editingColumn === col.name ? (
+                    <div className="mt-0.5" onClick={(e) => e.stopPropagation()}>
+                      <InlineEditor
+                        value={col.description}
+                        placeholder="Add description..."
+                        onSave={async (newDesc) => {
+                          editor.requestEdit(
+                            `${tableId}.${col.name}`,
+                            newDesc,
+                            col.name,
+                          )
+                          setEditingColumn(null)
+                        }}
+                        isLoading={editor.isLoading}
+                        className="text-[11px]"
+                      />
+                    </div>
+                  ) : (
+                    <div className="group/desc flex items-center gap-1 mt-0.5">
+                      {col.description ? (
+                        <p className="text-[11px] text-[var(--muted-foreground)] line-clamp-2">
+                          {col.description}
+                        </p>
+                      ) : tableId ? (
+                        <p className="text-[11px] text-[var(--muted-foreground)] italic opacity-0 group-hover/desc:opacity-50 transition-opacity">
+                          Add description...
+                        </p>
+                      ) : null}
+                      {tableId && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setEditingColumn(col.name)
+                          }}
+                          className="opacity-0 group-hover/desc:opacity-100 transition-opacity shrink-0"
+                          title="Edit description"
+                        >
+                          <Pencil className="h-2.5 w-2.5 text-[var(--muted-foreground)]" />
+                        </button>
+                      )}
+                    </div>
                   )}
                 </td>
                 <td className="py-2 px-2">
@@ -74,6 +119,24 @@ export function ColumnTable({ columns, primaryKey }: ColumnTableProps) {
           })}
         </tbody>
       </table>
+
+      {/* Confirm dialog for column description edits */}
+      <ConfirmDialog
+        open={!!editor.pendingEdit}
+        title="Update Column Description"
+        message={
+          editor.pendingEdit
+            ? `Save new description for column "${editor.pendingEdit.label}"?\n\nThis will update the metadata in the storage API.`
+            : ''
+        }
+        confirmLabel="Save"
+        onConfirm={async () => {
+          const success = await editor.confirmEdit()
+          if (success) onDescriptionUpdated?.()
+        }}
+        onCancel={editor.cancelEdit}
+        isLoading={editor.isLoading}
+      />
     </div>
   )
 }

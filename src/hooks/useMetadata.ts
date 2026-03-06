@@ -6,6 +6,7 @@ interface UseMetadataResult {
   isLoading: boolean
   error: string | null
   refresh: () => Promise<void>
+  refetch: () => Promise<void>
   isRefreshing: boolean
 }
 
@@ -77,5 +78,17 @@ export function useMetadata(): UseMetadataResult {
     }
   }, [])
 
-  return { data, isLoading, error, refresh, isRefreshing }
+  // Lightweight re-fetch from server cache (no Keboola API refresh)
+  const refetch = useCallback(async () => {
+    try {
+      const res = await fetch('/api/metadata')
+      if (!res.ok) return
+      const metadata: MetadataResponse = await res.json()
+      setData(metadata)
+    } catch {
+      // Silently fail — this is a best-effort update
+    }
+  }, [])
+
+  return { data, isLoading, error, refresh, refetch, isRefreshing }
 }

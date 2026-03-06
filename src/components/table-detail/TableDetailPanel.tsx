@@ -2,10 +2,13 @@ import { useEffect, useCallback, useState, useMemo } from 'react'
 import { X, Database, Rows3, HardDrive, Columns3, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { InlineEditor } from '@/components/ui/InlineEditor'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { ColumnTable } from './ColumnTable'
 import { RelationshipList } from './RelationshipList'
 import { CATEGORY_CONFIG } from '@/lib/constants'
 import { formatNumber, formatBytes, timeAgo } from '@/lib/utils'
+import { useDescriptionEditor } from '@/hooks/useDescriptionEditor'
 import type { MetadataResponse } from '@/lib/types'
 
 interface TableDetailPanelProps {
@@ -13,6 +16,7 @@ interface TableDetailPanelProps {
   metadata: MetadataResponse
   onClose: () => void
   onNavigate: (tableName: string) => void
+  onDescriptionUpdated?: () => void
 }
 
 export function TableDetailPanel({
@@ -20,8 +24,10 @@ export function TableDetailPanel({
   metadata,
   onClose,
   onNavigate,
+  onDescriptionUpdated,
 }: TableDetailPanelProps) {
   const [isVisible, setIsVisible] = useState(false)
+  const editor = useDescriptionEditor()
 
   // Find the table data
   const table = useMemo(
@@ -117,16 +123,17 @@ export function TableDetailPanel({
               {table.name}
             </h2>
 
-            {/* Description */}
-            {table.description ? (
-              <p className="text-sm text-[var(--muted-foreground)] mt-1 line-clamp-3">
-                {table.description}
-              </p>
-            ) : (
-              <p className="text-sm text-[var(--muted-foreground)] mt-1 italic">
-                No description available
-              </p>
-            )}
+            {/* Description — click to edit */}
+            <div className="text-sm text-[var(--muted-foreground)] mt-1">
+              <InlineEditor
+                value={table.description}
+                placeholder="No description — click to add"
+                onSave={async (newDesc) => {
+                  editor.requestEdit(table.id, newDesc, table.name)
+                }}
+                isLoading={editor.isLoading}
+              />
+            </div>
           </div>
 
           {/* Close button */}
@@ -173,6 +180,8 @@ export function TableDetailPanel({
             <ColumnTable
               columns={table.columns}
               primaryKey={table.primaryKey}
+              tableId={table.id}
+              onDescriptionUpdated={onDescriptionUpdated}
             />
           </div>
 
@@ -191,7 +200,31 @@ export function TableDetailPanel({
             />
           </div>
         </div>
+        {/* Error toast */}
+        {editor.error && (
+          <div className="absolute bottom-4 left-4 right-4 bg-red-500/10 border border-red-500/30 rounded-md p-3 text-sm text-red-400">
+            {editor.error}
+          </div>
+        )}
       </div>
+
+      {/* Confirm dialog for description edits */}
+      <ConfirmDialog
+        open={!!editor.pendingEdit}
+        title="Update Description"
+        message={
+          editor.pendingEdit
+            ? `Save new description for "${editor.pendingEdit.label}"?\n\nThis will update the metadata in the storage API.`
+            : ''
+        }
+        confirmLabel="Save"
+        onConfirm={async () => {
+          const success = await editor.confirmEdit()
+          if (success) onDescriptionUpdated?.()
+        }}
+        onCancel={editor.cancelEdit}
+        isLoading={editor.isLoading}
+      />
     </div>
   )
 }
