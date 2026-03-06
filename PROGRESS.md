@@ -138,3 +138,33 @@
 **Test:** 24 integration tests via mock Keboola API — cache init, getMetadata shape/categories, getTable with relationships, refresh, edge correctness. Plus manual curl tests for all endpoints without credentials (503 responses verified).
 
 **Result:** PASS — All 24 integration tests pass. Server handles all endpoint scenarios correctly.
+
+---
+
+## Step 7: React App Shell (Layout, Routing, Theme)
+**Status:** DONE
+
+**Files created:**
+- `src/lib/types.ts` — TypeScript interfaces: Column, TableSummary, TableDetail, Edge, Category, MetadataResponse, Page
+- `src/lib/constants.ts` — CATEGORY_CONFIG (colors, labels, Tailwind classes for each category), CATEGORY_ORDER
+- `src/hooks/useTheme.ts` — system preference default, localStorage persistence, `dark` class on `<html>`
+- `src/hooks/useMetadata.ts` — fetch `/api/metadata`, return `{ data, isLoading, error, refresh, isRefreshing }`
+- `src/components/ui/button.tsx` — variant (default/secondary/ghost/outline), size (default/sm/lg/icon)
+- `src/components/ui/badge.tsx` — variant (default/secondary/outline)
+- `src/components/ui/input.tsx` — styled input with focus ring
+- `src/components/ui/tooltip.tsx` — hover tooltip with side positioning
+- `src/components/layout/Header.tsx` — logo, ERD/Tables nav tabs, search trigger (Cmd+K hint), theme toggle
+- `src/components/layout/Layout.tsx` — Header + main content wrapper, full height
+- `src/pages/ErdPage.tsx` — placeholder with table/edge counts + refresh
+- `src/pages/TableBrowserPage.tsx` — placeholder with table count
+
+**Files modified:**
+- `src/App.tsx` — rewritten: state-based routing (`erd` | `tables`), useTheme, useMetadata, loading/error states
+
+**Error encountered:**
+- `TooltipProps` extended `HTMLAttributes<HTMLDivElement>` which has its own `content: string` attribute, conflicting with our `content: ReactNode`
+- **Fix:** Use `Omit<HTMLAttributes<HTMLDivElement>, 'content'>` to exclude the conflicting property
+
+**Test:** `npm run build` succeeds. SPA serves correctly. Health endpoint works. Tabs, theme toggle, loading/error states all implemented.
+
+**Result:** PASS — Build: `index.html` (0.47 KB), `index.css` (18.77 KB), `index.js` (174.93 KB / 56 KB gzip). Zero errors.
