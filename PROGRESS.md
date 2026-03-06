@@ -103,3 +103,38 @@
 **Test:** 89 tests covering all inference methods, category assignment, self-ref skipping, AUX bridges, REF chains, FCTH, cross-table references, edge metadata, uniqueness. Mock data based on real Keboola project structure.
 
 **Result:** PASS — 89/89. Produces 84 edges (63 direct, 4 compound, 17 alias). Only 1 unmatched _ID column out of 146 scanned.
+
+---
+
+## Step 6: Metadata Cache + API Endpoints
+**Status:** DONE
+
+**Files created:**
+- `server/metadata-cache.js` — `MetadataCache` class with `init()`, `refresh()`, `getMetadata()`, `getTable(id)`, `getStatus()`, `destroy()`
+
+**Files modified:**
+- `server/index.js` — added `/api/metadata`, `/api/table/:tableId`, `POST /api/refresh` routes; cache init before `app.listen()`; async `start()` function
+
+**Startup sequence:**
+1. Create MetadataCache with env vars
+2. `cache.init()` — fetch all tables, run inference, store result (blocks until ready)
+3. Start 15-min auto-refresh interval (timer doesn't prevent process exit)
+4. `app.listen()` — server ready
+
+**API endpoints:**
+| Method | Path | Response |
+|--------|------|----------|
+| GET | `/api/health` | Status, uptime, cache status (always works) |
+| GET | `/api/metadata` | Full payload: tables + edges + categories + stats |
+| GET | `/api/table/:tableId` | Single table with columns + outgoing/incoming edges |
+| POST | `/api/refresh` | Trigger cache refresh, returns counts + duration |
+| GET/POST | `/` | SPA fallback (always works) |
+
+**Graceful degradation:**
+- No credentials → server starts, SPA + health work, API endpoints return 503 with message
+- Cache init fails → server starts anyway, 503 until cache loads
+- Refresh already in progress → returns `{ status: "skipped" }`
+
+**Test:** 24 integration tests via mock Keboola API — cache init, getMetadata shape/categories, getTable with relationships, refresh, edge correctness. Plus manual curl tests for all endpoints without credentials (503 responses verified).
+
+**Result:** PASS — All 24 integration tests pass. Server handles all endpoint scenarios correctly.
