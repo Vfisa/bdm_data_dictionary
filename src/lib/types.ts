@@ -8,6 +8,10 @@ export interface Column {
   length: string | null
 }
 
+/** Predefined tag values */
+export const PREDEFINED_TAGS = ['verified', 'needs-review', 'deprecated', 'core', 'wip', 'sensitive'] as const
+export type PredefinedTag = typeof PREDEFINED_TAGS[number]
+
 /** Table summary (from /api/metadata) */
 export interface TableSummary {
   id: string
@@ -21,6 +25,7 @@ export interface TableSummary {
   bucket: string
   category: Category
   lastImportDate: string | null
+  tags: string[]
 }
 
 /** Table detail with relationships (from /api/table/:id) */

@@ -177,6 +177,35 @@ app.put('/api/descriptions', async (req, res) => {
   res.status(allSuccess ? 200 : 207).json({ results });
 });
 
+// Update tags for a table — propagates to Keboola Storage API (or mock in dev)
+app.put('/api/tags', async (req, res) => {
+  const { tableId, tags } = req.body;
+  if (!tableId || !Array.isArray(tags)) {
+    return res.status(400).json({ error: 'Missing tableId or tags array' });
+  }
+
+  // Mock mode
+  if (USE_MOCK && mockData) {
+    const table = mockData.tables.find((t) => t.id === tableId);
+    if (table) table.tags = tags;
+    return res.json({ success: true, tableId, tags });
+  }
+
+  if (!cache) {
+    return res.status(503).json({
+      error: 'Metadata not available — KBC_TOKEN or KBC_URL not configured',
+    });
+  }
+
+  try {
+    await cache.updateTags(tableId, tags);
+    res.json({ success: true, tableId, tags });
+  } catch (err) {
+    console.error(`PUT /api/tags failed for ${tableId}:`, err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Manual refresh trigger
 app.post('/api/refresh', async (_req, res) => {
   if (!cache) {

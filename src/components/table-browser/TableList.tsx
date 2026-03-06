@@ -1,5 +1,6 @@
 import { Columns3, Rows3, HardDrive } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { TagChips } from '@/components/tags/TagEditor'
 import { CATEGORY_CONFIG } from '@/lib/constants'
 import { formatNumber, formatBytes } from '@/lib/utils'
 import type { TableSummary } from '@/lib/types'
@@ -72,13 +73,20 @@ export function TableList({ tables, onSelectTable, searchQuery }: TableListProps
 
                 {/* Description */}
                 {table.description ? (
-                  <p className="text-xs text-[var(--muted-foreground)] line-clamp-1 mb-1.5">
+                  <p className="text-xs text-[var(--muted-foreground)] line-clamp-1 mb-1">
                     {table.description}
                   </p>
                 ) : (
-                  <p className="text-xs text-[var(--muted-foreground)] italic mb-1.5">
+                  <p className="text-xs text-[var(--muted-foreground)] italic mb-1">
                     No description
                   </p>
+                )}
+
+                {/* Tags */}
+                {table.tags && table.tags.length > 0 && (
+                  <div className="mb-1.5">
+                    <TagChips tags={table.tags} />
+                  </div>
                 )}
 
                 {/* Stats + matched columns */}

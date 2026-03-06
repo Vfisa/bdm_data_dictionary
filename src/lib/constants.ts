@@ -1,4 +1,4 @@
-import type { Category } from './types'
+import type { Category, PredefinedTag } from './types'
 
 /** Category display configuration */
 export const CATEGORY_CONFIG: Record<Category, {
@@ -95,6 +95,16 @@ export const CATEGORY_CONFIG: Record<Category, {
 export const CATEGORY_ORDER: Category[] = [
   'REF', 'DIM', 'FCT', 'FCTH', 'MAP', 'AUX', 'OTHER',
 ]
+
+/** Tag color configuration */
+export const TAG_CONFIG: Record<PredefinedTag, { color: string; bg: string; label: string }> = {
+  'verified': { color: '#22c55e', bg: '#22c55e18', label: 'Verified' },
+  'needs-review': { color: '#f59e0b', bg: '#f59e0b18', label: 'Needs Review' },
+  'deprecated': { color: '#ef4444', bg: '#ef444418', label: 'Deprecated' },
+  'core': { color: '#3b82f6', bg: '#3b82f618', label: 'Core' },
+  'wip': { color: '#a855f7', bg: '#a855f718', label: 'WIP' },
+  'sensitive': { color: '#ec4899', bg: '#ec489918', label: 'Sensitive' },
+}
 
 /** Category sort priority for Table Browser default sort */
 export const CATEGORY_SORT_PRIORITY: Record<Category, number> = {

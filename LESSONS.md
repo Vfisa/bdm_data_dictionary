@@ -246,6 +246,70 @@ Mock mode also supports in-memory description editing (saves to the mock data ob
 
 ---
 
+## 18. Backdrop Overlay Blocks Canvas Interaction (Phase 6 / PRD Phase 3)
+
+**Problem:** The `TableDetailPanel` was wrapped in a full-screen `absolute inset-0 z-20` div that served as a backdrop/click-away area. This completely blocked all pan, zoom, and click interactions on the underlying ERD canvas.
+
+**Root cause:** The backdrop div covered the entire viewport at z-index 20, intercepting all pointer events before they could reach the React Flow canvas underneath.
+
+**Fix:** Removed the backdrop wrapper entirely. Made the panel itself the root element with `absolute top-0 right-0 h-full w-[560px] z-20`. The ERD canvas remains fully interactive while the panel is open.
+
+**Lesson:** Avoid full-screen invisible overlays for side panels. They silently block underlying interactions. If click-away-to-close is needed, use React Flow's `onPaneClick` callback instead of a DOM overlay. Only use backdrop overlays for truly modal dialogs that should block all background interaction.
+
+---
+
+## 19. Mermaid ERD Generation — Entity Name Sanitization (Phase 6 / PRD Phase 3)
+
+**Observation:** Mermaid's `erDiagram` syntax doesn't support all characters in entity names. Table names with special characters need to be quoted or sanitized.
+
+**Approach:** Since BDM table names use only `A-Z`, `0-9`, and `_`, no sanitization was needed. The generator produces clean output like:
+```
+erDiagram
+    FCT_ORDER }o--|| REF_CLIENT : "CLIENT_ID"
+    FCT_ORDER }o--|| REF_PRODUCT : "PRODUCT_ID"
+```
+
+**Lesson:** When generating code for external tools (Mermaid, GraphViz, SQL), always consider the target tool's syntax constraints. For BDM naming conventions (`PREFIX_ENTITY`), Mermaid works out of the box, but other projects may need entity name escaping.
+
+---
+
+## 20. Tag Storage in Keboola Metadata (Phase 6 / PRD Phase 3)
+
+**Design decision:** Tags are stored as a JSON-serialized array under a custom metadata key (`bdm.tags`) with `provider: 'user'`:
+```javascript
+{ provider: 'user', metadata: [{ key: 'bdm.tags', value: '["verified","core"]' }] }
+```
+
+**Why this approach:**
+- Keboola metadata API supports arbitrary key-value pairs — no schema changes needed
+- JSON serialization handles arrays in a single metadata entry (vs. one entry per tag)
+- `provider: 'user'` ensures tags don't conflict with Keboola system metadata
+- Custom key prefix (`bdm.`) namespaces our metadata away from `KBC.` system keys
+
+**Lesson:** When extending a platform's metadata model, use a namespaced key prefix and JSON serialization for complex values. This avoids polluting the platform's built-in metadata namespace and keeps the storage model simple (one key = one concept).
+
+---
+
+## 21. Export Dropdown — Click-Outside Handling (Phase 6 / PRD Phase 3)
+
+**Observation:** The export dropdown needed click-outside-to-close behavior. Implemented via `useEffect` with `mousedown` event listener and `ref.current.contains(e.target)` check.
+
+**Pattern:**
+```typescript
+useEffect(() => {
+  if (!open) return
+  function handleClick(e: MouseEvent) {
+    if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+  }
+  document.addEventListener('mousedown', handleClick)
+  return () => document.removeEventListener('mousedown', handleClick)
+}, [open])
+```
+
+**Lesson:** For simple dropdowns, a `mousedown` listener with `contains()` check is sufficient. Use `mousedown` (not `click`) to close before the click event propagates. Only add the listener when the dropdown is open to avoid unnecessary event processing.
+
+---
+
 ## General Principles Discovered
 
 1. **Build early, build often** — Run `npm run build` after every file creation, not just at step completion. Catches errors when context is fresh.

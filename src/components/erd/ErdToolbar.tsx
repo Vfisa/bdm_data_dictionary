@@ -1,8 +1,11 @@
-import { RefreshCw, Maximize2, Download, CalendarDays } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { RefreshCw, Maximize2, Download, CalendarDays, Image, FileCode, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CATEGORY_CONFIG, CATEGORY_ORDER } from '@/lib/constants'
 import type { Category } from '@/lib/types'
 import { timeAgo } from '@/lib/utils'
+
+export type ExportFormat = 'png' | 'svg' | 'mermaid'
 
 interface ErdToolbarProps {
   visibleCategories: Set<Category>
@@ -11,7 +14,7 @@ interface ErdToolbarProps {
   isRefreshing: boolean
   onRefresh: () => void
   onFitView: () => void
-  onExport: () => void
+  onExport: (format: ExportFormat) => void
   tableCount: number
   edgeCount: number
   showDateLinks: boolean
@@ -110,15 +113,8 @@ export function ErdToolbar({
           <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
         </Button>
 
-        {/* Export button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onExport}
-          title="Export ERD as PNG"
-        >
-          <Download className="h-4 w-4" />
-        </Button>
+        {/* Export dropdown */}
+        <ExportDropdown onExport={onExport} />
 
         {/* Fit view button */}
         <Button
@@ -130,6 +126,63 @@ export function ErdToolbar({
           <Maximize2 className="h-4 w-4" />
         </Button>
       </div>
+    </div>
+  )
+}
+
+/** Export format dropdown menu */
+function ExportDropdown({ onExport }: { onExport: (format: ExportFormat) => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [open])
+
+  return (
+    <div className="relative" ref={ref}>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => setOpen((v) => !v)}
+        title="Export ERD"
+      >
+        <Download className="h-4 w-4" />
+      </Button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-1 w-44 rounded-md border border-[var(--border)] bg-[var(--card)] shadow-lg py-1 z-50">
+          <button
+            className="w-full text-left px-3 py-1.5 text-sm text-[var(--foreground)] hover:bg-[var(--muted)] flex items-center gap-2"
+            onClick={() => { onExport('png'); setOpen(false) }}
+          >
+            <Image className="h-3.5 w-3.5" />
+            PNG (3x)
+          </button>
+          <button
+            className="w-full text-left px-3 py-1.5 text-sm text-[var(--foreground)] hover:bg-[var(--muted)] flex items-center gap-2"
+            onClick={() => { onExport('svg'); setOpen(false) }}
+          >
+            <FileCode className="h-3.5 w-3.5" />
+            SVG (vector)
+          </button>
+          <button
+            className="w-full text-left px-3 py-1.5 text-sm text-[var(--foreground)] hover:bg-[var(--muted)] flex items-center gap-2"
+            onClick={() => { onExport('mermaid'); setOpen(false) }}
+          >
+            <ChevronDown className="h-3.5 w-3.5" />
+            Mermaid (.mmd)
+          </button>
+        </div>
+      )}
     </div>
   )
 }

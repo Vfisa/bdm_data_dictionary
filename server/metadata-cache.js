@@ -144,6 +144,7 @@ export class MetadataCache {
         bucket: t.bucket,
         category: this._data.categories[t.name] || 'OTHER',
         lastImportDate: t.lastImportDate,
+        tags: t.tags || [],
       })),
       edges: this._data.edges,
       dateEdges: this._data.dateEdges || [],
@@ -204,6 +205,25 @@ export class MetadataCache {
         } else {
           table.description = description;
         }
+      }
+    }
+  }
+
+  /**
+   * Update tags for a table.
+   * Pushes to Keboola API, then updates in-memory cache optimistically.
+   *
+   * @param {string} tableId - e.g. "out.c-bdm.REF_CLIENT"
+   * @param {string[]} tags - Array of tag strings
+   */
+  async updateTags(tableId, tags) {
+    await this.client.updateTableTags(tableId, tags);
+
+    // Optimistic in-memory update
+    if (this._data) {
+      const table = this._data.tables.find((t) => t.id === tableId);
+      if (table) {
+        table.tags = tags;
       }
     }
   }

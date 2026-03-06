@@ -1,12 +1,12 @@
 import { useState, useMemo, useCallback } from 'react'
-import { Search } from 'lucide-react'
+import { Search, Tag } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { CategoryFilter } from '@/components/table-browser/CategoryFilter'
 import { SortControls, type SortField, type SortDirection } from '@/components/table-browser/SortControls'
 import { TableList } from '@/components/table-browser/TableList'
 import { StatsDashboard } from '@/components/table-browser/StatsDashboard'
 import { TableDetailPanel } from '@/components/table-detail/TableDetailPanel'
-import { CATEGORY_ORDER, CATEGORY_SORT_PRIORITY } from '@/lib/constants'
+import { CATEGORY_ORDER, CATEGORY_SORT_PRIORITY, TAG_CONFIG } from '@/lib/constants'
 import type { MetadataResponse, Category } from '@/lib/types'
 
 interface TableBrowserPageProps {
@@ -22,6 +22,7 @@ export function TableBrowserPage({ metadata, onDescriptionUpdated }: TableBrowse
   const [sortField, setSortField] = useState<SortField>('category')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const [selectedTable, setSelectedTable] = useState<string | null>(null)
+  const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null)
 
   // Toggle category filter
   const toggleCategory = useCallback((category: Category) => {
@@ -58,6 +59,15 @@ export function TableBrowserPage({ metadata, onDescriptionUpdated }: TableBrowse
     return counts
   }, [metadata.tables])
 
+  // Collect all unique tags across tables
+  const allTags = useMemo(() => {
+    const tagSet = new Set<string>()
+    for (const t of metadata.tables) {
+      for (const tag of (t.tags || [])) tagSet.add(tag)
+    }
+    return Array.from(tagSet).sort()
+  }, [metadata.tables])
+
   // Filter + sort tables
   const filteredTables = useMemo(() => {
     const q = searchQuery.toLowerCase()
@@ -65,6 +75,9 @@ export function TableBrowserPage({ metadata, onDescriptionUpdated }: TableBrowse
     let tables = metadata.tables.filter((t) => {
       // Category filter
       if (!visibleCategories.has(t.category)) return false
+
+      // Tag filter
+      if (activeTagFilter && !(t.tags || []).includes(activeTagFilter)) return false
 
       // Search filter: match table name OR column names
       if (q) {
@@ -106,7 +119,7 @@ export function TableBrowserPage({ metadata, onDescriptionUpdated }: TableBrowse
     })
 
     return tables
-  }, [metadata.tables, searchQuery, visibleCategories, sortField, sortDirection])
+  }, [metadata.tables, searchQuery, visibleCategories, activeTagFilter, sortField, sortDirection])
 
   // Table selection for detail panel
   const handleSelectTable = useCallback((tableName: string) => {
@@ -149,10 +162,50 @@ export function TableBrowserPage({ metadata, onDescriptionUpdated }: TableBrowse
           />
         </div>
 
+        {/* Tag filter */}
+        {allTags.length > 0 && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Tag className="h-3 w-3 text-[var(--muted-foreground)] shrink-0" />
+            {allTags.map((tag) => {
+              const isActive = activeTagFilter === tag
+              const config = TAG_CONFIG[tag as keyof typeof TAG_CONFIG]
+              const color = config?.color || '#8b5cf6'
+              const bg = config?.bg || '#8b5cf618'
+              return (
+                <button
+                  key={tag}
+                  onClick={() => setActiveTagFilter(isActive ? null : tag)}
+                  className={`
+                    px-1.5 py-0.5 text-[11px] font-medium rounded-md border cursor-pointer transition-all
+                    ${isActive ? 'ring-1 ring-offset-1 ring-offset-[var(--background)]' : 'opacity-60 hover:opacity-100'}
+                  `}
+                  style={{
+                    backgroundColor: bg,
+                    color: color,
+                    borderColor: `${color}30`,
+                    ...(isActive ? { ringColor: color } : {}),
+                  }}
+                >
+                  {tag}
+                </button>
+              )
+            })}
+            {activeTagFilter && (
+              <button
+                onClick={() => setActiveTagFilter(null)}
+                className="text-[11px] text-[var(--muted-foreground)] hover:text-[var(--foreground)] cursor-pointer"
+              >
+                clear
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Results count */}
         <p className="text-xs text-[var(--muted-foreground)]">
           {filteredTables.length} of {metadata.tables.length} tables
           {searchQuery && ` matching "${searchQuery}"`}
+          {activeTagFilter && ` tagged "${activeTagFilter}"`}
         </p>
       </div>
 

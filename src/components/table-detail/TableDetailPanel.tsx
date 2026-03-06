@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { InlineEditor } from '@/components/ui/InlineEditor'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { TagEditor } from '@/components/tags/TagEditor'
 import { ColumnTable } from './ColumnTable'
 import { RelationshipList } from './RelationshipList'
 import { CATEGORY_CONFIG } from '@/lib/constants'
@@ -69,16 +70,6 @@ export function TableDetailPanel({
     setTimeout(onClose, 200)
   }, [onClose])
 
-  // Handle backdrop click
-  const handleBackdropClick = useCallback(
-    (e: React.MouseEvent) => {
-      if (e.target === e.currentTarget) {
-        handleClose()
-      }
-    },
-    [handleClose],
-  )
-
   if (!table) {
     return null
   }
@@ -87,22 +78,17 @@ export function TableDetailPanel({
 
   return (
     <div
-      className="absolute inset-0 z-20"
-      onClick={handleBackdropClick}
+      className={`
+        absolute top-0 right-0 h-full w-[560px] max-w-full z-20
+        bg-[var(--card)] border-l border-[var(--border)] shadow-2xl
+        flex flex-col
+        transition-transform duration-200 ease-out
+        ${isVisible ? 'translate-x-0' : 'translate-x-full'}
+      `}
       role="dialog"
       aria-label={`Table detail: ${table.name}`}
       aria-modal="false"
     >
-      {/* Panel */}
-      <div
-        className={`
-          absolute top-0 right-0 h-full w-[560px] max-w-full
-          bg-[var(--card)] border-l border-[var(--border)] shadow-2xl
-          flex flex-col
-          transition-transform duration-200 ease-out
-          ${isVisible ? 'translate-x-0' : 'translate-x-full'}
-        `}
-      >
         {/* Header */}
         <div className="flex items-start gap-3 p-5 border-b border-[var(--border)]">
           <div className="flex-1 min-w-0">
@@ -169,6 +155,15 @@ export function TableDetailPanel({
           )}
         </div>
 
+        {/* Tags */}
+        <div className="px-5 py-2.5 border-b border-[var(--border)]">
+          <TagEditor
+            tableId={table.id}
+            tags={table.tags || []}
+            onTagsUpdated={onDescriptionUpdated}
+          />
+        </div>
+
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto">
           {/* Columns section */}
@@ -206,7 +201,6 @@ export function TableDetailPanel({
             {editor.error}
           </div>
         )}
-      </div>
 
       {/* Confirm dialog for description edits */}
       <ConfirmDialog

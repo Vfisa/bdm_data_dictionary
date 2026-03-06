@@ -24,6 +24,7 @@ export function generateMockMetadata() {
       bucket: 'out.c-bdm',
       category: 'REF',
       lastImportDate: '2026-03-05T14:30:00Z',
+      tags: ['verified', 'core'],
     },
     {
       id: 'out.c-bdm.REF_PRODUCT',
@@ -43,6 +44,7 @@ export function generateMockMetadata() {
       bucket: 'out.c-bdm',
       category: 'REF',
       lastImportDate: '2026-03-04T10:00:00Z',
+      tags: ['needs-review'],
     },
     {
       id: 'out.c-bdm.REF_COUNTRY',
@@ -60,6 +62,7 @@ export function generateMockMetadata() {
       bucket: 'out.c-bdm',
       category: 'REF',
       lastImportDate: '2026-02-28T08:00:00Z',
+      tags: ['verified'],
     },
     {
       id: 'out.c-bdm.REF_CATEGORY',
@@ -76,6 +79,7 @@ export function generateMockMetadata() {
       bucket: 'out.c-bdm',
       category: 'REF',
       lastImportDate: '2026-03-01T12:00:00Z',
+      tags: [],
     },
     {
       id: 'out.c-bdm.DIM_DATE',
@@ -96,6 +100,7 @@ export function generateMockMetadata() {
       bucket: 'out.c-bdm',
       category: 'DIM',
       lastImportDate: '2026-03-06T00:00:00Z',
+      tags: ['core'],
     },
     {
       id: 'out.c-bdm.DIM_STORE',
@@ -114,6 +119,7 @@ export function generateMockMetadata() {
       bucket: 'out.c-bdm',
       category: 'DIM',
       lastImportDate: '2026-03-05T09:00:00Z',
+      tags: ['wip'],
     },
     {
       id: 'out.c-bdm.FCT_ORDER',
@@ -135,6 +141,7 @@ export function generateMockMetadata() {
       bucket: 'out.c-bdm',
       category: 'FCT',
       lastImportDate: '2026-03-06T06:00:00Z',
+      tags: ['core', 'verified'],
     },
     {
       id: 'out.c-bdm.FCT_PAYMENT',
@@ -154,6 +161,7 @@ export function generateMockMetadata() {
       bucket: 'out.c-bdm',
       category: 'FCT',
       lastImportDate: '2026-03-06T06:00:00Z',
+      tags: [],
     },
     {
       id: 'out.c-bdm.MAP_ORDER_PRODUCT',
@@ -172,6 +180,7 @@ export function generateMockMetadata() {
       bucket: 'out.c-bdm',
       category: 'MAP',
       lastImportDate: '2026-03-06T06:00:00Z',
+      tags: [],
     },
     {
       id: 'out.c-bdm_aux.AUX_STAGING_ORDERS',
@@ -189,6 +198,7 @@ export function generateMockMetadata() {
       bucket: 'out.c-bdm_aux',
       category: 'AUX',
       lastImportDate: null,
+      tags: ['deprecated'],
     },
   ];
 

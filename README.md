@@ -6,12 +6,14 @@ Interactive Entity Relationship Diagram, data dictionary, and quality dashboard 
 
 ### ERD Visualization
 - **Interactive ERD Diagram** — Pan, zoom, and explore tables with auto-layout via Dagre. Category-colored nodes with filter toggles and minimap.
+- **Floating Detail Panel** — Click a table node to open the detail sidebar without blocking the ERD canvas. Pan, zoom, and click other nodes while the panel is open.
 - **Connection Highlighting** — Click a table node to dim unconnected nodes and glow connected ones with drop-shadow effect.
 - **Date Link Visualization** — Toggle (off by default) shows assumed DIM_DATE connections from DATE/TIMESTAMP columns as dashed purple lines.
-- **Export as PNG** — Download current ERD view as `erd-YYYY-MM-DD.png`.
+- **Multi-Format Export** — Download ERD as PNG (3x resolution), SVG (vector), or Mermaid `.mmd` file via dropdown menu.
 
 ### Table Browser & Data Quality
-- **Table Browser** — Full-page searchable listing with category filters and sort (by category, name, rows, columns, size).
+- **Table Browser** — Full-page searchable listing with category filters, tag filters, and sort (by category, name, rows, columns, size).
+- **Collaborative Tags** — Predefined tags (verified, needs-review, deprecated, core, wip, sensitive) + custom free-form tags. Stored as JSON in Keboola metadata (`bdm.tags` key). Tag chips on table cards, tag editor in detail panel, filter-by-tag in browser toolbar.
 - **QA Stats Dashboard** — KPI cards showing total tables, columns, rows, QA score (% with descriptions), missing descriptions count, and empty tables. QA score is color-coded: green >80%, yellow 50-80%, red <50%.
 - **$NOVALUE Convention** — Info tooltips on `_ID` columns documenting the BDM sentinel value for missing FK references.
 
@@ -38,6 +40,7 @@ Browser (port 8888)
               +-- GET  /api/metadata           <- All tables + edges + dateEdges + categories
               +-- GET  /api/table/:tableId     <- Single table with relationships
               +-- PUT  /api/descriptions       <- Update table/column descriptions -> Keboola API
+              +-- PUT  /api/tags               <- Update table tags -> Keboola metadata (bdm.tags)
               +-- POST /api/refresh            <- Trigger cache refresh
               +-- GET  /api/health             <- Health check
 ```
@@ -166,6 +169,7 @@ Edit `server/overrides.json`:
 | `GET` | `/api/metadata` | Full payload: tables, edges, dateEdges, categories, stats |
 | `GET` | `/api/table/:tableId` | Single table with columns + relationships |
 | `PUT` | `/api/descriptions` | Update table/column descriptions -> Keboola Storage API |
+| `PUT` | `/api/tags` | Update table tags -> Keboola metadata (`bdm.tags` key) |
 | `POST` | `/api/refresh` | Trigger server-side metadata refresh |
 | `GET/POST` | `/` | React SPA (POST supported for Keboola liveness checks) |
 
@@ -185,6 +189,16 @@ curl -X PUT /api/descriptions \
 The `itemId` format determines the target:
 - 3 dot-separated parts (e.g., `out.c-bdm.TABLE`) -> table description
 - 4 dot-separated parts (e.g., `out.c-bdm.TABLE.COLUMN`) -> column description
+
+### Tag Update Format
+
+```bash
+curl -X PUT /api/tags \
+  -H 'Content-Type: application/json' \
+  -d '{ "tableId": "out.c-bdm.FCT_ORDER", "tags": ["verified", "core", "custom-tag"] }'
+```
+
+Tags are stored in Keboola metadata under the `bdm.tags` key as a JSON array.
 
 ## Tech Stack
 
@@ -219,19 +233,21 @@ bdm-data-dictionary/
 |   +-- components/
 |   |   +-- erd/                     # ERD diagram components
 |   |   |   +-- ErdCanvas.tsx        # React Flow canvas, selection, zoom/fit/export
-|   |   |   +-- ErdToolbar.tsx       # Category filters, date links, refresh, export
+|   |   |   +-- ErdToolbar.tsx       # Category filters, date links, refresh, export dropdown
 |   |   |   +-- TableNode.tsx        # Custom node rendering
 |   |   |   +-- useErdLayout.ts      # Dagre layout + highlight logic
 |   |   +-- table-detail/            # Table detail panel
-|   |   |   +-- TableDetailPanel.tsx # Slide-in sidebar with inline editing
+|   |   |   +-- TableDetailPanel.tsx # Floating sidebar with inline editing + tags
 |   |   |   +-- ColumnTable.tsx      # Column grid with types + inline editing
 |   |   |   +-- RelationshipList.tsx # FK relationships grouped by direction
 |   |   |   +-- TypeBadge.tsx        # Type-specific color badges
 |   |   +-- table-browser/           # Table browser page
 |   |   |   +-- CategoryFilter.tsx   # Toggle chips with counts
 |   |   |   +-- SortControls.tsx     # Sort field + direction
-|   |   |   +-- TableList.tsx        # Table rows with category badges
+|   |   |   +-- TableList.tsx        # Table rows with category badges + tag chips
 |   |   |   +-- StatsDashboard.tsx   # QA stats KPI cards
+|   |   +-- tags/                    # Tag system
+|   |   |   +-- TagEditor.tsx        # Add/remove tags + predefined suggestions + TagChips
 |   |   +-- search/                  # Global search
 |   |   |   +-- CommandPalette.tsx   # Cmd+K modal with filter toggles
 |   |   |   +-- useSearch.ts         # Search index
@@ -247,11 +263,13 @@ bdm-data-dictionary/
 |   |   +-- useMetadata.ts           # Fetch + refresh + refetch metadata
 |   |   +-- useTheme.ts              # Dark/light theme
 |   |   +-- useDescriptionEditor.ts  # Edit state + API submission
+|   |   +-- useTags.ts               # Tag update API hook
 |   +-- lib/
-|   |   +-- types.ts                 # TypeScript interfaces
-|   |   +-- constants.ts             # Category colors, sort priority
+|   |   +-- types.ts                 # TypeScript interfaces + tag types
+|   |   +-- constants.ts             # Category colors, sort priority, tag config
 |   |   +-- utils.ts                 # cn(), formatNumber(), timeAgo()
 |   |   +-- qa-stats.ts              # QA metrics computation
+|   |   +-- mermaid.ts               # Mermaid erDiagram text generation
 |   +-- pages/
 |       +-- ErdPage.tsx              # ERD + detail panel
 |       +-- TableBrowserPage.tsx     # Search + filter + sort + stats

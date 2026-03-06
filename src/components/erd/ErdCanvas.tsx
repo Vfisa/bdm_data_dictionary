@@ -10,11 +10,12 @@ import {
   type Node,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { toPng } from 'html-to-image'
+import { toPng, toSvg } from 'html-to-image'
 import { TableNode } from './TableNode'
-import { ErdToolbar } from './ErdToolbar'
+import { ErdToolbar, type ExportFormat } from './ErdToolbar'
 import { useErdLayout, type TableNodeData } from './useErdLayout'
 import { CATEGORY_ORDER } from '@/lib/constants'
+import { generateMermaidERD } from '@/lib/mermaid'
 import type { MetadataResponse, Category } from '@/lib/types'
 
 /** Register custom node types */
@@ -84,24 +85,47 @@ function ErdCanvasInner({
     fitView({ padding: 0.1, duration: 300 })
   }, [fitView])
 
-  // Handle export as PNG
-  const handleExport = useCallback(async () => {
+  // Handle export in multiple formats
+  const handleExport = useCallback(async (format: ExportFormat) => {
+    const datestamp = new Date().toISOString().slice(0, 10)
+
+    if (format === 'mermaid') {
+      const mmd = generateMermaidERD(metadata)
+      const blob = new Blob([mmd], { type: 'text/plain' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.download = `erd-${datestamp}.mmd`
+      link.href = url
+      link.click()
+      URL.revokeObjectURL(url)
+      return
+    }
+
     const viewport = containerRef.current?.querySelector('.react-flow__viewport') as HTMLElement
     if (!viewport) return
+
     try {
       const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--background').trim()
-      const dataUrl = await toPng(viewport, {
-        backgroundColor: bgColor.startsWith('oklch') ? '#1a1a1a' : bgColor,
-        pixelRatio: 2,
-      })
-      const link = document.createElement('a')
-      link.download = `erd-${new Date().toISOString().slice(0, 10)}.png`
-      link.href = dataUrl
-      link.click()
+      const bg = bgColor.startsWith('oklch') ? '#1a1a1a' : bgColor
+
+      if (format === 'svg') {
+        const dataUrl = await toSvg(viewport, { backgroundColor: bg })
+        const link = document.createElement('a')
+        link.download = `erd-${datestamp}.svg`
+        link.href = dataUrl
+        link.click()
+      } else {
+        // PNG at 3x for print quality
+        const dataUrl = await toPng(viewport, { backgroundColor: bg, pixelRatio: 3 })
+        const link = document.createElement('a')
+        link.download = `erd-${datestamp}.png`
+        link.href = dataUrl
+        link.click()
+      }
     } catch (err) {
       console.error('Export failed:', err)
     }
-  }, [])
+  }, [metadata])
 
   // Count visible tables/edges
   const visibleTableCount = nodes.length

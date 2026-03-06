@@ -537,14 +537,14 @@ All features below were implemented and committed:
 - [x] **Search filter toggles** — Both / Tables Only / Columns Only in command palette `f52ea39`
 - [x] **Mock data server** — Auto-detected, serves 10 sample tables for local dev `3c83181`
 
-### Phase 3 — UX Improvements (next)
+### Phase 3 — UX Improvements (DONE)
 
-- [ ] **ERD pan/zoom with sidebar open** — Remove full-screen backdrop overlay from `TableDetailPanel` (`absolute inset-0 z-20` blocks all canvas interaction). Panel becomes a floating sidebar (`absolute top-0 right-0 w-[560px] z-20`) without backdrop. Panning, zooming, and node highlighting all work while the detail panel is open. Click empty canvas to close panel.
-- [ ] **ERD export improvements** — Replace single PNG download with export dropdown menu:
-  - **PNG (3x)** — Increase `pixelRatio` from 2 to 3 for print-quality output
+- [x] **ERD pan/zoom with sidebar open** — Removed full-screen backdrop overlay from `TableDetailPanel`. Panel is now a floating sidebar (`absolute top-0 right-0 w-[560px] z-20`) without backdrop. Panning, zooming, and node highlighting all work while the detail panel is open.
+- [x] **ERD export improvements** — Replaced single PNG button with export dropdown menu:
+  - **PNG (3x)** — `pixelRatio: 3` for print-quality output
   - **SVG** — Vector export via `html-to-image`'s `toSvg()` for infinite scalability
-  - **Mermaid (.mmd)** — Generate Mermaid `erDiagram` text from full metadata (all tables + all edges, regardless of current filters). Downloadable as `.mmd` file or copy-to-clipboard.
-- [ ] **Collaborative tags** — Predefined tags (`verified`, `needs-review`, `deprecated`, `core`, `wip`, `sensitive`) + free-form custom tags. Stored as JSON in Keboola metadata (`bdm.tags` key, `provider: 'user'`). Tag chips in detail panel + table browser. Filter by tag.
+  - **Mermaid (.mmd)** — Generates Mermaid `erDiagram` text from full metadata (all tables + all edges). Downloadable as `.mmd` file.
+- [x] **Collaborative tags** — Predefined tags (`verified`, `needs-review`, `deprecated`, `core`, `wip`, `sensitive`) + free-form custom tags. Stored as JSON in Keboola metadata (`bdm.tags` key, `provider: 'user'`). Tag chips in detail panel + table browser. Filter by tag in Table Browser.
 
 ### Phase 4 — Data Profiling (planned)
 

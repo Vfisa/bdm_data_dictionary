@@ -50,6 +50,13 @@ export function createClient(kbcUrl, kbcToken) {
     // Extract table description from metadata array
     const description = extractMetadataValue(raw.metadata, 'KBC.description') || '';
 
+    // Extract tags from metadata (stored as JSON array under bdm.tags key)
+    let tags = [];
+    const tagsRaw = extractMetadataValue(raw.metadata, 'bdm.tags');
+    if (tagsRaw) {
+      try { tags = JSON.parse(tagsRaw); } catch (_) { /* ignore parse errors */ }
+    }
+
     // Build column definitions
     const columns = (raw.columns || []).map((colName) => {
       const colMeta = (raw.columnMetadata || {})[colName] || [];
@@ -77,6 +84,7 @@ export function createClient(kbcUrl, kbcToken) {
       bucket: raw.bucket?.id || tableId.split('.').slice(0, 2).join('.'),
       lastImportDate: raw.lastImportDate || null,
       lastChangeDate: raw.lastChangeDate || null,
+      tags,
     };
   }
 
@@ -215,11 +223,45 @@ export function createClient(kbcUrl, kbcToken) {
     return res.json();
   }
 
+  /**
+   * Update tags for a table via Keboola metadata API.
+   * Tags are stored as a JSON array under the bdm.tags key.
+   *
+   * @param {string} tableId - e.g. "out.c-bdm.REF_CLIENT"
+   * @param {string[]} tags - Array of tag strings
+   */
+  async function updateTableTags(tableId, tags) {
+    const url = `${baseUrl}/v2/storage/tables/${encodeURIComponent(tableId)}/metadata`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'X-StorageApi-Token': token,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        provider: 'user',
+        metadata: [
+          {
+            key: 'bdm.tags',
+            value: JSON.stringify(tags),
+          },
+        ],
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`Failed to update table tags: ${res.status} ${res.statusText}\n${body}`);
+    }
+    return res.json();
+  }
+
   return {
     listBucketTables,
     getTable,
     listAllTables,
     updateTableDescription,
     updateColumnDescription,
+    updateTableTags,
   };
 }

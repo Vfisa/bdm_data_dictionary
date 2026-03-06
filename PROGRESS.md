@@ -438,15 +438,64 @@
 
 ---
 
+## Phase 6: UX Improvements (PRD Phase 3)
+**Status:** DONE
+
+**Changes:**
+
+### Feature 1: ERD pan/zoom with sidebar open
+- Removed full-screen backdrop overlay (`absolute inset-0 z-20`) from `TableDetailPanel`
+- Panel is now a floating sidebar: `absolute top-0 right-0 h-full w-[560px] z-20`
+- ERD canvas remains fully interactive (pan, zoom, node click) while detail panel is open
+- Removed `handleBackdropClick` callback — panel closes via X button or Escape key only
+
+### Feature 2: ERD export improvements
+- Replaced single PNG export button with `ExportDropdown` component offering three formats:
+  - **PNG (3x)** — `pixelRatio: 3` for print-quality resolution
+  - **SVG (vector)** — via `html-to-image`'s `toSvg()` for infinite scalability
+  - **Mermaid (.mmd)** — Generates Mermaid `erDiagram` text from full metadata
+- Created `src/lib/mermaid.ts` — `generateMermaidERD()` converts all tables + edges to Mermaid syntax
+
+### Feature 3: Collaborative tags
+- **Backend:** Tags stored as JSON array in Keboola metadata under `bdm.tags` key (`provider: 'user'`)
+  - `server/keboola-client.js` — added `updateTableTags()`, extracts tags from metadata in `normalizeTable()`
+  - `server/metadata-cache.js` — added `updateTags()` with optimistic in-memory update
+  - `server/index.js` — added `PUT /api/tags` endpoint (supports mock mode)
+  - `server/mock-data.js` — added sample tags to all 10 mock tables
+- **Frontend:** Tag editor + tag chips + tag filtering
+  - `src/components/tags/TagEditor.tsx` — `TagEditor` (add/remove with predefined suggestions + custom input) and `TagChips` (read-only display)
+  - `src/hooks/useTags.ts` — hook for tag API calls
+  - `src/lib/types.ts` — added `PREDEFINED_TAGS`, `PredefinedTag` type, `tags: string[]` to `TableSummary`
+  - `src/lib/constants.ts` — added `TAG_CONFIG` with colors for 6 predefined tags
+  - `src/components/table-detail/TableDetailPanel.tsx` — added TagEditor section
+  - `src/components/table-browser/TableList.tsx` — added TagChips after description
+  - `src/pages/TableBrowserPage.tsx` — added tag filter state, `allTags` memo, tag filter UI with colored buttons
+
+**Files created:**
+- `src/lib/mermaid.ts`
+- `src/hooks/useTags.ts`
+- `src/components/tags/TagEditor.tsx`
+
+**Files modified:**
+- `server/index.js`, `server/keboola-client.js`, `server/metadata-cache.js`, `server/mock-data.js`
+- `src/components/erd/ErdCanvas.tsx`, `src/components/erd/ErdToolbar.tsx`
+- `src/components/table-browser/TableList.tsx`, `src/components/table-detail/TableDetailPanel.tsx`
+- `src/lib/constants.ts`, `src/lib/types.ts`, `src/pages/TableBrowserPage.tsx`
+
+**Result:** PASS — Build succeeds (568.64 KB JS / 182.91 KB gzip, 54.02 KB CSS / 9.92 KB gzip). All three features verified in browser.
+
+---
+
 ## Summary
 
-All 12 foundation steps + 5 expansion phases complete. The BDM Data Dictionary & ERD Viewer includes:
+All 12 foundation steps + 6 expansion phases complete. The BDM Data Dictionary & ERD Viewer includes:
 
 - **58 tables** from `out.c-bdm` + `out.c-bdm_aux` with live Keboola metadata
 - **84 inferred FK relationships** via dynamic inference engine
-- **Interactive ERD diagram** with Dagre layout, category filters, minimap, connection highlighting, date links, PNG export
-- **Table detail panel** with column types, PK indicators, navigable relationships, inline description editing
-- **Table browser** with search, category filters, sort, QA stats dashboard
+- **Interactive ERD diagram** with Dagre layout, category filters, minimap, connection highlighting, date links, multi-format export (PNG 3x / SVG / Mermaid)
+- **Floating detail panel** with column types, PK indicators, navigable relationships, inline description editing — ERD stays interactive while panel is open
+- **Table browser** with search, category filters, sort, QA stats dashboard, tag filtering
+- **Collaborative tags** — predefined + custom tags stored in Keboola metadata, with tag editor and filter-by-tag
 - **Global search** (Cmd+K) with fuzzy matching and filter toggles (Both/Tables/Columns)
 - **Inline description editing** with Keboola Storage API write-back and confirmation dialog
 - **QA metrics** — description coverage score, missing counts, $NOVALUE documentation
