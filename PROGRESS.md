@@ -47,3 +47,24 @@
 **Test:** GET `/` → 200 (SPA), POST `/` → 200 (not 405), GET `/api/health` → JSON.
 
 **Result:** PASS — All three endpoints respond correctly. Warns on missing KBC_TOKEN/KBC_URL without crashing.
+
+---
+
+## Step 4: Keboola Storage API Client
+**Status:** DONE
+
+**Files created:**
+- `server/keboola-client.js` — `createClient(kbcUrl, kbcToken)` returning `{ listBucketTables, getTable, listAllTables }`
+
+**Key features:**
+- Uses native `fetch()` with `X-StorageApi-Token` header
+- `listBucketTables(bucketId)` — single API call per bucket with `?include=columns,metadata,columnMetadata`
+- `listAllTables(bucketIds?)` — fetches from `out.c-bdm` + `out.c-bdm_aux` in parallel via `Promise.allSettled`
+- Normalizes response to: `{ id, name, description, primaryKey, rowsCount, dataSizeBytes, columns: [{ name, databaseNativeType, keboolaBaseType, nullable, description, length }], bucket, lastImportDate, lastChangeDate }`
+- Strips `#` prefix from token (Keboola env injection quirk)
+- Strips trailing slash from base URL
+- Graceful error handling: failed buckets logged as warnings, don't crash the app
+
+**Test:** 28 tests via mock HTTP server — normalization, auth header, multi-bucket parallel fetch, error handling (404), default bucket IDs. Verified against real Keboola project data (51 tables in out.c-bdm + 7 in out.c-bdm_aux = 58 total).
+
+**Result:** PASS — All 28 unit/integration tests pass. Column metadata correctly extracted from Keboola metadata arrays.

@@ -1,0 +1,154 @@
+/**
+ * Keboola Storage API Client
+ *
+ * Wrapper for fetching table metadata from Keboola Storage API.
+ * Uses native fetch() with X-StorageApi-Token header.
+ */
+
+/**
+ * Create a Keboola Storage API client.
+ *
+ * @param {string} kbcUrl - Base URL (e.g. https://connection.eu-central-1.keboola.com)
+ * @param {string} kbcToken - Storage API token
+ * @returns {{ listBucketTables, getTable, listAllTables }}
+ */
+export function createClient(kbcUrl, kbcToken) {
+  // Strip trailing slash and any # prefix from token (Keboola env injection quirk)
+  const baseUrl = kbcUrl.replace(/\/+$/, '');
+  const token = kbcToken.replace(/^#/, '');
+
+  /**
+   * Generic API request helper.
+   */
+  async function request(endpoint) {
+    const url = `${baseUrl}/v2/storage/${endpoint}`;
+    const res = await fetch(url, {
+      headers: {
+        'X-StorageApi-Token': token,
+        'Accept': 'application/json',
+      },
+    });
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(
+        `Keboola API error: ${res.status} ${res.statusText} — ${endpoint}\n${body}`
+      );
+    }
+
+    return res.json();
+  }
+
+  /**
+   * Normalize a raw Keboola table object to a clean schema.
+   * Handles columns, metadata, and columnMetadata from the API response.
+   */
+  function normalizeTable(raw) {
+    const tableId = raw.id; // e.g. "out.c-bdm.REF_CLIENT"
+    const name = raw.name; // e.g. "REF_CLIENT"
+
+    // Extract table description from metadata array
+    const description = extractMetadataValue(raw.metadata, 'KBC.description') || '';
+
+    // Build column definitions
+    const columns = (raw.columns || []).map((colName) => {
+      const colMeta = (raw.columnMetadata || {})[colName] || [];
+
+      return {
+        name: colName,
+        databaseNativeType: extractMetadataValue(colMeta, 'KBC.datatype.type')
+          || extractMetadataValue(colMeta, 'KBC.datatype.basetype')
+          || 'VARCHAR',
+        keboolaBaseType: extractMetadataValue(colMeta, 'KBC.datatype.basetype') || 'STRING',
+        nullable: extractMetadataValue(colMeta, 'KBC.datatype.nullable') !== '0',
+        description: extractMetadataValue(colMeta, 'KBC.description') || '',
+        length: extractMetadataValue(colMeta, 'KBC.datatype.length') || null,
+      };
+    });
+
+    return {
+      id: tableId,
+      name,
+      description,
+      primaryKey: raw.primaryKey || [],
+      rowsCount: raw.rowsCount || 0,
+      dataSizeBytes: raw.dataSizeBytes || 0,
+      columns,
+      bucket: raw.bucket?.id || tableId.split('.').slice(0, 2).join('.'),
+      lastImportDate: raw.lastImportDate || null,
+      lastChangeDate: raw.lastChangeDate || null,
+    };
+  }
+
+  /**
+   * Extract a value from Keboola metadata array by key.
+   * Metadata is an array of { key, value, provider } objects.
+   */
+  function extractMetadataValue(metadataArray, key) {
+    if (!Array.isArray(metadataArray)) return null;
+    const entry = metadataArray.find((m) => m.key === key);
+    return entry ? entry.value : null;
+  }
+
+  /**
+   * Fetch all tables in a bucket, including columns and metadata.
+   * Uses a single API call per bucket with the include parameter.
+   *
+   * @param {string} bucketId - e.g. "out.c-bdm"
+   * @returns {Promise<Array>} Normalized table objects
+   */
+  async function listBucketTables(bucketId) {
+    const raw = await request(
+      `buckets/${encodeURIComponent(bucketId)}/tables?include=columns,metadata,columnMetadata`
+    );
+
+    return raw.map(normalizeTable);
+  }
+
+  /**
+   * Fetch detailed info for a single table.
+   *
+   * @param {string} tableId - e.g. "out.c-bdm.REF_CLIENT"
+   * @returns {Promise<Object>} Normalized table object
+   */
+  async function getTable(tableId) {
+    const raw = await request(`tables/${encodeURIComponent(tableId)}`);
+    return normalizeTable(raw);
+  }
+
+  /**
+   * Fetch all tables from multiple buckets in parallel.
+   * Defaults to both out.c-bdm and out.c-bdm_aux.
+   *
+   * @param {string[]} [bucketIds] - Array of bucket IDs to fetch
+   * @returns {Promise<Array>} Combined normalized table objects
+   */
+  async function listAllTables(bucketIds) {
+    const ids = bucketIds || ['out.c-bdm', 'out.c-bdm_aux'];
+
+    const results = await Promise.allSettled(
+      ids.map((id) => listBucketTables(id))
+    );
+
+    const tables = [];
+    for (let i = 0; i < results.length; i++) {
+      const result = results[i];
+      if (result.status === 'fulfilled') {
+        tables.push(...result.value);
+      } else {
+        // Log but don't crash — bucket might not exist (e.g. aux bucket)
+        console.warn(
+          `Warning: Failed to fetch bucket "${ids[i]}": ${result.reason?.message || result.reason}`
+        );
+      }
+    }
+
+    return tables;
+  }
+
+  return {
+    listBucketTables,
+    getTable,
+    listAllTables,
+  };
+}
