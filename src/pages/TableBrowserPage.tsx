@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input'
 import { CategoryFilter } from '@/components/table-browser/CategoryFilter'
 import { SortControls, type SortField, type SortDirection } from '@/components/table-browser/SortControls'
 import { TableList } from '@/components/table-browser/TableList'
+import { StatsDashboard } from '@/components/table-browser/StatsDashboard'
 import { TableDetailPanel } from '@/components/table-detail/TableDetailPanel'
 import { CATEGORY_ORDER, CATEGORY_SORT_PRIORITY } from '@/lib/constants'
 import type { MetadataResponse, Category } from '@/lib/types'
@@ -119,6 +120,9 @@ export function TableBrowserPage({ metadata }: TableBrowserPageProps) {
     <div className="relative h-full flex flex-col">
       {/* Toolbar */}
       <div className="shrink-0 border-b border-[var(--border)] bg-[var(--card)] px-4 py-3 space-y-3">
+        {/* Stats Dashboard */}
+        <StatsDashboard metadata={metadata} />
+
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--muted-foreground)]" />

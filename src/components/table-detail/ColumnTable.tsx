@@ -1,6 +1,7 @@
-import { Key, CircleDot } from 'lucide-react'
+import { Key, CircleDot, Info } from 'lucide-react'
 import { TypeBadge } from './TypeBadge'
 import type { Column } from '@/lib/types'
+import { NOVALUE_SENTINEL } from '@/lib/qa-stats'
 
 interface ColumnTableProps {
   columns: Column[]
@@ -29,6 +30,7 @@ export function ColumnTable({ columns, primaryKey }: ColumnTableProps) {
         <tbody>
           {columns.map((col) => {
             const isPK = pkSet.has(col.name)
+            const isIdColumn = col.name.endsWith('_ID')
             return (
               <tr
                 key={col.name}
@@ -42,6 +44,11 @@ export function ColumnTable({ columns, primaryKey }: ColumnTableProps) {
                     <span className={`font-mono text-xs ${isPK ? 'font-semibold text-[var(--foreground)]' : 'text-[var(--foreground)]'}`}>
                       {col.name}
                     </span>
+                    {isIdColumn && !isPK && (
+                      <span title={`May contain ${NOVALUE_SENTINEL} for missing references`}>
+                        <Info className="h-3 w-3 text-[var(--muted-foreground)] opacity-40 shrink-0" />
+                      </span>
+                    )}
                   </div>
                   {col.description && (
                     <p className="text-[11px] text-[var(--muted-foreground)] mt-0.5 line-clamp-2">
