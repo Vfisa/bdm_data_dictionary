@@ -335,16 +335,122 @@
 
 ---
 
+---
+
+## Phase 1: Visual Polish & Layout
+**Status:** DONE
+**Commit:** `d8fc976`
+
+**Changes:**
+- F1: Increased font sizes across all components (`text-xs` → `text-sm` in tables, `text-base` → `text-lg` in headers)
+- F5: Default sort by category priority (FCT → FCTH → DIM → REF → MAP → AUX → OTHER) via `CATEGORY_SORT_PRIORITY` map
+- F6: Sidebar width 420px → 560px with increased padding
+- F9: ERD layout reorder — `CATEGORY_ORDER` changed to `['REF', 'DIM', 'FCT', 'FCTH', 'MAP', 'AUX', 'OTHER']` (reference data on top, auxiliary on bottom)
+
+**Files modified:** `src/index.css`, `TableNode.tsx`, `ColumnTable.tsx`, `TableDetailPanel.tsx`, `RelationshipList.tsx`, `TableList.tsx`, `Header.tsx`, `constants.ts`, `SortControls.tsx`, `TableBrowserPage.tsx`
+
+**Result:** PASS — Build succeeds. Visual improvements verified in browser.
+
+---
+
+## Phase 2: ERD Interaction Enhancements
+**Status:** DONE
+**Commit:** `c55bc1e`
+
+**Changes:**
+- F2: Connection highlighting — click a node to dim unconnected nodes/edges (opacity 0.15) and glow connected ones (drop-shadow)
+- F7: Date link visualization — dashed purple lines from DATE/TIMESTAMP columns to DIM_DATE, toggle off by default
+- F12: Export ERD as PNG via `html-to-image` library
+
+**Files modified:** `ErdCanvas.tsx`, `useErdLayout.ts`, `ErdToolbar.tsx`, `index.css`, `inference.js`, `metadata-cache.js`, `types.ts`
+
+**New dependency:** `html-to-image ^1.11.13`
+
+**Result:** PASS — Build succeeds. Dim+glow, date links, and PNG export all verified.
+
+---
+
+## Phase 3: Data Quality & Stats Dashboard
+**Status:** DONE
+**Commit:** `a3363a9`
+
+**Changes:**
+- F4+F13: QA stats dashboard — horizontal KPI cards (total tables, columns, rows, QA score, missing descriptions, empty tables)
+- F10: $NOVALUE convention — info tooltips on `_ID` columns, `NOVALUE_SENTINEL` constant
+
+**Files created:** `src/lib/qa-stats.ts`, `src/components/table-browser/StatsDashboard.tsx`
+
+**Files modified:** `TableBrowserPage.tsx`, `ColumnTable.tsx`
+
+**Result:** PASS — QA score color-coded correctly. $NOVALUE tooltips render on _ID columns.
+
+---
+
+## Phase 4: Inline Description Editing
+**Status:** DONE
+**Commit:** `614cbce`
+
+**Changes:**
+- F3: Full click-to-edit flow with confirmation dialog for table and column descriptions
+- Backend: `updateTableDescription()` and `updateColumnDescription()` via Keboola metadata API (JSON format)
+- Server: `PUT /api/descriptions` route with table/column detection based on itemId part count
+- Cache: Optimistic in-memory update after successful API call
+- Frontend: `InlineEditor`, `ConfirmDialog`, `useDescriptionEditor` hook
+- Wired `onDescriptionUpdated` → `refetch()` through App → pages
+
+**Files created:** `src/components/ui/InlineEditor.tsx`, `src/components/ui/ConfirmDialog.tsx`, `src/hooks/useDescriptionEditor.ts`
+
+**Files modified:** `server/keboola-client.js`, `server/index.js`, `server/metadata-cache.js`, `types.ts`, `useMetadata.ts`, `TableDetailPanel.tsx`, `ColumnTable.tsx`, `ErdPage.tsx`, `TableBrowserPage.tsx`, `App.tsx`
+
+**Bug fix (post-commit):** Switched Keboola API calls from deprecated `application/x-www-form-urlencoded` to `application/json`. Column metadata now uses table endpoint with `columnsMetadata` field instead of separate per-column endpoint.
+
+**Result:** PASS — Full edit flow verified: click → edit → save → confirm → API call → cache update → UI refresh.
+
+---
+
+## Phase 5: Search Enhancements
+**Status:** DONE
+**Commit:** `f52ea39`
+
+**Changes:**
+- F8: Search filter toggles in command palette — "Both" / "Tables Only" / "Columns Only" buttons below search input
+
+**Files modified:** `src/components/search/CommandPalette.tsx`
+
+**Result:** PASS — Filter toggles render correctly, conditionally show/hide table and column result groups.
+
+---
+
+## Dev Infrastructure: Mock Data Server
+**Status:** DONE
+**Commit:** `3c83181`
+
+**Changes:**
+- Auto-detect missing KBC_TOKEN/KBC_URL and serve mock data for local development
+- 10 sample tables (4 REF, 2 DIM, 2 FCT, 1 MAP, 1 AUX), 9 FK edges, 4 date edges
+- Mock mode supports in-memory description editing
+
+**Files created:** `server/mock-data.js`
+
+**Files modified:** `server/index.js`
+
+**Result:** PASS — `npm run dev` works out-of-the-box without Keboola credentials.
+
+---
+
 ## Summary
 
-All 12 steps complete. The BDM Data Dictionary & ERD Viewer is a fully functional Keboola Data App with:
+All 12 foundation steps + 5 expansion phases complete. The BDM Data Dictionary & ERD Viewer includes:
 
 - **58 tables** from `out.c-bdm` + `out.c-bdm_aux` with live Keboola metadata
 - **84 inferred FK relationships** via dynamic inference engine
-- **Interactive ERD diagram** with Dagre layout, category filters, minimap
-- **Table detail panel** with column types, PK indicators, navigable relationships
-- **Table browser** with search (tables + columns), category filters, sort
-- **Global search** (Cmd+K) with fuzzy matching across tables and columns
+- **Interactive ERD diagram** with Dagre layout, category filters, minimap, connection highlighting, date links, PNG export
+- **Table detail panel** with column types, PK indicators, navigable relationships, inline description editing
+- **Table browser** with search, category filters, sort, QA stats dashboard
+- **Global search** (Cmd+K) with fuzzy matching and filter toggles (Both/Tables/Columns)
+- **Inline description editing** with Keboola Storage API write-back and confirmation dialog
+- **QA metrics** — description coverage score, missing counts, $NOVALUE documentation
 - **Dark/light theme** with system preference default
+- **Mock data mode** for credential-free local development
 - **Enterprise-grade UI** with shadcn/ui design tokens
 - **Keboola deployment-ready** with nginx proxy, supervisord, and setup.sh

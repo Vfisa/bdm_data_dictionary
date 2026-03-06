@@ -168,6 +168,7 @@ app.put('/api/descriptions', async (req, res) => {
         results.push({ itemId, success: false, error: 'Invalid itemId format' });
       }
     } catch (err) {
+      console.error(`PUT /api/descriptions failed for ${itemId}:`, err.message);
       results.push({ itemId, success: false, error: err.message });
     }
   }

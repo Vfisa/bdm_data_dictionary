@@ -148,6 +148,8 @@ export function createClient(kbcUrl, kbcToken) {
 
   /**
    * Update a table description via Keboola metadata API.
+   * Uses JSON body format (form-urlencoded is deprecated).
+   *
    * @param {string} tableId - e.g. "out.c-bdm.REF_CLIENT"
    * @param {string} description - New description text
    */
@@ -157,12 +159,17 @@ export function createClient(kbcUrl, kbcToken) {
       method: 'POST',
       headers: {
         'X-StorageApi-Token': token,
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
-      body: new URLSearchParams({
-        'provider': 'user',
-        'metadata[0][key]': 'KBC.description',
-        'metadata[0][value]': description,
+      body: JSON.stringify({
+        provider: 'user',
+        metadata: [
+          {
+            key: 'KBC.description',
+            value: description,
+          },
+        ],
       }),
     });
     if (!res.ok) {
@@ -174,22 +181,31 @@ export function createClient(kbcUrl, kbcToken) {
 
   /**
    * Update a column description via Keboola metadata API.
+   * Uses the table metadata endpoint with columnsMetadata for column-level updates.
+   *
    * @param {string} tableId - e.g. "out.c-bdm.REF_CLIENT"
    * @param {string} columnName - e.g. "CLIENT_ID"
    * @param {string} description - New description text
    */
   async function updateColumnDescription(tableId, columnName, description) {
-    const url = `${baseUrl}/v2/storage/tables/${encodeURIComponent(tableId)}/column/${encodeURIComponent(columnName)}/metadata`;
+    const url = `${baseUrl}/v2/storage/tables/${encodeURIComponent(tableId)}/metadata`;
     const res = await fetch(url, {
       method: 'POST',
       headers: {
         'X-StorageApi-Token': token,
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
-      body: new URLSearchParams({
-        'provider': 'user',
-        'metadata[0][key]': 'KBC.description',
-        'metadata[0][value]': description,
+      body: JSON.stringify({
+        provider: 'user',
+        columnsMetadata: {
+          [columnName]: [
+            {
+              key: 'KBC.description',
+              value: description,
+            },
+          ],
+        },
       }),
     });
     if (!res.ok) {

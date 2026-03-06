@@ -165,6 +165,87 @@ const FK_SEARCH_ORDER = ['REF_', 'DIM_', 'FCTH_', 'FCT_', 'MAP_', 'AUX_']; // FK
 
 ---
 
+## 14. Keboola Metadata API: Form-Urlencoded Is Deprecated (Phase 4)
+
+**Problem:** Description updates via `PUT /api/descriptions` silently failed against the Keboola Storage API. The server returned no clear error, but descriptions weren't persisting.
+
+**Root cause:** Our `updateTableDescription()` and `updateColumnDescription()` methods used `Content-Type: application/x-www-form-urlencoded` with `URLSearchParams`:
+```javascript
+// BROKEN — deprecated format
+body: new URLSearchParams({
+  'provider': 'user',
+  'metadata[0][key]': 'KBC.description',
+  'metadata[0][value]': description,
+})
+```
+
+Keboola's Storage API has moved to JSON for all endpoints. Form-urlencoded is formally deprecated.
+
+**Fix:** Switch to `Content-Type: application/json` with a proper JSON body:
+```javascript
+// CORRECT — JSON format
+body: JSON.stringify({
+  provider: 'user',
+  metadata: [{ key: 'KBC.description', value: description }],
+})
+```
+
+**Lesson:** Always check the Keboola changelog and docs for API format changes. The form-urlencoded PHP-style array notation (`metadata[0][key]`) was the old format. JSON is now the standard for all Storage API endpoints. When integrating with any API, verify Content-Type requirements against current documentation, not old examples.
+
+---
+
+## 15. Column Metadata: Use Table Endpoint with `columnsMetadata` (Phase 4)
+
+**Problem:** Column description updates used a per-column endpoint: `POST /v2/storage/tables/{tableId}/column/{columnName}/metadata`. This endpoint format was unreliable.
+
+**Fix:** Use the **table metadata endpoint** for both table and column metadata, passing column-level data via the `columnsMetadata` field:
+```javascript
+// Table description
+POST /v2/storage/tables/{tableId}/metadata
+{ provider: 'user', metadata: [{ key: 'KBC.description', value: '...' }] }
+
+// Column description — same endpoint, different field
+POST /v2/storage/tables/{tableId}/metadata
+{ provider: 'user', columnsMetadata: { COLUMN_NAME: [{ key: 'KBC.description', value: '...' }] } }
+```
+
+**Lesson:** When an API offers both granular endpoints (per-column) and batch endpoints (per-table with column data), prefer the batch endpoint. It's more likely to be maintained and documented, and reduces the number of API calls.
+
+---
+
+## 16. Mock Data Server for Local Development (Dev Infrastructure)
+
+**Problem:** Developing and testing the app locally required valid Keboola credentials. Without `KBC_TOKEN` and `KBC_URL`, the app showed loading errors.
+
+**Solution:** Created `server/mock-data.js` with `generateMockMetadata()` that produces 10 sample tables, 9 FK edges, and 4 date edges. The server auto-detects missing credentials and serves mock data:
+```javascript
+const USE_MOCK = !KBC_TOKEN || !KBC_URL;
+if (USE_MOCK) mockData = generateMockMetadata();
+```
+
+Mock mode also supports in-memory description editing (saves to the mock data object, persists until server restart).
+
+**Lesson:** Always provide a local development mode that works without external service credentials. Auto-detect missing credentials and fall back gracefully. This makes onboarding new developers trivial: `git clone && npm install && npm run dev` just works.
+
+---
+
+## 17. Optimistic Cache Updates for API Write-Back (Phase 4)
+
+**Problem:** After updating a description via the Keboola API, the UI needed to reflect the change immediately. A full cache refresh (re-fetching all metadata from Keboola) is slow (3-8 seconds) and unnecessary for a single field change.
+
+**Solution:** Two-layer update strategy:
+1. **Push to API:** `cache.updateDescription()` calls Keboola API first
+2. **Optimistic in-memory update:** On success, mutate the cached object directly:
+   ```javascript
+   const table = this._data.tables.find(t => t.id === tableId);
+   if (table) table.description = description;
+   ```
+3. **Lightweight re-fetch:** Frontend calls `refetch()` (just `GET /api/metadata` from server cache) instead of `refresh()` (full Keboola API re-fetch)
+
+**Lesson:** For write-back operations on cached data, always update the cache optimistically after a successful API call. Provide separate `refetch()` (read from cache) and `refresh()` (reload from source) methods. The frontend should call the lightweight one after edits, reserving full refresh for toolbar/manual triggers.
+
+---
+
 ## General Principles Discovered
 
 1. **Build early, build often** — Run `npm run build` after every file creation, not just at step completion. Catches errors when context is fresh.
@@ -176,3 +257,7 @@ const FK_SEARCH_ORDER = ['REF_', 'DIM_', 'FCTH_', 'FCT_', 'MAP_', 'AUX_']; // FK
 4. **Test with real data shapes** — Mock data should match the actual Keboola API response structure. Use MCP tools to verify expected data shapes before writing normalization code.
 
 5. **Shell simplicity** — Keep shell commands atomic. The tool environment may not be bash. Avoid multi-line chains, variable assignments, and process management in single commands.
+
+6. **Always verify API Content-Type** — Don't assume an API accepts a particular format. Check current docs, changelogs, and migration guides. APIs evolve — what worked a year ago may be deprecated now.
+
+7. **Provide credential-free dev mode** — External service dependencies should never block local development. Auto-detect missing credentials and serve mock data for a zero-config onboarding experience.

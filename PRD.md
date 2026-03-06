@@ -498,37 +498,71 @@ All `/api/*` routes use server-side `KBC_TOKEN` + `KBC_URL` to talk to Keboola S
 ### Phase 1 — Complete MVP (all P0 + P1)
 
 **Infrastructure:**
-- [ ] Project scaffolding (Vite + React + TypeScript + Tailwind + shadcn/ui)
-- [ ] Keboola config files (nginx, supervisord, setup.sh)
-- [ ] Express server with SPA serving + Keboola Storage API proxy
-- [ ] FK inference engine (`server/inference.js`) with override support
-- [ ] `/api/metadata` endpoint — full metadata + edges payload
-- [ ] In-memory metadata cache with TTL + manual refresh
+- [x] Project scaffolding (Vite + React + TypeScript + Tailwind + shadcn/ui)
+- [x] Keboola config files (nginx, supervisord, setup.sh)
+- [x] Express server with SPA serving + Keboola Storage API proxy
+- [x] FK inference engine (`server/inference.js`) with override support
+- [x] `/api/metadata` endpoint — full metadata + edges payload
+- [x] In-memory metadata cache with TTL + manual refresh
 
 **ERD View:**
-- [ ] React Flow ERD with all nodes + separately labeled inferred edges
-- [ ] Deterministic auto-layout (Dagre/ELK) with category swim lanes
-- [ ] Category-based node coloring (FCT/REF/MAP/DIM/AUX/Other)
-- [ ] Table detail overlay panel (floating, ~420px)
-- [ ] Refresh button with toast notifications
+- [x] React Flow ERD with all nodes + separately labeled inferred edges
+- [x] Deterministic auto-layout (Dagre/ELK) with category swim lanes
+- [x] Category-based node coloring (FCT/REF/MAP/DIM/AUX/Other)
+- [x] Table detail overlay panel (floating, ~420px)
+- [x] Refresh button with toast notifications
 
 **Table Browser:**
-- [ ] Full-page searchable/filterable table listing
-- [ ] Filter by category prefix, sort by name/row count/size/columns
-- [ ] Click row → Table Detail view
+- [x] Full-page searchable/filterable table listing
+- [x] Filter by category prefix, sort by name/row count/size/columns
+- [x] Click row → Table Detail view
 
 **Global:**
-- [ ] Global search (Cmd+K) across table and column names
-- [ ] Dark/light theme (system preference default) with toggle
-- [ ] Responsive layout (desktop primary, tablet secondary)
-- [ ] Loading skeletons + error states
+- [x] Global search (Cmd+K) across table and column names
+- [x] Dark/light theme (system preference default) with toggle
+- [x] Responsive layout (desktop primary, tablet secondary)
+- [x] Loading skeletons + error states
 
-### Phase 2 — Future (out of scope for v1)
-- [ ] Data lineage visualization (transformation → table)
-- [ ] Sample data preview (first N rows)
-- [ ] Data quality indicators
-- [ ] Column-level search across all tables
-- [ ] Export ERD as PNG/SVG
+### Phase 2 — Feature Expansion (v2, DONE)
+
+All features below were implemented and committed:
+
+- [x] **Visual polish** — Larger fonts, 560px sidebar, category sort priority, ERD layout reorder (REF top → AUX bottom) `d8fc976`
+- [x] **Connection highlighting** — Click node to dim unconnected, glow connected (drop-shadow) `c55bc1e`
+- [x] **Date link visualization** — Dashed purple DIM_DATE connections, toggle off by default `c55bc1e`
+- [x] **Export ERD as PNG** — via html-to-image library `c55bc1e`
+- [x] **QA stats dashboard** — KPI cards (tables, columns, rows, QA score, missing descriptions, empty tables) `a3363a9`
+- [x] **$NOVALUE handling** — Info tooltips on _ID columns documenting the BDM sentinel `a3363a9`
+- [x] **Inline description editing** — Click-to-edit with confirmation dialog, Keboola Storage API write-back (JSON format) `614cbce`
+- [x] **Search filter toggles** — Both / Tables Only / Columns Only in command palette `f52ea39`
+- [x] **Mock data server** — Auto-detected, serves 10 sample tables for local dev `3c83181`
+
+### Phase 3 — UX Improvements (next)
+
+- [ ] **ERD pan/zoom with sidebar open** — Remove full-screen backdrop overlay from `TableDetailPanel` (`absolute inset-0 z-20` blocks all canvas interaction). Panel becomes a floating sidebar (`absolute top-0 right-0 w-[560px] z-20`) without backdrop. Panning, zooming, and node highlighting all work while the detail panel is open. Click empty canvas to close panel.
+- [ ] **ERD export improvements** — Replace single PNG download with export dropdown menu:
+  - **PNG (3x)** — Increase `pixelRatio` from 2 to 3 for print-quality output
+  - **SVG** — Vector export via `html-to-image`'s `toSvg()` for infinite scalability
+  - **Mermaid (.mmd)** — Generate Mermaid `erDiagram` text from full metadata (all tables + all edges, regardless of current filters). Downloadable as `.mmd` file or copy-to-clipboard.
+- [ ] **Collaborative tags** — Predefined tags (`verified`, `needs-review`, `deprecated`, `core`, `wip`, `sensitive`) + free-form custom tags. Stored as JSON in Keboola metadata (`bdm.tags` key, `provider: 'user'`). Tag chips in detail panel + table browser. Filter by tag.
+
+### Phase 4 — Data Profiling (planned)
+
+- [ ] **$NOVALUE data profiling** — Query actual $NOVALUE rates per FK column via Keboola data preview API. Color-coded rates: green <5%, yellow 5-20%, red >20%. Separate 30-min cache TTL with rate-limited API calls.
+- [ ] **Column-level profiling stats** — Min/max/distinct count/null rate per column via data preview sampling. Expandable column profile drawer with distribution bars and sample values.
+
+### Phase 5 — Data Lineage (planned)
+
+- [ ] **Data lineage graph** — Full upstream/downstream visualization via Keboola component config + flow APIs. New LineagePage with LR Dagre layout showing extractors, transformations, writers as distinct node types.
+
+### Backlog
+
+- [ ] Column cross-reference ("Also appears in: TABLE_A, TABLE_B")
+- [ ] Data quality heatmap overlay on ERD (requires profiling data from Phase 4)
+- [ ] Keyboard navigation in ERD (arrow keys to traverse tables)
+- [ ] API documentation generation (Markdown/OpenAPI from schema)
+
+> Detailed implementation plans for all phases are in the expanded PRD at `.claude/plans/recursive-tickling-starfish.md`.
 
 ---
 
@@ -554,10 +588,25 @@ All `/api/*` routes use server-side `KBC_TOKEN` + `KBC_URL` to talk to Keboola S
 | 3 | Default theme | System preference (`prefers-color-scheme`), fallback to light |
 | 4 | Phase 1 scope | All P0 + P1 in one phase (ERD, detail panel, table browser, search, theme) |
 | 5 | Unknown table prefixes | `Other` category — slate color, own swim lane at bottom, FK inference still applies |
-| 6 | Detail panel behavior | Floating overlay (~420px) on top of ERD, not push layout |
-| 7 | Local dev workflow | `npm run build` + `node server/index.js` — mirrors production |
-| 8 | Node positions | Deterministic auto-layout (Dagre/ELK), not draggable |
+| 6 | Detail panel behavior | Floating overlay (560px) on top of ERD, not push layout |
+| 7 | Local dev workflow | `npm run dev` with auto-detected mock data, or `.env` credentials for live Keboola |
+| 8 | Node positions | Deterministic auto-layout (Dagre), not draggable |
+| 9 | Description editing | Click-to-edit with confirmation dialog; writes to Keboola Storage API metadata endpoint (JSON format, `provider: 'user'`) |
+| 10 | Keboola API format | JSON body (`Content-Type: application/json`); form-urlencoded is deprecated |
+| 11 | Column metadata endpoint | Use table endpoint with `columnsMetadata` field, not separate per-column endpoint |
+| 12 | Mock data for dev | Auto-detect missing credentials and serve 10 sample tables with edges and date links |
 
 ## 13. Open Questions
 
-1. **Auth**: Default Keboola basic auth sufficient, or need OIDC integration for future?
+1. **Auth**: Default Keboola basic auth is currently used. OIDC integration deferred.
+2. **Data profiling API limits**: Keboola data preview returns max 1,000 rows. Sufficient for sampling or need full-scan approach?
+3. **Lineage API scope**: Start with transformation-only lineage or include extractors/writers from the start?
+
+## 14. Resolved Phase 3 Decisions
+
+| # | Question | Decision |
+|---|----------|----------|
+| 13 | ERD pan/zoom when sidebar open | Panning is fully blocked by backdrop div. Fix: remove `inset-0` backdrop, make panel float without overlay |
+| 14 | ERD export formats | All three: PNG at 3x resolution, SVG vector, Mermaid ERD text |
+| 15 | Mermaid export scope | Always full ERD (all tables + edges), regardless of filters or selection |
+| 16 | Tag system design | Both predefined tags (verified, needs-review, deprecated, core, wip, sensitive) + free-form custom tags, stored as JSON array in Keboola metadata |
