@@ -58,6 +58,7 @@ export function Header({ currentPage, onNavigate, isDark, onToggleTheme, onOpenS
           size="sm"
           onClick={onOpenSearch}
           className="gap-1.5 text-[var(--muted-foreground)]"
+          aria-label="Search tables and columns (Cmd+K)"
         >
           <Search className="h-4 w-4" />
           <span className="hidden sm:inline text-xs">Search</span>

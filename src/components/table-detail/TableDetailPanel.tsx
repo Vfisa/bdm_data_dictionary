@@ -83,6 +83,9 @@ export function TableDetailPanel({
     <div
       className="absolute inset-0 z-20"
       onClick={handleBackdropClick}
+      role="dialog"
+      aria-label={`Table detail: ${table.name}`}
+      aria-modal="false"
     >
       {/* Panel */}
       <div

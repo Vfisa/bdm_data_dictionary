@@ -292,3 +292,59 @@
 **Test:** `npm run build` succeeds. Zero TypeScript errors.
 
 **Result:** PASS — Build: `index.html` (0.47 KB), `index.css` (48.13 KB / 9.08 KB gzip), `index.js` (529.62 KB / 171.33 KB gzip). cmdk + Radix adds ~53 KB JS. Zero errors.
+
+---
+
+## Step 12: Polish & QA
+**Status:** DONE
+
+**Files created:**
+- `src/components/layout/ErrorBoundary.tsx` — React class-based error boundary with "Try Again" / "Reload Page" buttons
+
+**Files modified:**
+- `src/App.tsx` — wrapped app in `<ErrorBoundary>`, added `role="status"` + `aria-label` on loading state, `role="alert"` on error state, `aria-hidden` on decorative icons
+- `src/components/layout/Header.tsx` — added `aria-label` on search button
+- `src/components/layout/Layout.tsx` — added `role="main"` + dynamic `aria-label` on main content area
+- `src/components/table-detail/TableDetailPanel.tsx` — added `role="dialog"` + `aria-label` + `aria-modal` on panel
+
+**QA Checklist:**
+| Check | Result |
+|-------|--------|
+| `npm run build` — zero errors | PASS |
+| `node server/index.js` — starts without crash | PASS |
+| GET `/` → 200 (SPA) | PASS |
+| POST `/` → 200 (Keboola liveness check) | PASS |
+| GET `/api/health` → 200 JSON | PASS |
+| GET `/api/metadata` → 503 (no credentials) | PASS (expected) |
+| `keboola-config/setup.sh` is executable | PASS |
+| dist/ contains index.html + assets | PASS |
+| Source files: 30 TypeScript/React | PASS |
+| Server files: 5 (index.js, keboola-client.js, inference.js, metadata-cache.js, overrides.json) | PASS |
+| Error boundary wraps entire app | PASS |
+| ARIA labels on key interactive elements | PASS |
+| Theme toggle persists via localStorage | PASS |
+
+**Final bundle:**
+| File | Size | Gzip |
+|------|------|------|
+| index.html | 0.47 KB | 0.31 KB |
+| index.css | 48.36 KB | 9.13 KB |
+| index.js | 531.61 KB | 171.94 KB |
+
+**Total gzip: ~181 KB** — within acceptable range for a data app with React Flow + cmdk.
+
+---
+
+## Summary
+
+All 12 steps complete. The BDM Data Dictionary & ERD Viewer is a fully functional Keboola Data App with:
+
+- **58 tables** from `out.c-bdm` + `out.c-bdm_aux` with live Keboola metadata
+- **84 inferred FK relationships** via dynamic inference engine
+- **Interactive ERD diagram** with Dagre layout, category filters, minimap
+- **Table detail panel** with column types, PK indicators, navigable relationships
+- **Table browser** with search (tables + columns), category filters, sort
+- **Global search** (Cmd+K) with fuzzy matching across tables and columns
+- **Dark/light theme** with system preference default
+- **Enterprise-grade UI** with shadcn/ui design tokens
+- **Keboola deployment-ready** with nginx proxy, supervisord, and setup.sh
