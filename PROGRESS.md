@@ -35,3 +35,15 @@
 **Test:** All 3 files exist, setup.sh is executable, shebang is `#!/bin/bash`.
 
 **Result:** PASS — Structure matches Keboola JS Data App spec exactly.
+
+---
+
+## Step 3: Express Server + SPA Serving
+**Status:** DONE
+
+**Files created:**
+- `server/index.js` — Express on :3000, reads env vars, serves dist/ as static, SPA fallback (GET+POST), /api/health endpoint
+
+**Test:** GET `/` → 200 (SPA), POST `/` → 200 (not 405), GET `/api/health` → JSON.
+
+**Result:** PASS — All three endpoints respond correctly. Warns on missing KBC_TOKEN/KBC_URL without crashing.
