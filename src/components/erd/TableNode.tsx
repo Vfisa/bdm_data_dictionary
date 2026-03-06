@@ -29,7 +29,7 @@ function TableNodeComponent({ data, selected }: TableNodeProps) {
         {/* Category badge + table name */}
         <div className="flex items-start gap-1.5 mb-1.5">
           <span
-            className="inline-flex items-center px-1.5 py-0.5 text-[9px] font-semibold rounded-sm uppercase shrink-0 mt-0.5"
+            className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold rounded-sm uppercase shrink-0 mt-0.5"
             style={{
               backgroundColor: `${data.color}18`,
               color: data.color,
@@ -37,13 +37,13 @@ function TableNodeComponent({ data, selected }: TableNodeProps) {
           >
             {data.category}
           </span>
-          <span className="text-xs font-medium text-[var(--foreground)] leading-tight truncate">
+          <span className="text-sm font-medium text-[var(--foreground)] leading-tight truncate">
             {data.tableName}
           </span>
         </div>
 
         {/* Stats row */}
-        <div className="flex items-center gap-3 text-[10px] text-[var(--muted-foreground)]">
+        <div className="flex items-center gap-3 text-[11px] text-[var(--muted-foreground)]">
           <span className="flex items-center gap-1">
             <Columns3 className="h-3 w-3" />
             {data.columnCount} cols

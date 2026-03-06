@@ -22,8 +22,8 @@ export function Header({ currentPage, onNavigate, isDark, onToggleTheme, onOpenS
       {/* Logo & Title */}
       <div className="flex items-center gap-2.5 mr-8">
         <Database className="h-5 w-5 text-[var(--primary)]" />
-        <h1 className="text-sm font-semibold text-[var(--foreground)] tracking-tight">
-          BDM Data Dictionary
+        <h1 className="text-base font-semibold text-[var(--foreground)] tracking-tight">
+          Data Dictionary
         </h1>
       </div>
 

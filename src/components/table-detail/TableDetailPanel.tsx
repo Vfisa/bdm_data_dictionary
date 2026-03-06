@@ -90,7 +90,7 @@ export function TableDetailPanel({
       {/* Panel */}
       <div
         className={`
-          absolute top-0 right-0 h-full w-[420px] max-w-full
+          absolute top-0 right-0 h-full w-[560px] max-w-full
           bg-[var(--card)] border-l border-[var(--border)] shadow-2xl
           flex flex-col
           transition-transform duration-200 ease-out
@@ -98,7 +98,7 @@ export function TableDetailPanel({
         `}
       >
         {/* Header */}
-        <div className="flex items-start gap-3 p-4 border-b border-[var(--border)]">
+        <div className="flex items-start gap-3 p-5 border-b border-[var(--border)]">
           <div className="flex-1 min-w-0">
             {/* Category badge */}
             <Badge
@@ -113,17 +113,17 @@ export function TableDetailPanel({
             </Badge>
 
             {/* Table name */}
-            <h2 className="text-base font-semibold text-[var(--foreground)] truncate">
+            <h2 className="text-lg font-semibold text-[var(--foreground)] truncate">
               {table.name}
             </h2>
 
             {/* Description */}
             {table.description ? (
-              <p className="text-xs text-[var(--muted-foreground)] mt-1 line-clamp-3">
+              <p className="text-sm text-[var(--muted-foreground)] mt-1 line-clamp-3">
                 {table.description}
               </p>
             ) : (
-              <p className="text-xs text-[var(--muted-foreground)] mt-1 italic">
+              <p className="text-sm text-[var(--muted-foreground)] mt-1 italic">
                 No description available
               </p>
             )}
@@ -141,22 +141,22 @@ export function TableDetailPanel({
         </div>
 
         {/* Stats bar */}
-        <div className="flex items-center gap-4 px-4 py-2.5 border-b border-[var(--border)] bg-[var(--muted)]">
-          <span className="flex items-center gap-1 text-[11px] text-[var(--muted-foreground)]">
-            <Columns3 className="h-3 w-3" />
+        <div className="flex items-center gap-4 px-5 py-2.5 border-b border-[var(--border)] bg-[var(--muted)]">
+          <span className="flex items-center gap-1 text-xs text-[var(--muted-foreground)]">
+            <Columns3 className="h-3.5 w-3.5" />
             {table.columnCount} columns
           </span>
-          <span className="flex items-center gap-1 text-[11px] text-[var(--muted-foreground)]">
-            <Rows3 className="h-3 w-3" />
+          <span className="flex items-center gap-1 text-xs text-[var(--muted-foreground)]">
+            <Rows3 className="h-3.5 w-3.5" />
             {formatNumber(table.rowsCount)} rows
           </span>
-          <span className="flex items-center gap-1 text-[11px] text-[var(--muted-foreground)]">
-            <HardDrive className="h-3 w-3" />
+          <span className="flex items-center gap-1 text-xs text-[var(--muted-foreground)]">
+            <HardDrive className="h-3.5 w-3.5" />
             {formatBytes(table.dataSizeBytes)}
           </span>
           {table.lastImportDate && (
-            <span className="flex items-center gap-1 text-[11px] text-[var(--muted-foreground)]" title={table.lastImportDate}>
-              <Clock className="h-3 w-3" />
+            <span className="flex items-center gap-1 text-xs text-[var(--muted-foreground)]" title={table.lastImportDate}>
+              <Clock className="h-3.5 w-3.5" />
               {timeAgo(table.lastImportDate)}
             </span>
           )}
@@ -165,9 +165,9 @@ export function TableDetailPanel({
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto">
           {/* Columns section */}
-          <div className="p-4">
-            <h3 className="text-xs font-semibold text-[var(--foreground)] uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <Database className="h-3.5 w-3.5" />
+          <div className="p-5">
+            <h3 className="text-sm font-semibold text-[var(--foreground)] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <Database className="h-4 w-4" />
               Columns
             </h3>
             <ColumnTable
@@ -177,8 +177,8 @@ export function TableDetailPanel({
           </div>
 
           {/* Relationships section */}
-          <div className="p-4 pt-0">
-            <h3 className="text-xs font-semibold text-[var(--foreground)] uppercase tracking-wider mb-2">
+          <div className="p-5 pt-0">
+            <h3 className="text-sm font-semibold text-[var(--foreground)] uppercase tracking-wider mb-2">
               Relationships
             </h3>
             <RelationshipList
@@ -187,6 +187,7 @@ export function TableDetailPanel({
               onNavigate={(target) => {
                 onNavigate(target)
               }}
+              categories={metadata.categories}
             />
           </div>
         </div>

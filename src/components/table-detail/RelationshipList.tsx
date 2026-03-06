@@ -1,16 +1,32 @@
 import { ArrowRight, ArrowLeft } from 'lucide-react'
-import type { Edge } from '@/lib/types'
+import { CATEGORY_SORT_PRIORITY } from '@/lib/constants'
+import type { Edge, Category } from '@/lib/types'
 
 interface RelationshipListProps {
   outgoing: Edge[]
   incoming: Edge[]
   onNavigate: (tableName: string) => void
+  categories?: Record<string, Category>
 }
 
-export function RelationshipList({ outgoing, incoming, onNavigate }: RelationshipListProps) {
+function sortEdgesByCategory(edges: Edge[], getTable: (e: Edge) => string, categories?: Record<string, Category>): Edge[] {
+  if (!categories) return edges
+  return [...edges].sort((a, b) => {
+    const catA = categories[getTable(a)] || 'OTHER'
+    const catB = categories[getTable(b)] || 'OTHER'
+    const diff = (CATEGORY_SORT_PRIORITY[catA] ?? 6) - (CATEGORY_SORT_PRIORITY[catB] ?? 6)
+    if (diff !== 0) return diff
+    return getTable(a).localeCompare(getTable(b))
+  })
+}
+
+export function RelationshipList({ outgoing, incoming, onNavigate, categories }: RelationshipListProps) {
+  const sortedOutgoing = sortEdgesByCategory(outgoing, e => e.target, categories)
+  const sortedIncoming = sortEdgesByCategory(incoming, e => e.source, categories)
+
   if (outgoing.length === 0 && incoming.length === 0) {
     return (
-      <p className="text-xs text-[var(--muted-foreground)] italic py-2">
+      <p className="text-sm text-[var(--muted-foreground)] italic py-2">
         No relationships found
       </p>
     )
@@ -19,29 +35,29 @@ export function RelationshipList({ outgoing, incoming, onNavigate }: Relationshi
   return (
     <div className="space-y-3">
       {/* Outgoing (this table → other) */}
-      {outgoing.length > 0 && (
+      {sortedOutgoing.length > 0 && (
         <div>
-          <h4 className="text-[10px] font-semibold text-[var(--muted-foreground)] uppercase tracking-wider mb-1.5">
-            References ({outgoing.length})
+          <h4 className="text-[11px] font-semibold text-[var(--muted-foreground)] uppercase tracking-wider mb-1.5">
+            References ({sortedOutgoing.length})
           </h4>
           <div className="space-y-1">
-            {outgoing.map((edge) => (
+            {sortedOutgoing.map((edge) => (
               <button
                 key={edge.id}
                 onClick={() => onNavigate(edge.target)}
                 className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded-md
                   hover:bg-[var(--muted)] transition-colors group cursor-pointer"
               >
-                <ArrowRight className="h-3 w-3 text-[var(--muted-foreground)] shrink-0" />
+                <ArrowRight className="h-3.5 w-3.5 text-[var(--muted-foreground)] shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <span className="text-xs font-medium text-[var(--primary)] group-hover:underline truncate block">
+                  <span className="text-sm font-medium text-[var(--primary)] group-hover:underline truncate block">
                     {edge.target}
                   </span>
-                  <span className="text-[10px] text-[var(--muted-foreground)] truncate block">
+                  <span className="text-xs text-[var(--muted-foreground)] truncate block">
                     {edge.sourceColumn} → {edge.targetColumn}
                   </span>
                 </div>
-                <span className="text-[9px] text-[var(--muted-foreground)] px-1.5 py-0.5 rounded bg-[var(--muted)] shrink-0">
+                <span className="text-[10px] text-[var(--muted-foreground)] px-1.5 py-0.5 rounded bg-[var(--muted)] shrink-0">
                   {edge.inferenceMethod}
                 </span>
               </button>
@@ -51,29 +67,29 @@ export function RelationshipList({ outgoing, incoming, onNavigate }: Relationshi
       )}
 
       {/* Incoming (other → this table) */}
-      {incoming.length > 0 && (
+      {sortedIncoming.length > 0 && (
         <div>
-          <h4 className="text-[10px] font-semibold text-[var(--muted-foreground)] uppercase tracking-wider mb-1.5">
-            Referenced By ({incoming.length})
+          <h4 className="text-[11px] font-semibold text-[var(--muted-foreground)] uppercase tracking-wider mb-1.5">
+            Referenced By ({sortedIncoming.length})
           </h4>
           <div className="space-y-1">
-            {incoming.map((edge) => (
+            {sortedIncoming.map((edge) => (
               <button
                 key={edge.id}
                 onClick={() => onNavigate(edge.source)}
                 className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded-md
                   hover:bg-[var(--muted)] transition-colors group cursor-pointer"
               >
-                <ArrowLeft className="h-3 w-3 text-[var(--muted-foreground)] shrink-0" />
+                <ArrowLeft className="h-3.5 w-3.5 text-[var(--muted-foreground)] shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <span className="text-xs font-medium text-[var(--primary)] group-hover:underline truncate block">
+                  <span className="text-sm font-medium text-[var(--primary)] group-hover:underline truncate block">
                     {edge.source}
                   </span>
-                  <span className="text-[10px] text-[var(--muted-foreground)] truncate block">
+                  <span className="text-xs text-[var(--muted-foreground)] truncate block">
                     {edge.sourceColumn} → {edge.targetColumn}
                   </span>
                 </div>
-                <span className="text-[9px] text-[var(--muted-foreground)] px-1.5 py-0.5 rounded bg-[var(--muted)] shrink-0">
+                <span className="text-[10px] text-[var(--muted-foreground)] px-1.5 py-0.5 rounded bg-[var(--muted)] shrink-0">
                   {edge.inferenceMethod}
                 </span>
               </button>

@@ -91,7 +91,18 @@ export const CATEGORY_CONFIG: Record<Category, {
   },
 }
 
-/** Ordered list of categories for display (rank order for ERD layout) */
+/** Ordered list of categories for display (rank order for ERD layout: REF top → AUX bottom) */
 export const CATEGORY_ORDER: Category[] = [
-  'DIM', 'FCT', 'FCTH', 'MAP', 'AUX', 'REF', 'OTHER',
+  'REF', 'DIM', 'FCT', 'FCTH', 'MAP', 'AUX', 'OTHER',
 ]
+
+/** Category sort priority for Table Browser default sort */
+export const CATEGORY_SORT_PRIORITY: Record<Category, number> = {
+  FCT: 0,
+  FCTH: 1,
+  DIM: 2,
+  REF: 3,
+  MAP: 4,
+  AUX: 5,
+  OTHER: 6,
+}

@@ -5,7 +5,7 @@ import { CategoryFilter } from '@/components/table-browser/CategoryFilter'
 import { SortControls, type SortField, type SortDirection } from '@/components/table-browser/SortControls'
 import { TableList } from '@/components/table-browser/TableList'
 import { TableDetailPanel } from '@/components/table-detail/TableDetailPanel'
-import { CATEGORY_ORDER } from '@/lib/constants'
+import { CATEGORY_ORDER, CATEGORY_SORT_PRIORITY } from '@/lib/constants'
 import type { MetadataResponse, Category } from '@/lib/types'
 
 interface TableBrowserPageProps {
@@ -17,7 +17,7 @@ export function TableBrowserPage({ metadata }: TableBrowserPageProps) {
   const [visibleCategories, setVisibleCategories] = useState<Set<Category>>(
     () => new Set(CATEGORY_ORDER),
   )
-  const [sortField, setSortField] = useState<SortField>('name')
+  const [sortField, setSortField] = useState<SortField>('category')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const [selectedTable, setSelectedTable] = useState<string | null>(null)
 
@@ -40,7 +40,7 @@ export function TableBrowserPage({ metadata }: TableBrowserPageProps) {
       if (prev === field) {
         setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'))
       } else {
-        setSortDirection(field === 'name' ? 'asc' : 'desc')
+        setSortDirection(field === 'name' || field === 'category' ? 'asc' : 'desc')
       }
       return field
     })
@@ -80,6 +80,11 @@ export function TableBrowserPage({ metadata }: TableBrowserPageProps) {
     tables = [...tables].sort((a, b) => {
       let cmp: number
       switch (sortField) {
+        case 'category': {
+          cmp = (CATEGORY_SORT_PRIORITY[a.category] ?? 6) - (CATEGORY_SORT_PRIORITY[b.category] ?? 6)
+          if (cmp === 0) cmp = a.name.localeCompare(b.name)
+          break
+        }
         case 'name':
           cmp = a.name.localeCompare(b.name)
           break

@@ -65,7 +65,7 @@ export function TableList({ tables, onSelectTable, searchQuery }: TableListProps
                   >
                     {table.category}
                   </Badge>
-                  <span className="text-sm font-medium text-[var(--foreground)] truncate group-hover:text-[var(--primary)]">
+                  <span className="text-base font-medium text-[var(--foreground)] truncate group-hover:text-[var(--primary)]">
                     {table.name}
                   </span>
                 </div>
@@ -82,7 +82,7 @@ export function TableList({ tables, onSelectTable, searchQuery }: TableListProps
                 )}
 
                 {/* Stats + matched columns */}
-                <div className="flex items-center gap-4 text-[11px] text-[var(--muted-foreground)]">
+                <div className="flex items-center gap-4 text-xs text-[var(--muted-foreground)]">
                   <span className="flex items-center gap-1">
                     <Columns3 className="h-3 w-3" />
                     {table.columnCount}

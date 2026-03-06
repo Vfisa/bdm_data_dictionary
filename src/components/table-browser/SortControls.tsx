@@ -1,6 +1,6 @@
 import { ArrowUpDown } from 'lucide-react'
 
-export type SortField = 'name' | 'rowsCount' | 'columnCount' | 'dataSizeBytes'
+export type SortField = 'category' | 'name' | 'rowsCount' | 'columnCount' | 'dataSizeBytes'
 export type SortDirection = 'asc' | 'desc'
 
 interface SortControlsProps {
@@ -10,6 +10,7 @@ interface SortControlsProps {
 }
 
 const SORT_OPTIONS: { field: SortField; label: string }[] = [
+  { field: 'category', label: 'Category' },
   { field: 'name', label: 'Name' },
   { field: 'rowsCount', label: 'Rows' },
   { field: 'columnCount', label: 'Columns' },
