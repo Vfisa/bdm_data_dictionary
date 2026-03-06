@@ -1,3 +1,5 @@
+import { useState, useCallback } from 'react'
+import { ErdCanvas } from '@/components/erd/ErdCanvas'
 import type { MetadataResponse } from '@/lib/types'
 
 interface ErdPageProps {
@@ -7,21 +9,21 @@ interface ErdPageProps {
 }
 
 export function ErdPage({ metadata, isRefreshing, onRefresh }: ErdPageProps) {
+  const [_selectedTable, setSelectedTable] = useState<string | null>(null)
+
+  const handleSelectTable = useCallback((tableName: string) => {
+    setSelectedTable((prev) => (prev === tableName ? null : tableName))
+  }, [])
+
   return (
-    <div className="flex h-full items-center justify-center">
-      <div className="text-center space-y-3">
-        <p className="text-lg font-medium text-[var(--foreground)]">ERD Diagram</p>
-        <p className="text-sm text-[var(--muted-foreground)]">
-          {metadata.tables.length} tables, {metadata.edges.length} relationships
-        </p>
-        <button
-          onClick={onRefresh}
-          disabled={isRefreshing}
-          className="text-sm text-[var(--primary)] hover:underline disabled:opacity-50 cursor-pointer"
-        >
-          {isRefreshing ? 'Refreshing...' : 'Refresh'}
-        </button>
-      </div>
+    <div className="relative h-full w-full">
+      <ErdCanvas
+        metadata={metadata}
+        isRefreshing={isRefreshing}
+        onRefresh={onRefresh}
+        onSelectTable={handleSelectTable}
+      />
+      {/* Table detail overlay will be added in Step 9 */}
     </div>
   )
 }

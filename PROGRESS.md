@@ -168,3 +168,42 @@
 **Test:** `npm run build` succeeds. SPA serves correctly. Health endpoint works. Tabs, theme toggle, loading/error states all implemented.
 
 **Result:** PASS — Build: `index.html` (0.47 KB), `index.css` (18.77 KB), `index.js` (174.93 KB / 56 KB gzip). Zero errors.
+
+---
+
+## Step 8: ERD Diagram
+**Status:** DONE
+
+**Files created:**
+- `src/components/erd/useErdLayout.ts` — converts MetadataResponse → React Flow nodes/edges via Dagre layout (top-to-bottom, category-based rank hints)
+- `src/components/erd/TableNode.tsx` — custom React Flow node: 2px colored header bar, category badge, table name, column/row count stats
+- `src/components/erd/ErdToolbar.tsx` — category filter toggles (colored dots), table/edge count, relative time since refresh, refresh button, fit-to-view button
+- `src/components/erd/ErdCanvas.tsx` — React Flow canvas with custom nodeTypes, MiniMap, dotted Background, ReactFlowProvider wrapper
+
+**Files modified:**
+- `src/pages/ErdPage.tsx` — rewritten: wires ErdCanvas with metadata, manages selectedTable state for future detail panel
+- `src/index.css` — added React Flow theme overrides (CSS custom properties for dark/light theme, edge label show-on-hover, edge hover/selected effects)
+
+**Layout configuration:**
+- Dagre: `rankdir: TB`, `nodesep: 60`, `ranksep: 100`, margins 40px
+- Node dimensions: 220px wide × 80px tall
+- Category rank order applied via Dagre node rank hints
+- `nodesDraggable: false` (fixed layout)
+
+**Edge rendering:**
+- Separate edge per FK column (not merged)
+- Labels hidden by default, shown on hover/select (CSS transitions)
+- Arrow markers at target end
+- Semi-transparent by default, full opacity on hover/select
+
+**Interactive features:**
+- Category filter toggles (can't hide all — minimum 1 must remain visible)
+- Pan on scroll, zoom on scroll
+- MiniMap (pannable, zoomable, color-coded by category)
+- Fit-to-view button
+- Node click → sets selected table (for Step 9 detail panel)
+- Refresh button triggers server-side metadata refresh
+
+**Test:** `npm run build` succeeds. Zero TypeScript errors. All components wire together correctly.
+
+**Result:** PASS — Build: `index.html` (0.47 KB), `index.css` (39.90 KB / 7.78 KB gzip), `index.js` (457.29 KB / 150.07 KB gzip). React Flow adds ~280 KB to JS bundle. Zero errors.

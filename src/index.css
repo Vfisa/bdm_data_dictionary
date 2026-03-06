@@ -55,3 +55,44 @@
     @apply bg-[var(--background)] text-[var(--foreground)];
   }
 }
+
+/* === React Flow theme overrides === */
+.react-flow {
+  --xy-background-color: var(--background);
+  --xy-node-border-radius: 8px;
+  --xy-edge-stroke: var(--muted-foreground);
+  --xy-edge-label-color: var(--muted-foreground);
+  --xy-edge-label-background-color: var(--background);
+  --xy-minimap-background-color: var(--card);
+  --xy-minimap-mask-background-color: var(--background);
+  --xy-controls-button-background-color: var(--card);
+  --xy-controls-button-color: var(--foreground);
+  --xy-controls-button-border-color: var(--border);
+}
+
+.react-flow__minimap {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Hide edge labels by default, show on hover */
+.react-flow__edge .react-flow__edge-textwrapper {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.react-flow__edge:hover .react-flow__edge-textwrapper,
+.react-flow__edge.selected .react-flow__edge-textwrapper {
+  opacity: 1;
+}
+
+/* Edge hover effect */
+.react-flow__edge:hover path {
+  stroke-opacity: 1 !important;
+  stroke-width: 2 !important;
+}
+
+.react-flow__edge.selected path {
+  stroke-opacity: 1 !important;
+  stroke-width: 2 !important;
+}
