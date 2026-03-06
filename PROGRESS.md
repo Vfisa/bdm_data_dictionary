@@ -21,3 +21,17 @@
 **Test:** `npm install && npm run build` must succeed. `dist/` must contain `index.html` + assets.
 
 **Result:** PASS — Build produces `dist/index.html` (0.47 KB), `index.css` (6.24 KB), `index.js` (143.77 KB / 46 KB gzip). Zero errors.
+
+---
+
+## Step 2: Keboola Config Files
+**Status:** DONE
+
+**Files created:**
+- `keboola-config/nginx/sites/default.conf` — listen 8888, proxy_pass to 127.0.0.1:3000
+- `keboola-config/supervisord/services/app.conf` — node /app/server/index.js, autostart/autorestart
+- `keboola-config/setup.sh` — npm install + npm run build (executable)
+
+**Test:** All 3 files exist, setup.sh is executable, shebang is `#!/bin/bash`.
+
+**Result:** PASS — Structure matches Keboola JS Data App spec exactly.
