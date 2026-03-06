@@ -1,6 +1,6 @@
 # BDM Data Dictionary & ERD Viewer
 
-Interactive Entity Relationship Diagram and data dictionary for the Horizon Air Freight Business Data Model, built as a [Keboola Data App](https://help.keboola.com/components/data-apps/).
+Interactive Entity Relationship Diagram and data dictionary for the generic Business Data Model, built as a [Keboola Data App](https://help.keboola.com/components/data-apps/).
 
 ## Features
 
