@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { ErdCanvas } from '@/components/erd/ErdCanvas'
+import { TableDetailPanel } from '@/components/table-detail/TableDetailPanel'
 import type { MetadataResponse } from '@/lib/types'
 
 interface ErdPageProps {
@@ -9,10 +10,18 @@ interface ErdPageProps {
 }
 
 export function ErdPage({ metadata, isRefreshing, onRefresh }: ErdPageProps) {
-  const [_selectedTable, setSelectedTable] = useState<string | null>(null)
+  const [selectedTable, setSelectedTable] = useState<string | null>(null)
 
   const handleSelectTable = useCallback((tableName: string) => {
     setSelectedTable((prev) => (prev === tableName ? null : tableName))
+  }, [])
+
+  const handleCloseDetail = useCallback(() => {
+    setSelectedTable(null)
+  }, [])
+
+  const handleNavigateToTable = useCallback((tableName: string) => {
+    setSelectedTable(tableName)
   }, [])
 
   return (
@@ -23,7 +32,14 @@ export function ErdPage({ metadata, isRefreshing, onRefresh }: ErdPageProps) {
         onRefresh={onRefresh}
         onSelectTable={handleSelectTable}
       />
-      {/* Table detail overlay will be added in Step 9 */}
+      {selectedTable && (
+        <TableDetailPanel
+          tableName={selectedTable}
+          metadata={metadata}
+          onClose={handleCloseDetail}
+          onNavigate={handleNavigateToTable}
+        />
+      )}
     </div>
   )
 }

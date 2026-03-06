@@ -133,6 +133,18 @@ const FK_SEARCH_ORDER = ['REF_', 'DIM_', 'FCTH_', 'FCT_', 'MAP_', 'AUX_']; // FK
 
 ---
 
+## 11. Lucide-React Icons Don't Accept HTML Attributes Directly (Step 9)
+
+**Problem:** `<Key className="..." title="Primary Key" />` fails TypeScript with "Property 'title' does not exist on type".
+
+**Root cause:** Lucide-react icons are SVG components that only accept `LucideProps` (className, size, color, strokeWidth, etc.), not arbitrary HTML attributes like `title`.
+
+**Fix:** Wrap the icon in a native HTML element: `<span title="Primary Key"><Key className="..." /></span>`.
+
+**Lesson:** Lucide-react SVG icons don't support `title`, `aria-label`, or other HTML attributes directly. Always wrap in a `<span>` or `<div>` if you need tooltip text or accessibility attributes on icons.
+
+---
+
 ## General Principles Discovered
 
 1. **Build early, build often** — Run `npm run build` after every file creation, not just at step completion. Catches errors when context is fresh.

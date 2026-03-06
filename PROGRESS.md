@@ -207,3 +207,33 @@
 **Test:** `npm run build` succeeds. Zero TypeScript errors. All components wire together correctly.
 
 **Result:** PASS — Build: `index.html` (0.47 KB), `index.css` (39.90 KB / 7.78 KB gzip), `index.js` (457.29 KB / 150.07 KB gzip). React Flow adds ~280 KB to JS bundle. Zero errors.
+
+---
+
+## Step 9: Table Detail Overlay
+**Status:** DONE
+
+**Files created:**
+- `src/components/table-detail/TableDetailPanel.tsx` — fixed-right 420px slide-in panel with header (category badge, name, description), stats bar (columns, rows, size, last import), scrollable content
+- `src/components/table-detail/ColumnTable.tsx` — scrollable column grid: name (with PK icon), type (TypeBadge), nullable indicator, description
+- `src/components/table-detail/RelationshipList.tsx` — outgoing ("References") and incoming ("Referenced By") edges, clickable navigation to target/source tables
+- `src/components/table-detail/TypeBadge.tsx` — type-specific badges with icons (number=blue/Hash, string=green/Type, date=purple/Calendar, boolean=amber/Toggle)
+
+**Files modified:**
+- `src/pages/ErdPage.tsx` — wired TableDetailPanel: selectedTable state, close handler, navigate-to-table handler
+
+**Features:**
+- Slide-in/slide-out animation via CSS `translate-x` transition (200ms)
+- Close on Escape key, backdrop click, or X button
+- Relationship navigation: clicking a relationship swaps the panel to that table
+- Column table: sticky header, PK icon (amber key), type badges with hover title showing native type
+- Stats bar: column count, row count, data size (auto-formatted), last import (relative time)
+- Empty states: "No description available" (italic), "No relationships found"
+
+**Errors fixed:**
+- `title` prop not available on lucide-react SVG components — wrapped icons in `<span title="...">` instead
+- Unused type imports (`TableSummary`, `Edge`, `Binary`) removed
+
+**Test:** `npm run build` succeeds. Zero TypeScript errors.
+
+**Result:** PASS — Build: `index.html` (0.47 KB), `index.css` (44.51 KB / 8.60 KB gzip), `index.js` (470.20 KB / 152.96 KB gzip). Detail panel adds ~13 KB JS. Zero errors.
