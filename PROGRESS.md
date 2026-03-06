@@ -237,3 +237,28 @@
 **Test:** `npm run build` succeeds. Zero TypeScript errors.
 
 **Result:** PASS — Build: `index.html` (0.47 KB), `index.css` (44.51 KB / 8.60 KB gzip), `index.js` (470.20 KB / 152.96 KB gzip). Detail panel adds ~13 KB JS. Zero errors.
+
+---
+
+## Step 10: Table Browser Page
+**Status:** DONE
+
+**Files created:**
+- `src/components/table-browser/CategoryFilter.tsx` — rounded-pill toggle chips with colored dots and table counts per category
+- `src/components/table-browser/SortControls.tsx` — inline sort buttons: Name, Rows, Columns, Size with direction indicator (↑↓)
+- `src/components/table-browser/TableList.tsx` — card-style table rows: category color bar, badge, name, description, stats, matched column indicator
+
+**Files modified:**
+- `src/pages/TableBrowserPage.tsx` — rewritten: search input, category filters, sort controls, filtered/sorted table list, detail panel integration
+
+**Features:**
+- **Search:** Filters by table name AND column names within tables. Shows "Matched: COLUMN_X, COLUMN_Y" indicator
+- **Category filter:** Toggle chips with table counts. Minimum 1 category must remain visible
+- **Sort:** Toggle between Name (asc default) / Rows / Columns / Size (desc default for numeric). Click same field to flip direction
+- **Results count:** "X of Y tables matching 'query'"
+- **Detail panel:** Same TableDetailPanel from Step 9, reused for clicking table cards
+- **Empty state:** "No tables match your filters"
+
+**Test:** `npm run build` succeeds. Zero TypeScript errors.
+
+**Result:** PASS — Build: `index.html` (0.47 KB), `index.css` (45.20 KB / 8.67 KB gzip), `index.js` (476.48 KB / 154.53 KB gzip). Zero errors.
