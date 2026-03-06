@@ -96,3 +96,17 @@
   stroke-opacity: 1 !important;
   stroke-width: 2 !important;
 }
+
+/* Node highlighting on selection */
+.react-flow__node.highlighted {
+  filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5));
+  z-index: 10;
+}
+
+.dark .react-flow__node.highlighted {
+  filter: drop-shadow(0 0 10px rgba(96, 165, 250, 0.6));
+}
+
+.react-flow__node.dimmed {
+  pointer-events: auto;
+}

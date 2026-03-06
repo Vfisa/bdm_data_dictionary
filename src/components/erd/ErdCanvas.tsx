@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useState, useRef } from 'react'
 import {
   ReactFlow,
   MiniMap,
@@ -10,6 +10,7 @@ import {
   type Node,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
+import { toPng } from 'html-to-image'
 import { TableNode } from './TableNode'
 import { ErdToolbar } from './ErdToolbar'
 import { useErdLayout, type TableNodeData } from './useErdLayout'
@@ -26,6 +27,7 @@ interface ErdCanvasInnerProps {
   isRefreshing: boolean
   onRefresh: () => void
   onSelectTable: (tableName: string) => void
+  selectedTable: string | null
 }
 
 function ErdCanvasInner({
@@ -33,19 +35,23 @@ function ErdCanvasInner({
   isRefreshing,
   onRefresh,
   onSelectTable,
+  selectedTable,
 }: ErdCanvasInnerProps) {
   const { fitView } = useReactFlow()
+  const containerRef = useRef<HTMLDivElement>(null)
 
   // Category visibility state — all visible by default
   const [visibleCategories, setVisibleCategories] = useState<Set<Category>>(
     () => new Set(CATEGORY_ORDER),
   )
 
+  // Date links toggle — off by default
+  const [showDateLinks, setShowDateLinks] = useState(false)
+
   const toggleCategory = useCallback((category: Category) => {
     setVisibleCategories((prev) => {
       const next = new Set(prev)
       if (next.has(category)) {
-        // Don't allow hiding all categories
         if (next.size > 1) {
           next.delete(category)
         }
@@ -56,8 +62,9 @@ function ErdCanvasInner({
     })
   }, [])
 
-  // Compute layout
-  const { nodes, edges } = useErdLayout(metadata, visibleCategories)
+  // Compute layout with highlighting and optional date edges
+  const dateEdges = showDateLinks ? metadata.dateEdges : undefined
+  const { nodes, edges } = useErdLayout(metadata, visibleCategories, selectedTable, dateEdges)
 
   // Handle node click → open detail panel
   const handleNodeClick = useCallback(
@@ -67,17 +74,41 @@ function ErdCanvasInner({
     [onSelectTable],
   )
 
+  // Handle pane click → clear selection
+  const handlePaneClick = useCallback(() => {
+    onSelectTable('')
+  }, [onSelectTable])
+
   // Handle fit view
   const handleFitView = useCallback(() => {
     fitView({ padding: 0.1, duration: 300 })
   }, [fitView])
+
+  // Handle export as PNG
+  const handleExport = useCallback(async () => {
+    const viewport = containerRef.current?.querySelector('.react-flow__viewport') as HTMLElement
+    if (!viewport) return
+    try {
+      const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--background').trim()
+      const dataUrl = await toPng(viewport, {
+        backgroundColor: bgColor.startsWith('oklch') ? '#1a1a1a' : bgColor,
+        pixelRatio: 2,
+      })
+      const link = document.createElement('a')
+      link.download = `erd-${new Date().toISOString().slice(0, 10)}.png`
+      link.href = dataUrl
+      link.click()
+    } catch (err) {
+      console.error('Export failed:', err)
+    }
+  }, [])
 
   // Count visible tables/edges
   const visibleTableCount = nodes.length
   const visibleEdgeCount = edges.length
 
   return (
-    <div className="relative h-full w-full">
+    <div className="relative h-full w-full" ref={containerRef}>
       <ErdToolbar
         visibleCategories={visibleCategories}
         onToggleCategory={toggleCategory}
@@ -85,8 +116,12 @@ function ErdCanvasInner({
         isRefreshing={isRefreshing}
         onRefresh={onRefresh}
         onFitView={handleFitView}
+        onExport={handleExport}
         tableCount={visibleTableCount}
         edgeCount={visibleEdgeCount}
+        showDateLinks={showDateLinks}
+        onToggleDateLinks={() => setShowDateLinks((v) => !v)}
+        hasDateEdges={(metadata.dateEdges?.length ?? 0) > 0}
       />
 
       <ReactFlow
@@ -94,6 +129,7 @@ function ErdCanvasInner({
         edges={edges}
         nodeTypes={nodeTypes}
         onNodeClick={handleNodeClick}
+        onPaneClick={handlePaneClick}
         fitView
         fitViewOptions={{ padding: 0.1 }}
         minZoom={0.1}
@@ -144,6 +180,7 @@ interface ErdCanvasProps {
   isRefreshing: boolean
   onRefresh: () => void
   onSelectTable: (tableName: string) => void
+  selectedTable: string | null
 }
 
 export function ErdCanvas(props: ErdCanvasProps) {

@@ -13,6 +13,10 @@ export function ErdPage({ metadata, isRefreshing, onRefresh }: ErdPageProps) {
   const [selectedTable, setSelectedTable] = useState<string | null>(null)
 
   const handleSelectTable = useCallback((tableName: string) => {
+    if (!tableName) {
+      setSelectedTable(null)
+      return
+    }
     setSelectedTable((prev) => (prev === tableName ? null : tableName))
   }, [])
 
@@ -41,6 +45,7 @@ export function ErdPage({ metadata, isRefreshing, onRefresh }: ErdPageProps) {
         isRefreshing={isRefreshing}
         onRefresh={onRefresh}
         onSelectTable={handleSelectTable}
+        selectedTable={selectedTable}
       />
       {selectedTable && (
         <TableDetailPanel

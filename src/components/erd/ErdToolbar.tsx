@@ -1,4 +1,4 @@
-import { RefreshCw, Maximize2 } from 'lucide-react'
+import { RefreshCw, Maximize2, Download, CalendarDays } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CATEGORY_CONFIG, CATEGORY_ORDER } from '@/lib/constants'
 import type { Category } from '@/lib/types'
@@ -11,8 +11,12 @@ interface ErdToolbarProps {
   isRefreshing: boolean
   onRefresh: () => void
   onFitView: () => void
+  onExport: () => void
   tableCount: number
   edgeCount: number
+  showDateLinks: boolean
+  onToggleDateLinks: () => void
+  hasDateEdges: boolean
 }
 
 export function ErdToolbar({
@@ -22,8 +26,12 @@ export function ErdToolbar({
   isRefreshing,
   onRefresh,
   onFitView,
+  onExport,
   tableCount,
   edgeCount,
+  showDateLinks,
+  onToggleDateLinks,
+  hasDateEdges,
 }: ErdToolbarProps) {
   return (
     <div className="absolute top-3 left-3 right-3 z-10 flex items-center justify-between gap-3 pointer-events-none">
@@ -56,9 +64,28 @@ export function ErdToolbar({
             </button>
           )
         })}
+
+        {/* Date Links toggle */}
+        {hasDateEdges && (
+          <button
+            onClick={onToggleDateLinks}
+            className={`
+              inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded-md
+              border transition-all cursor-pointer
+              ${showDateLinks
+                ? 'border-purple-400/30 bg-purple-500/10 text-purple-400 shadow-sm'
+                : 'border-transparent bg-[var(--muted)] text-[var(--muted-foreground)] opacity-60'
+              }
+            `}
+            title="Toggle assumed date connections to DIM_DATE"
+          >
+            <CalendarDays className="h-3 w-3" />
+            Date Links
+          </button>
+        )}
       </div>
 
-      {/* Right: Stats, refresh, fit-view */}
+      {/* Right: Stats, refresh, export, fit-view */}
       <div className="flex items-center gap-2 pointer-events-auto shrink-0">
         {/* Stats */}
         <span className="text-[11px] text-[var(--muted-foreground)] hidden md:inline">
@@ -81,6 +108,16 @@ export function ErdToolbar({
           title="Refresh metadata from Keboola"
         >
           <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+        </Button>
+
+        {/* Export button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onExport}
+          title="Export ERD as PNG"
+        >
+          <Download className="h-4 w-4" />
         </Button>
 
         {/* Fit view button */}

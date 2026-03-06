@@ -325,3 +325,40 @@ export function inferRelationships(tables, overridesPath) {
 
   return { edges, categories, stats };
 }
+
+/**
+ * Detect DATE/TIMESTAMP columns and create assumed connections to DIM_DATE.
+ * These are virtual edges, kept separate from inferred FK edges.
+ *
+ * @param {Array} tables - normalized table objects
+ * @returns {{ dateEdges: Array }}
+ */
+export function inferDateConnections(tables) {
+  const dimDate = tables.find(t => t.name === 'DIM_DATE');
+  if (!dimDate) return { dateEdges: [] };
+
+  const dimDatePK = dimDate.primaryKey?.[0] || 'DATE_ID';
+  const dateEdges = [];
+
+  for (const table of tables) {
+    if (table.name === 'DIM_DATE') continue;
+
+    for (const col of table.columns) {
+      const baseType = (col.keboolaBaseType || '').toUpperCase();
+      if (baseType === 'DATE' || baseType === 'TIMESTAMP') {
+        dateEdges.push({
+          id: `date:${table.name}.${col.name}→DIM_DATE`,
+          source: table.name,
+          target: 'DIM_DATE',
+          sourceColumn: col.name,
+          targetColumn: dimDatePK,
+          label: col.name,
+          cardinality: 'M:1',
+          inferenceMethod: 'date-assumed',
+        });
+      }
+    }
+  }
+
+  return { dateEdges };
+}

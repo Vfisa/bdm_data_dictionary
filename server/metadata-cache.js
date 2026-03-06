@@ -7,7 +7,7 @@
  */
 
 import { createClient } from './keboola-client.js';
-import { inferRelationships, getCategory } from './inference.js';
+import { inferRelationships, inferDateConnections, getCategory } from './inference.js';
 
 export class MetadataCache {
   /**
@@ -107,10 +107,14 @@ export class MetadataCache {
     // Run FK inference
     const { edges, categories, stats } = inferRelationships(tables, this.overridesPath);
 
+    // Run date connection inference
+    const { dateEdges } = inferDateConnections(tables);
+
     // Atomic swap — old data is replaced all at once
     this._data = {
       tables,
       edges,
+      dateEdges,
       categories,
       stats,
       lastRefresh: new Date().toISOString(),
@@ -142,6 +146,7 @@ export class MetadataCache {
         lastImportDate: t.lastImportDate,
       })),
       edges: this._data.edges,
+      dateEdges: this._data.dateEdges || [],
       categories: this._data.categories,
       lastRefresh: this._data.lastRefresh,
       stats: this._data.stats,

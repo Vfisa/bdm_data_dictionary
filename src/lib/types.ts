@@ -40,7 +40,7 @@ export interface Edge {
   targetColumn: string
   label: string
   cardinality: string
-  inferenceMethod: 'direct' | 'compound' | 'alias' | 'manual'
+  inferenceMethod: 'direct' | 'compound' | 'alias' | 'manual' | 'date-assumed'
 }
 
 /** Table category */
@@ -61,6 +61,7 @@ export interface InferenceStats {
 export interface MetadataResponse {
   tables: TableSummary[]
   edges: Edge[]
+  dateEdges: Edge[]
   categories: Record<string, Category>
   lastRefresh: string
   stats: InferenceStats
