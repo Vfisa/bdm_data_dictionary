@@ -256,6 +256,74 @@ export function createClient(kbcUrl, kbcToken) {
     return res.json();
   }
 
+  /**
+   * Trigger async data profiling for a table.
+   * Keboola runs profiling in the background (BigQuery/Snowflake backends).
+   *
+   * @param {string} tableId - e.g. "out.c-bdm.REF_CLIENT"
+   * @returns {Promise<Object>} Job info
+   */
+  async function createProfile(tableId) {
+    const url = `${baseUrl}/v2/storage/tables/${encodeURIComponent(tableId)}/profile`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'X-StorageApi-Token': token,
+        'Accept': 'application/json',
+      },
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`Failed to create profile: ${res.status} ${res.statusText}\n${body}`);
+    }
+    return res.json();
+  }
+
+  /**
+   * Get the latest profiling result for a table.
+   * Returns null if no profile has been created yet.
+   *
+   * @param {string} tableId - e.g. "out.c-bdm.REF_CLIENT"
+   * @returns {Promise<Object|null>} Profile data or null
+   */
+  async function getLatestProfile(tableId) {
+    const url = `${baseUrl}/v2/storage/tables/${encodeURIComponent(tableId)}/profile/latest`;
+    const res = await fetch(url, {
+      headers: {
+        'X-StorageApi-Token': token,
+        'Accept': 'application/json',
+      },
+    });
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`Failed to get profile: ${res.status} ${res.statusText}\n${body}`);
+    }
+    return res.json();
+  }
+
+  /**
+   * Fetch up to 1000 rows of actual data from a table as CSV.
+   *
+   * @param {string} tableId - e.g. "out.c-bdm.REF_CLIENT"
+   * @param {number} [limit=1000] - max rows
+   * @returns {Promise<string>} Raw CSV text
+   */
+  async function getDataPreview(tableId, limit = 1000) {
+    const url = `${baseUrl}/v2/storage/tables/${encodeURIComponent(tableId)}/data-preview?limit=${limit}`;
+    const res = await fetch(url, {
+      headers: {
+        'X-StorageApi-Token': token,
+        'Accept': 'text/csv',
+      },
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`Data preview error: ${res.status} ${res.statusText} — ${tableId}\n${body}`);
+    }
+    return res.text();
+  }
+
   return {
     listBucketTables,
     getTable,
@@ -263,5 +331,8 @@ export function createClient(kbcUrl, kbcToken) {
     updateTableDescription,
     updateColumnDescription,
     updateTableTags,
+    createProfile,
+    getLatestProfile,
+    getDataPreview,
   };
 }

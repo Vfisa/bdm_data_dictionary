@@ -310,6 +310,81 @@ useEffect(() => {
 
 ---
 
+## 22. Hybrid Profiling: Native API + Data Preview (Phase 4 — Data Profiling)
+
+**Design decision:** Column profiling uses two Keboola APIs in tandem:
+1. **Native profiling** (`POST /v2/storage/tables/{tableId}/profile` + `GET .../profile/latest`) — exact null count, distinct count, duplicate count over all rows
+2. **Data preview** (`GET /v2/storage/tables/{tableId}/data-preview?limit=1000`) — CSV sample for $NOVALUE rates, min/max, top values
+
+**Why hybrid:**
+- Native profiling is async (trigger → poll) and doesn't expose value-level stats ($NOVALUE, top values, min/max)
+- Data preview is synchronous but limited to 1000 rows (sample, not exact)
+- Combining both gives exact structural stats + value-level insights at acceptable latency
+
+**Lesson:** When a platform API provides multiple data access methods with different trade-offs, combine them rather than choosing one. Document which stats come from which source (exact vs. approximate) in the UI so users understand confidence levels.
+
+---
+
+## 23. CSV Parsing from Keboola Data Preview (Phase 4)
+
+**Problem:** The data-preview endpoint returns raw CSV text (not JSON). Needed server-side parsing.
+
+**Solution:** Used `csv-parse/sync` for synchronous parsing. The sync variant is appropriate here because:
+- The CSV is bounded (max 1000 rows)
+- Parsing happens inside an already-async profiling pipeline
+- Simpler error handling than the streaming API
+
+**Lesson:** For bounded, small CSV payloads (< 10K rows), synchronous CSV parsing is simpler and performant enough. Reserve streaming parsers for unbounded or large datasets.
+
+---
+
+## 24. Request Deduplication in Profiling Cache (Phase 4)
+
+**Problem:** Multiple rapid clicks on the "Profile" button could trigger duplicate API calls for the same table.
+
+**Solution:** `ProfilingCache` stores pending promises in a `_pendingRequests` Map. If a request for the same table is already in-flight, subsequent callers await the existing promise instead of making a new API call.
+
+```javascript
+if (this._pendingRequests.has(tableId)) {
+  return this._pendingRequests.get(tableId);
+}
+const promise = this._fetchAndCompute(tableId, columns);
+this._pendingRequests.set(tableId, promise);
+```
+
+**Lesson:** Any server-side cache that fetches from slow external APIs should deduplicate concurrent requests for the same key. Store the promise (not the result) to coalesce waiting callers.
+
+---
+
+## 25. Type-Aware Min/Max in Column Profiling (Phase 4)
+
+**Problem:** Min/max values from a CSV sample are strings. Comparing `"9"` > `"10"` lexicographically gives wrong results for numeric columns.
+
+**Solution:** Type-dispatch based on `keboolaBaseType`:
+- `INTEGER`, `NUMERIC`, `FLOAT` → `parseFloat()` comparison, return as numbers
+- `DATE`, `TIMESTAMP` → `new Date()` comparison, return as ISO strings
+- Everything else → lexicographic string comparison
+
+**Lesson:** When computing aggregate stats from string-typed CSV data, always parse values according to the column's declared type before comparison. A type-aware comparator prevents subtle ordering bugs.
+
+---
+
+## 26. Expandable Table Rows with colSpan Pattern (Phase 4)
+
+**Problem:** Needed expandable drawer rows in the column table — clicking a chevron reveals stats below that column.
+
+**Solution:** Each `<tr>` uses a single `<td colSpan={3}>` containing both the main row (as a `<div>` with flex layout) and the conditional drawer:
+```jsx
+<td colSpan={3} className="p-0">
+  <div className="flex items-start">  {/* main row */}
+  {isExpanded && <ColumnProfileDrawer />}  {/* drawer */}
+</td>
+```
+
+**Lesson:** For expandable table rows, `colSpan` on a single cell is simpler than inserting/removing extra `<tr>` elements. The flex-based inner layout replaces the multi-cell structure while maintaining visual alignment.
+
+---
+
 ## General Principles Discovered
 
 1. **Build early, build often** — Run `npm run build` after every file creation, not just at step completion. Catches errors when context is fresh.

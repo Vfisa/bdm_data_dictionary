@@ -546,14 +546,21 @@ All features below were implemented and committed:
   - **Mermaid (.mmd)** — Generates Mermaid `erDiagram` text from full metadata (all tables + all edges). Downloadable as `.mmd` file.
 - [x] **Collaborative tags** — Predefined tags (`verified`, `needs-review`, `deprecated`, `core`, `wip`, `sensitive`) + free-form custom tags. Stored as JSON in Keboola metadata (`bdm.tags` key, `provider: 'user'`). Tag chips in detail panel + table browser. Filter by tag in Table Browser.
 
-### Phase 4 — Data Profiling (planned)
+### Phase 4 — Data Profiling (DONE)
 
-- [ ] **$NOVALUE data profiling** — Query actual $NOVALUE rates per FK column via Keboola data preview API. Color-coded rates: green <5%, yellow 5-20%, red >20%. Separate 30-min cache TTL with rate-limited API calls.
-- [ ] **Column-level profiling stats** — Min/max/distinct count/null rate per column via data preview sampling. Expandable column profile drawer with distribution bars and sample values.
+- [x] **Hybrid profiling engine** — Keboola native profiling API for exact stats (all rows: null count, distinct count, duplicate count) + data-preview API for sampled stats (1000 rows: $NOVALUE rates, min/max, top values, sample values). ProfilingCache with 30-min TTL, request deduplication, rate limiting. `csv-parse` for CSV parsing.
+- [x] **$NOVALUE data profiling** — Color-coded `$NV: X%` pill badges on _ID columns. Green <5%, yellow 5-20%, red >=20%. Tooltip shows "N of M sampled rows contain $NOVALUE".
+- [x] **Column-level profiling stats** — Expandable column profile drawers with null rate bar, distinct count bar, min/max (type-aware: numeric, date, string), $NOVALUE section for _ID columns, top 5 values with counts. Footer indicates exact (native profile) vs approximate (sample) stats.
+- [x] **On-demand profiling** — Manual "Profile" button in detail panel Columns header. Flask icon + loading spinner. Shows "Profiled Xs ago" after completion. Error state with retry link.
+- [x] **Mock profiling** — `generateMockProfile()` produces realistic stats per column for local dev (PKs: unique, _ID columns: randomized $NOVALUE, numerics: min/max, dates: date ranges, booleans: true/false distribution).
 
 ### Phase 5 — Data Lineage (planned)
 
 - [ ] **Data lineage graph** — Full upstream/downstream visualization via Keboola component config + flow APIs. New LineagePage with LR Dagre layout showing extractors, transformations, writers as distinct node types.
+
+### Phase 6 — Query Service Profiling (planned)
+
+- [ ] **SQL-based exact profiling** — Use Keboola Query Service (`POST /api/v1/branches/{branchId}/workspaces/{workspaceId}/queries`) for full SQL-based profiling over all rows. Requires `KBC_BRANCHID` + `KBC_WORKSPACE_ID` env vars. Async job-based: submit → poll → get results.
 
 ### Backlog
 
@@ -599,7 +606,7 @@ All features below were implemented and committed:
 ## 13. Open Questions
 
 1. **Auth**: Default Keboola basic auth is currently used. OIDC integration deferred.
-2. **Data profiling API limits**: Keboola data preview returns max 1,000 rows. Sufficient for sampling or need full-scan approach?
+2. ~~**Data profiling API limits**: Keboola data preview returns max 1,000 rows. Sufficient for sampling or need full-scan approach?~~ **Resolved:** Hybrid approach — native profiling API for exact stats (all rows) + data preview for $NOVALUE/samples (1000 rows). Query service for Phase 6.
 3. **Lineage API scope**: Start with transformation-only lineage or include extractors/writers from the start?
 
 ## 14. Resolved Phase 3 Decisions
@@ -610,3 +617,14 @@ All features below were implemented and committed:
 | 14 | ERD export formats | All three: PNG at 3x resolution, SVG vector, Mermaid ERD text |
 | 15 | Mermaid export scope | Always full ERD (all tables + edges), regardless of filters or selection |
 | 16 | Tag system design | Both predefined tags (verified, needs-review, deprecated, core, wip, sensitive) + free-form custom tags, stored as JSON array in Keboola metadata |
+
+## 15. Resolved Phase 4 Decisions
+
+| # | Question | Decision |
+|---|----------|----------|
+| 17 | Profiling data source | Hybrid: Keboola native profiling API (exact null/distinct/duplicate) + data-preview API (1000-row sample for $NOVALUE, min/max, top values) |
+| 18 | Profiling trigger | Manual "Profile" button — not auto-fetch. On-demand per table. |
+| 19 | Profile UI pattern | Expandable rows in ColumnTable with chevron toggle. ColumnProfileDrawer renders below each row. |
+| 20 | CSV parsing | `csv-parse/sync` npm package for data-preview CSV parsing |
+| 21 | Profile cache | Server-side ProfilingCache, 30-min TTL per table, request deduplication, 200ms rate limiting between API calls |
+| 22 | Query service | Deferred to Phase 6. Requires KBC_BRANCHID + KBC_WORKSPACE_ID env vars (not confirmed auto-injected into Data Apps). |

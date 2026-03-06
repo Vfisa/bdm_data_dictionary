@@ -2,7 +2,8 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { MetadataCache } from './metadata-cache.js';
-import { generateMockMetadata } from './mock-data.js';
+import { createProfilingCache } from './profiling-cache.js';
+import { generateMockMetadata, generateMockProfile } from './mock-data.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -34,6 +35,13 @@ if (KBC_TOKEN && KBC_URL) {
     bucketId: BUCKET_ID,
     overridesPath: path.join(__dirname, 'overrides.json'),
   });
+}
+
+// --- Profiling cache ---
+let profilingCache = null;
+
+if (cache) {
+  profilingCache = createProfilingCache({ client: cache.getClient() });
 }
 
 // --- Middleware ---
@@ -203,6 +211,49 @@ app.put('/api/tags', async (req, res) => {
   } catch (err) {
     console.error(`PUT /api/tags failed for ${tableId}:`, err.message);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// Data profiling for a table — on-demand, cached 30 min
+app.get('/api/profile/:tableId', async (req, res) => {
+  const tableId = req.params.tableId;
+
+  // Mock mode
+  if (USE_MOCK && mockData) {
+    const table = mockData.tables.find((t) => t.id === tableId);
+    if (!table) {
+      return res.status(404).json({ error: `Table not found: ${tableId}` });
+    }
+    return res.json(generateMockProfile(table));
+  }
+
+  if (!cache || !profilingCache) {
+    return res.status(503).json({
+      error: 'Profiling not available — KBC_TOKEN or KBC_URL not configured',
+    });
+  }
+
+  // Find table in metadata cache to get column definitions
+  const metadata = cache.getMetadata();
+  if (!metadata) {
+    return res.status(503).json({ error: 'Metadata cache is still loading.' });
+  }
+
+  const table = metadata.tables.find((t) => t.id === tableId);
+  if (!table) {
+    return res.status(404).json({ error: `Table not found: ${tableId}` });
+  }
+
+  try {
+    const profile = await profilingCache.getProfile(tableId, table.columns);
+    // Attach totalRows from metadata if native profile didn't have it
+    if (!profile.totalRows && table.rowsCount) {
+      profile.totalRows = table.rowsCount;
+    }
+    res.json(profile);
+  } catch (err) {
+    console.error(`GET /api/profile/${tableId} failed:`, err.message);
+    res.status(500).json({ error: `Profiling failed: ${err.message}` });
   }
 });
 

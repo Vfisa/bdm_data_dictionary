@@ -486,14 +486,47 @@
 
 ---
 
+## Phase 7: Data Profiling (PRD Phase 4)
+**Status:** DONE
+
+**Changes:**
+
+### Hybrid Profiling Engine
+- **Native profiling API** — `POST /v2/storage/tables/{tableId}/profile` (triggers async profiling), `GET /v2/storage/tables/{tableId}/profile/latest` (exact stats: null count, distinct count, duplicate count per column)
+- **Data preview API** — `GET /v2/storage/tables/{tableId}/data-preview?limit=1000` returns CSV for sampling ($NOVALUE rates, min/max, top values, sample values)
+- **ProfilingCache** — Per-table 30-min TTL cache, request deduplication, 200ms rate limiting, serial execution. Merges native (exact) + preview (sample) into unified response.
+- **CSV parsing** — `csv-parse/sync` for parsing data-preview CSV responses
+
+### Backend (5 files)
+- `server/keboola-client.js` — Added `createProfile()`, `getLatestProfile()`, `getDataPreview()` methods
+- `server/profiling-cache.js` — **New** — `createProfilingCache()` with `getProfile(tableId, columns)`, `clearCache()`. Computes preview stats: null rate, distinct count, $NOVALUE rate for _ID columns, type-aware min/max, top 5 values, sample values.
+- `server/mock-data.js` — Added `generateMockProfile(table)` for local dev: PKs fully unique, nullable FKs with random $NOVALUE rates, type-appropriate min/max for numbers/dates/strings
+- `server/index.js` — Added `GET /api/profile/:tableId` endpoint (mock mode returns `generateMockProfile`, production mode uses `ProfilingCache`)
+- `server/metadata-cache.js` — Added `getClient()` method to expose Keboola client for ProfilingCache reuse
+
+### Frontend (6 files)
+- `src/lib/types.ts` — Added `ColumnProfile` and `TableProfile` interfaces
+- `src/hooks/useProfile.ts` — **New** — On-demand profile fetch hook with stale-update prevention, loading/error state
+- `src/components/table-detail/NoValueBadge.tsx` — **New** — Inline pill badge `$NV: X%` with color coding (green <5%, yellow 5-20%, red >=20%)
+- `src/components/table-detail/ColumnProfileDrawer.tsx` — **New** — Expandable drawer with null rate bar, distinct count bar, min/max (type-aware), $NOVALUE section, top values, footer showing exact vs approximate
+- `src/components/table-detail/ColumnTable.tsx` — Added expandable rows with `ChevronRight` toggle, `NoValueBadge` on _ID columns, `ColumnProfileDrawer` rendering below expanded rows
+- `src/components/table-detail/TableDetailPanel.tsx` — Added `useProfile` hook, "Profile" button with `FlaskConical` icon + loading spinner, "Profiled Xs ago" timestamp, error state with retry link
+
+**New dependency:** `csv-parse ^5.6`
+
+**Result:** PASS — Build succeeds (575.18 KB JS / 184.45 KB gzip, 57.87 KB CSS / 10.54 KB gzip). Profile button fetches data, chevrons appear, $NV badges color-coded, drawers expand with full stats, empty table profiles cleanly, zero console errors.
+
+---
+
 ## Summary
 
-All 12 foundation steps + 6 expansion phases complete. The BDM Data Dictionary & ERD Viewer includes:
+All 12 foundation steps + 7 expansion phases complete. The BDM Data Dictionary & ERD Viewer includes:
 
 - **58 tables** from `out.c-bdm` + `out.c-bdm_aux` with live Keboola metadata
 - **84 inferred FK relationships** via dynamic inference engine
 - **Interactive ERD diagram** with Dagre layout, category filters, minimap, connection highlighting, date links, multi-format export (PNG 3x / SVG / Mermaid)
 - **Floating detail panel** with column types, PK indicators, navigable relationships, inline description editing — ERD stays interactive while panel is open
+- **On-demand data profiling** — hybrid native profiling (exact stats) + data preview (1000-row sample) with per-column expandable drawers showing null rate, distinct count, min/max, $NOVALUE rates, top values
 - **Table browser** with search, category filters, sort, QA stats dashboard, tag filtering
 - **Collaborative tags** — predefined + custom tags stored in Keboola metadata, with tag editor and filter-by-tag
 - **Global search** (Cmd+K) with fuzzy matching and filter toggles (Both/Tables/Columns)

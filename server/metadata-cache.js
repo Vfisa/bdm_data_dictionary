@@ -229,6 +229,14 @@ export class MetadataCache {
   }
 
   /**
+   * Get the underlying Keboola client instance.
+   * Used by ProfilingCache to share the same client.
+   */
+  getClient() {
+    return this.client;
+  }
+
+  /**
    * Get cache status for health checks.
    */
   getStatus() {

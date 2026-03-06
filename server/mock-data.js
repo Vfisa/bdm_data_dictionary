@@ -243,3 +243,231 @@ export function generateMockMetadata() {
     },
   };
 }
+
+/**
+ * Generate mock profiling data for a table.
+ * Produces realistic stats per column matching the ProfilingCache response shape.
+ *
+ * @param {object} table - Table object from generateMockMetadata()
+ * @returns {object} Mock profile matching TableProfile interface
+ */
+export function generateMockProfile(table) {
+  if (!table || table.rowsCount === 0) {
+    return {
+      tableId: table?.id || 'unknown',
+      sampleSize: 0,
+      totalRows: 0,
+      profiledAt: new Date().toISOString(),
+      hasNativeProfile: true,
+      columns: (table?.columns || []).map((col) => ({
+        columnName: col.name,
+        nullCount: 0,
+        nullRate: 0,
+        distinctCount: 0,
+        duplicateCount: 0,
+        isExact: true,
+        min: null,
+        max: null,
+        novalueCount: 0,
+        novalueRate: 0,
+        topValues: [],
+        sampleValues: [],
+      })),
+    };
+  }
+
+  const sampleSize = Math.min(1000, table.rowsCount);
+  const totalRows = table.rowsCount;
+  const isPK = new Set(table.primaryKey || []);
+
+  const columns = table.columns.map((col) => {
+    const isId = col.name.endsWith('_ID');
+    const isPrimary = isPK.has(col.name);
+    const baseType = (col.keboolaBaseType || 'STRING').toUpperCase();
+
+    // PKs: no nulls, fully unique
+    if (isPrimary) {
+      return {
+        columnName: col.name,
+        nullCount: 0,
+        nullRate: 0,
+        distinctCount: totalRows,
+        duplicateCount: 0,
+        isExact: true,
+        min: baseType === 'INTEGER' ? 1 : null,
+        max: baseType === 'INTEGER' ? totalRows : null,
+        novalueCount: 0,
+        novalueRate: 0,
+        topValues: [],
+        sampleValues: baseType === 'INTEGER'
+          ? ['1', '2', '3', '4', '5']
+          : baseType === 'DATE'
+            ? ['2020-01-01', '2020-01-02', '2020-01-03', '2020-01-04', '2020-01-05']
+            : [],
+      };
+    }
+
+    // Nullable FK _ID columns: some $NOVALUE
+    if (isId && col.nullable) {
+      const novalueRate = _mockRandom(0.02, 0.22);
+      const novalueCount = Math.round(sampleSize * novalueRate);
+      const nullRate = _mockRandom(0, 0.05);
+      const nullCount = Math.round(totalRows * nullRate);
+      const distinctCount = Math.round(totalRows * _mockRandom(0.001, 0.1));
+      return {
+        columnName: col.name,
+        nullCount,
+        nullRate,
+        distinctCount,
+        duplicateCount: Math.max(0, totalRows - nullCount - distinctCount),
+        isExact: true,
+        min: 1,
+        max: Math.round(_mockRandom(500, 50000)),
+        novalueCount,
+        novalueRate,
+        topValues: [
+          { value: '$NOVALUE', count: novalueCount },
+          { value: String(Math.round(_mockRandom(1, 100))), count: Math.round(sampleSize * 0.05) },
+          { value: String(Math.round(_mockRandom(100, 500))), count: Math.round(sampleSize * 0.03) },
+        ],
+        sampleValues: ['$NOVALUE', '42', '187', '1003', '2891'],
+      };
+    }
+
+    // Non-nullable FK _ID columns: no $NOVALUE
+    if (isId) {
+      const distinctCount = Math.round(totalRows * _mockRandom(0.01, 0.5));
+      return {
+        columnName: col.name,
+        nullCount: 0,
+        nullRate: 0,
+        distinctCount,
+        duplicateCount: Math.max(0, totalRows - distinctCount),
+        isExact: true,
+        min: 1,
+        max: Math.round(_mockRandom(1000, 20000)),
+        novalueCount: 0,
+        novalueRate: 0,
+        topValues: [
+          { value: String(Math.round(_mockRandom(1, 50))), count: Math.round(sampleSize * 0.08) },
+          { value: String(Math.round(_mockRandom(50, 200))), count: Math.round(sampleSize * 0.05) },
+          { value: String(Math.round(_mockRandom(200, 500))), count: Math.round(sampleSize * 0.04) },
+        ],
+        sampleValues: ['1', '23', '456', '789', '1234'],
+      };
+    }
+
+    // Numeric columns
+    if (['INTEGER', 'NUMERIC', 'FLOAT'].includes(baseType)) {
+      const nullRate = col.nullable ? _mockRandom(0, 0.08) : 0;
+      const nullCount = Math.round(totalRows * nullRate);
+      const min = baseType === 'INTEGER' ? Math.round(_mockRandom(0, 10)) : _mockRound(_mockRandom(0.01, 100), 2);
+      const max = baseType === 'INTEGER' ? Math.round(_mockRandom(100, 999999)) : _mockRound(_mockRandom(100, 50000), 2);
+      const distinctCount = Math.round((totalRows - nullCount) * _mockRandom(0.3, 0.95));
+      return {
+        columnName: col.name,
+        nullCount,
+        nullRate,
+        distinctCount,
+        duplicateCount: Math.max(0, totalRows - nullCount - distinctCount),
+        isExact: true,
+        min,
+        max,
+        novalueCount: 0,
+        novalueRate: 0,
+        topValues: [
+          { value: String(min), count: Math.round(sampleSize * 0.02) },
+          { value: String(Math.round((min + max) / 2)), count: Math.round(sampleSize * 0.015) },
+        ],
+        sampleValues: [String(min), String(Math.round(max * 0.25)), String(Math.round(max * 0.5)), String(Math.round(max * 0.75)), String(max)],
+      };
+    }
+
+    // Date/Timestamp columns
+    if (['DATE', 'TIMESTAMP'].includes(baseType)) {
+      const nullRate = col.nullable ? _mockRandom(0, 0.03) : 0;
+      const nullCount = Math.round(totalRows * nullRate);
+      return {
+        columnName: col.name,
+        nullCount,
+        nullRate,
+        distinctCount: Math.round((totalRows - nullCount) * _mockRandom(0.5, 1)),
+        duplicateCount: Math.round(totalRows * _mockRandom(0, 0.3)),
+        isExact: true,
+        min: '2020-01-01',
+        max: '2026-03-06',
+        novalueCount: 0,
+        novalueRate: 0,
+        topValues: [
+          { value: '2026-03-06', count: Math.round(sampleSize * 0.04) },
+          { value: '2026-03-05', count: Math.round(sampleSize * 0.035) },
+        ],
+        sampleValues: ['2020-01-15', '2022-06-01', '2024-11-20', '2025-08-12', '2026-03-01'],
+      };
+    }
+
+    // Boolean columns
+    if (baseType === 'BOOLEAN') {
+      return {
+        columnName: col.name,
+        nullCount: 0,
+        nullRate: 0,
+        distinctCount: 2,
+        duplicateCount: totalRows - 2,
+        isExact: true,
+        min: 'false',
+        max: 'true',
+        novalueCount: 0,
+        novalueRate: 0,
+        topValues: [
+          { value: 'true', count: Math.round(sampleSize * 0.72) },
+          { value: 'false', count: Math.round(sampleSize * 0.28) },
+        ],
+        sampleValues: ['true', 'false'],
+      };
+    }
+
+    // String columns (default)
+    const nullRate = col.nullable ? _mockRandom(0, 0.12) : 0;
+    const nullCount = Math.round(totalRows * nullRate);
+    const distinctCount = Math.min(totalRows - nullCount, Math.round(_mockRandom(5, 500)));
+    return {
+      columnName: col.name,
+      nullCount,
+      nullRate,
+      distinctCount,
+      duplicateCount: Math.max(0, totalRows - nullCount - distinctCount),
+      isExact: true,
+      min: null,
+      max: null,
+      novalueCount: 0,
+      novalueRate: 0,
+      topValues: [
+        { value: 'Active', count: Math.round(sampleSize * 0.45) },
+        { value: 'Inactive', count: Math.round(sampleSize * 0.3) },
+        { value: 'Pending', count: Math.round(sampleSize * 0.15) },
+      ],
+      sampleValues: ['Active', 'Inactive', 'Pending', 'Archived', 'Draft'],
+    };
+  });
+
+  return {
+    tableId: table.id,
+    sampleSize,
+    totalRows,
+    profiledAt: new Date().toISOString(),
+    hasNativeProfile: true,
+    columns,
+  };
+}
+
+/** Seeded random for reproducible mock data within a range. */
+function _mockRandom(min, max) {
+  return min + Math.random() * (max - min);
+}
+
+/** Round to N decimal places. */
+function _mockRound(n, decimals) {
+  const f = Math.pow(10, decimals);
+  return Math.round(n * f) / f;
+}

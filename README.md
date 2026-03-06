@@ -11,6 +11,12 @@ Interactive Entity Relationship Diagram, data dictionary, and quality dashboard 
 - **Date Link Visualization** — Toggle (off by default) shows assumed DIM_DATE connections from DATE/TIMESTAMP columns as dashed purple lines.
 - **Multi-Format Export** — Download ERD as PNG (3x resolution), SVG (vector), or Mermaid `.mmd` file via dropdown menu.
 
+### Data Profiling
+- **On-Demand Profiling** — Click "Profile" button in table detail panel to fetch column statistics. Hybrid engine: Keboola native profiling API (exact stats over all rows) + data-preview API (1000-row sample for $NOVALUE rates, min/max, top values).
+- **$NOVALUE Detection** — Color-coded `$NV: X%` badges on `_ID` columns showing $NOVALUE rates. Green <5%, yellow 5-20%, red >=20%.
+- **Expandable Column Stats** — Click chevron on any column row to see null rate bar, distinct count, min/max (type-aware), $NOVALUE section, top 5 values. Footer shows whether stats are exact (native profile) or approximate (sample).
+- **Profiling Cache** — Server-side 30-minute TTL cache per table with request deduplication and rate limiting.
+
 ### Table Browser & Data Quality
 - **Table Browser** — Full-page searchable listing with category filters, tag filters, and sort (by category, name, rows, columns, size).
 - **Collaborative Tags** — Predefined tags (verified, needs-review, deprecated, core, wip, sensitive) + custom free-form tags. Stored as JSON in Keboola metadata (`bdm.tags` key). Tag chips on table cards, tag editor in detail panel, filter-by-tag in browser toolbar.
@@ -41,6 +47,7 @@ Browser (port 8888)
               +-- GET  /api/table/:tableId     <- Single table with relationships
               +-- PUT  /api/descriptions       <- Update table/column descriptions -> Keboola API
               +-- PUT  /api/tags               <- Update table tags -> Keboola metadata (bdm.tags)
+              +-- GET  /api/profile/:tableId   <- On-demand column profiling (hybrid native + sample)
               +-- POST /api/refresh            <- Trigger cache refresh
               +-- GET  /api/health             <- Health check
 ```
@@ -170,6 +177,7 @@ Edit `server/overrides.json`:
 | `GET` | `/api/table/:tableId` | Single table with columns + relationships |
 | `PUT` | `/api/descriptions` | Update table/column descriptions -> Keboola Storage API |
 | `PUT` | `/api/tags` | Update table tags -> Keboola metadata (`bdm.tags` key) |
+| `GET` | `/api/profile/:tableId` | On-demand column profiling (hybrid native + sample) |
 | `POST` | `/api/refresh` | Trigger server-side metadata refresh |
 | `GET/POST` | `/` | React SPA (POST supported for Keboola liveness checks) |
 
@@ -223,6 +231,7 @@ bdm-data-dictionary/
 |   +-- index.js                     # Express server + API routes + mock data fallback
 |   +-- keboola-client.js            # Keboola Storage API wrapper (read + write)
 |   +-- metadata-cache.js            # In-memory cache with auto-refresh
+|   +-- profiling-cache.js           # Hybrid profiling engine (native + sample)
 |   +-- inference.js                 # FK inference engine
 |   +-- mock-data.js                 # Mock data generator for local development
 |   +-- overrides.json               # FK alias/skip/add/remove rules
@@ -237,8 +246,10 @@ bdm-data-dictionary/
 |   |   |   +-- TableNode.tsx        # Custom node rendering
 |   |   |   +-- useErdLayout.ts      # Dagre layout + highlight logic
 |   |   +-- table-detail/            # Table detail panel
-|   |   |   +-- TableDetailPanel.tsx # Floating sidebar with inline editing + tags
-|   |   |   +-- ColumnTable.tsx      # Column grid with types + inline editing
+|   |   |   +-- TableDetailPanel.tsx # Floating sidebar with inline editing + tags + profiling
+|   |   |   +-- ColumnTable.tsx      # Column grid with expandable profile rows
+|   |   |   +-- ColumnProfileDrawer.tsx # Expandable stats drawer per column
+|   |   |   +-- NoValueBadge.tsx     # Inline $NOVALUE rate badge for _ID columns
 |   |   |   +-- RelationshipList.tsx # FK relationships grouped by direction
 |   |   |   +-- TypeBadge.tsx        # Type-specific color badges
 |   |   +-- table-browser/           # Table browser page
@@ -264,6 +275,7 @@ bdm-data-dictionary/
 |   |   +-- useTheme.ts              # Dark/light theme
 |   |   +-- useDescriptionEditor.ts  # Edit state + API submission
 |   |   +-- useTags.ts               # Tag update API hook
+|   |   +-- useProfile.ts            # On-demand profiling fetch
 |   +-- lib/
 |   |   +-- types.ts                 # TypeScript interfaces + tag types
 |   |   +-- constants.ts             # Category colors, sort priority, tag config

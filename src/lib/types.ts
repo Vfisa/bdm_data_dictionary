@@ -78,5 +78,31 @@ export interface DescriptionUpdate {
   description: string
 }
 
+/** Per-column profiling statistics */
+export interface ColumnProfile {
+  columnName: string
+  nullCount: number
+  nullRate: number
+  distinctCount: number
+  duplicateCount: number
+  isExact: boolean
+  min: string | number | null
+  max: string | number | null
+  novalueCount: number
+  novalueRate: number
+  topValues: { value: string; count: number }[]
+  sampleValues: string[]
+}
+
+/** Table-level profiling result from GET /api/profile/:tableId */
+export interface TableProfile {
+  tableId: string
+  sampleSize: number
+  totalRows: number
+  profiledAt: string
+  hasNativeProfile: boolean
+  columns: ColumnProfile[]
+}
+
 /** App navigation page */
 export type Page = 'erd' | 'tables'

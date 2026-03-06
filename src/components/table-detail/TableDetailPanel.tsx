@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useState, useMemo } from 'react'
-import { X, Database, Rows3, HardDrive, Columns3, Clock } from 'lucide-react'
+import { X, Database, Rows3, HardDrive, Columns3, Clock, FlaskConical, Loader2, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { InlineEditor } from '@/components/ui/InlineEditor'
@@ -10,6 +10,7 @@ import { RelationshipList } from './RelationshipList'
 import { CATEGORY_CONFIG } from '@/lib/constants'
 import { formatNumber, formatBytes, timeAgo } from '@/lib/utils'
 import { useDescriptionEditor } from '@/hooks/useDescriptionEditor'
+import { useProfile } from '@/hooks/useProfile'
 import type { MetadataResponse } from '@/lib/types'
 
 interface TableDetailPanelProps {
@@ -29,6 +30,12 @@ export function TableDetailPanel({
 }: TableDetailPanelProps) {
   const [isVisible, setIsVisible] = useState(false)
   const editor = useDescriptionEditor()
+  const { profile, isLoading: profileLoading, error: profileError, fetchProfile, clearProfile } = useProfile()
+
+  // Clear profile when table changes
+  useEffect(() => {
+    clearProfile()
+  }, [tableName, clearProfile])
 
   // Find the table data
   const table = useMemo(
@@ -168,15 +175,50 @@ export function TableDetailPanel({
         <div className="flex-1 overflow-y-auto">
           {/* Columns section */}
           <div className="p-5">
-            <h3 className="text-sm font-semibold text-[var(--foreground)] uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <Database className="h-4 w-4" />
-              Columns
-            </h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold text-[var(--foreground)] uppercase tracking-wider flex items-center gap-1.5">
+                <Database className="h-4 w-4" />
+                Columns
+              </h3>
+              <div className="flex items-center gap-2">
+                {profile && (
+                  <span className="text-[10px] text-[var(--muted-foreground)]">
+                    Profiled {timeAgo(profile.profiledAt)}
+                  </span>
+                )}
+                <button
+                  onClick={() => table && fetchProfile(table.id)}
+                  disabled={profileLoading}
+                  className="flex items-center gap-1 text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors disabled:opacity-50"
+                  title="Profile column data"
+                >
+                  {profileLoading ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <FlaskConical className="h-3.5 w-3.5" />
+                  )}
+                  Profile
+                </button>
+              </div>
+            </div>
+            {profileError && (
+              <div className="mb-2 flex items-center gap-1.5 text-xs text-yellow-600 dark:text-yellow-400">
+                <AlertTriangle className="h-3 w-3 shrink-0" />
+                <span>{profileError}</span>
+                <button
+                  onClick={() => table && fetchProfile(table.id)}
+                  className="underline hover:no-underline"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
             <ColumnTable
               columns={table.columns}
               primaryKey={table.primaryKey}
               tableId={table.id}
               onDescriptionUpdated={onDescriptionUpdated}
+              profile={profile}
             />
           </div>
 
