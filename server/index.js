@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { MetadataCache } from './metadata-cache.js';
+import { generateMockMetadata } from './mock-data.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -12,11 +13,15 @@ const KBC_TOKEN = process.env.KBC_TOKEN;
 const KBC_URL = process.env.KBC_URL;
 const BUCKET_ID = process.env.BUCKET_ID || 'out.c-bdm';
 
-if (!KBC_TOKEN || !KBC_URL) {
+const USE_MOCK = !KBC_TOKEN || !KBC_URL;
+let mockData = null;
+
+if (USE_MOCK) {
   console.warn(
-    'WARNING: KBC_TOKEN or KBC_URL not set. API endpoints will not work.\n' +
+    'WARNING: KBC_TOKEN or KBC_URL not set. Using mock data for development.\n' +
     'Set them in .env or as environment variables for full functionality.'
   );
+  mockData = generateMockMetadata();
 }
 
 // --- Metadata cache ---
@@ -54,6 +59,11 @@ app.get('/api/health', (_req, res) => {
 
 // Full metadata payload — tables, edges, categories
 app.get('/api/metadata', (_req, res) => {
+  // Serve mock data in development mode
+  if (USE_MOCK && mockData) {
+    return res.json(mockData);
+  }
+
   if (!cache) {
     return res.status(503).json({
       error: 'Metadata not available — KBC_TOKEN or KBC_URL not configured',
@@ -90,8 +100,36 @@ app.get('/api/table/:tableId', (req, res) => {
   res.json(table);
 });
 
-// Update descriptions — propagates to Keboola Storage API
+// Update descriptions — propagates to Keboola Storage API (or mock in dev)
 app.put('/api/descriptions', async (req, res) => {
+  // In mock mode, accept updates and apply to in-memory mock data
+  if (USE_MOCK && mockData) {
+    const { updates } = req.body;
+    if (!Array.isArray(updates) || updates.length === 0) {
+      return res.status(400).json({ error: 'Missing or empty updates array' });
+    }
+    const results = updates.map((update) => {
+      const { itemId, description } = update;
+      const parts = itemId.split('.');
+      if (parts.length === 3) {
+        const table = mockData.tables.find((t) => t.id === itemId);
+        if (table) table.description = description;
+        return { itemId, success: true };
+      } else if (parts.length === 4) {
+        const tableId = parts.slice(0, 3).join('.');
+        const colName = parts[3];
+        const table = mockData.tables.find((t) => t.id === tableId);
+        if (table) {
+          const col = table.columns.find((c) => c.name === colName);
+          if (col) col.description = description;
+        }
+        return { itemId, success: true };
+      }
+      return { itemId, success: false, error: 'Invalid itemId format' };
+    });
+    return res.json({ results });
+  }
+
   if (!cache) {
     return res.status(503).json({
       error: 'Metadata not available — KBC_TOKEN or KBC_URL not configured',
