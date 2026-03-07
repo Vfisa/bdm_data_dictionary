@@ -111,5 +111,8 @@ export interface DataPreviewResult {
   totalAvailable: number
 }
 
+/** Stats filter for clickable KPI cards */
+export type StatsFilter = 'missingTableDesc' | 'missingColDesc' | 'emptyTables' | null
+
 /** App navigation page */
 export type Page = 'erd' | 'tables'

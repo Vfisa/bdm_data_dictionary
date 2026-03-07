@@ -7,7 +7,7 @@ import { TableList } from '@/components/table-browser/TableList'
 import { StatsDashboard } from '@/components/table-browser/StatsDashboard'
 import { CATEGORY_ORDER, CATEGORY_SORT_PRIORITY, TAG_CONFIG } from '@/lib/constants'
 import { toHumanName } from '@/lib/human-name'
-import type { MetadataResponse, Category } from '@/lib/types'
+import type { MetadataResponse, Category, StatsFilter } from '@/lib/types'
 
 interface TableBrowserPageProps {
   metadata: MetadataResponse
@@ -23,6 +23,7 @@ export function TableBrowserPage({ metadata, onDescriptionUpdated }: TableBrowse
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const [selectedTable, setSelectedTable] = useState<string | null>(null)
   const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null)
+  const [activeStatsFilter, setActiveStatsFilter] = useState<StatsFilter>(null)
 
   // Toggle category filter
   const toggleCategory = useCallback((category: Category) => {
@@ -79,6 +80,11 @@ export function TableBrowserPage({ metadata, onDescriptionUpdated }: TableBrowse
       // Tag filter
       if (activeTagFilter && !(t.tags || []).includes(activeTagFilter)) return false
 
+      // Stats KPI filter
+      if (activeStatsFilter === 'missingTableDesc' && t.description) return false
+      if (activeStatsFilter === 'missingColDesc' && !t.columns.some((c) => !c.description)) return false
+      if (activeStatsFilter === 'emptyTables' && t.rowsCount > 0) return false
+
       // Search filter: match table name, human name, OR column names
       if (q) {
         const nameMatch = t.name.toLowerCase().includes(q)
@@ -120,7 +126,7 @@ export function TableBrowserPage({ metadata, onDescriptionUpdated }: TableBrowse
     })
 
     return tables
-  }, [metadata.tables, searchQuery, visibleCategories, activeTagFilter, sortField, sortDirection])
+  }, [metadata.tables, searchQuery, visibleCategories, activeTagFilter, activeStatsFilter, sortField, sortDirection])
 
   // Table selection for detail panel
   const handleSelectTable = useCallback((tableName: string) => {
@@ -132,7 +138,7 @@ export function TableBrowserPage({ metadata, onDescriptionUpdated }: TableBrowse
       {/* Toolbar */}
       <div className="shrink-0 border-b border-[var(--border)] bg-[var(--card)] px-4 py-2 space-y-2">
         {/* Row 1: Stats Dashboard */}
-        <StatsDashboard metadata={metadata} />
+        <StatsDashboard metadata={metadata} activeFilter={activeStatsFilter} onFilterClick={setActiveStatsFilter} />
 
         {/* Row 2: Search + Category filters + Sort — all on one line */}
         <div className="flex items-center gap-3">
@@ -198,10 +204,21 @@ export function TableBrowserPage({ metadata, onDescriptionUpdated }: TableBrowse
               )}
             </div>
           )}
-          <p className="text-xs text-[var(--muted-foreground)] shrink-0 ml-auto">
+          <p className="text-xs text-[var(--muted-foreground)] shrink-0 ml-auto flex items-center gap-1.5">
             {filteredTables.length} of {metadata.tables.length} tables
             {searchQuery && ` matching "${searchQuery}"`}
             {activeTagFilter && ` tagged "${activeTagFilter}"`}
+            {activeStatsFilter === 'missingTableDesc' && ' — missing table description'}
+            {activeStatsFilter === 'missingColDesc' && ' — missing column descriptions'}
+            {activeStatsFilter === 'emptyTables' && ' — empty tables'}
+            {activeStatsFilter && (
+              <button
+                onClick={() => setActiveStatsFilter(null)}
+                className="underline hover:no-underline cursor-pointer"
+              >
+                clear
+              </button>
+            )}
           </p>
         </div>
       </div>
