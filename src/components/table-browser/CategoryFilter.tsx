@@ -40,7 +40,7 @@ export function CategoryFilter({
                 opacity: isVisible ? 1 : 0.4,
               }}
             />
-            {config.label}
+            {config.shortCode}
             <span className="text-[10px] opacity-60">{count}</span>
           </button>
         )

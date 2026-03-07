@@ -3,6 +3,8 @@ import type { Category, PredefinedTag } from './types'
 /** Category display configuration */
 export const CATEGORY_CONFIG: Record<Category, {
   label: string
+  shortCode: string
+  groupLabel: string
   color: string
   bgLight: string
   bgDark: string
@@ -14,6 +16,8 @@ export const CATEGORY_CONFIG: Record<Category, {
 }> = {
   DIM: {
     label: 'Dimension',
+    shortCode: 'DIM',
+    groupLabel: 'Dimension',
     color: '#3b82f6',
     bgLight: 'bg-blue-50',
     bgDark: 'dark:bg-blue-950',
@@ -25,6 +29,8 @@ export const CATEGORY_CONFIG: Record<Category, {
   },
   FCT: {
     label: 'Fact',
+    shortCode: 'FCT',
+    groupLabel: 'Fact Tables',
     color: '#22c55e',
     bgLight: 'bg-green-50',
     bgDark: 'dark:bg-green-950',
@@ -36,6 +42,8 @@ export const CATEGORY_CONFIG: Record<Category, {
   },
   FCTH: {
     label: 'Fact (Historical)',
+    shortCode: 'FCTH',
+    groupLabel: 'Fact Historical',
     color: '#16a34a',
     bgLight: 'bg-green-50',
     bgDark: 'dark:bg-green-950',
@@ -47,6 +55,8 @@ export const CATEGORY_CONFIG: Record<Category, {
   },
   MAP: {
     label: 'Mapping',
+    shortCode: 'MAP',
+    groupLabel: 'Mapping',
     color: '#f97316',
     bgLight: 'bg-orange-50',
     bgDark: 'dark:bg-orange-950',
@@ -58,6 +68,8 @@ export const CATEGORY_CONFIG: Record<Category, {
   },
   AUX: {
     label: 'Auxiliary',
+    shortCode: 'AUX',
+    groupLabel: 'Auxiliary',
     color: '#6b7280',
     bgLight: 'bg-gray-50',
     bgDark: 'dark:bg-gray-900',
@@ -69,6 +81,8 @@ export const CATEGORY_CONFIG: Record<Category, {
   },
   REF: {
     label: 'Reference',
+    shortCode: 'REF',
+    groupLabel: 'Reference',
     color: '#06b6d4',
     bgLight: 'bg-cyan-50',
     bgDark: 'dark:bg-cyan-950',
@@ -80,6 +94,8 @@ export const CATEGORY_CONFIG: Record<Category, {
   },
   OTHER: {
     label: 'Other',
+    shortCode: 'OTH',
+    groupLabel: 'Other',
     color: '#64748b',
     bgLight: 'bg-slate-50',
     bgDark: 'dark:bg-slate-900',
