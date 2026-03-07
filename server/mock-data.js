@@ -461,6 +461,68 @@ export function generateMockProfile(table) {
   };
 }
 
+/**
+ * Generate mock data preview rows for a table.
+ */
+export function generateMockPreview(table, limit = 20) {
+  if (!table || table.rowsCount === 0) {
+    return { columns: table?.columns?.map((c) => c.name) || [], rows: [], totalAvailable: 0 };
+  }
+  const columns = table.columns.map((c) => c.name);
+  const count = Math.min(limit, table.rowsCount, 20);
+  const rows = [];
+  for (let i = 0; i < count; i++) {
+    const row = {};
+    for (const col of table.columns) {
+      row[col.name] = _generateMockCell(col, i, table.primaryKey || []);
+    }
+    rows.push(row);
+  }
+  return { columns, rows, totalAvailable: count };
+}
+
+function _generateMockCell(col, rowIndex, primaryKey) {
+  const baseType = (col.keboolaBaseType || 'STRING').toUpperCase();
+  const isPK = primaryKey.includes(col.name);
+  const isId = col.name.endsWith('_ID');
+
+  if (isPK) return String(rowIndex + 1);
+
+  if (isId) {
+    // Occasionally return $NOVALUE for nullable FK columns
+    if (col.nullable && rowIndex % 7 === 0) return '$NOVALUE';
+    return String(Math.round(Math.random() * 9999) + 1);
+  }
+
+  if (baseType === 'INTEGER') return String(Math.round(Math.random() * 10000));
+  if (baseType === 'NUMERIC' || baseType === 'FLOAT') return (Math.random() * 1000).toFixed(2);
+  if (baseType === 'BOOLEAN') return Math.random() > 0.3 ? 'true' : 'false';
+
+  if (baseType === 'DATE') {
+    const d = new Date(2023, 0, 1 + Math.floor(Math.random() * 1000));
+    return d.toISOString().split('T')[0];
+  }
+  if (baseType === 'TIMESTAMP') {
+    const d = new Date(2023, 0, 1 + Math.floor(Math.random() * 1000));
+    return d.toISOString().replace('T', ' ').slice(0, 19);
+  }
+
+  // String type — use column name hints for realistic data
+  const name = col.name.toUpperCase();
+  if (name.includes('NAME')) return ['Acme Corp', 'Global Trade', 'Sky Cargo', 'Fast Ship', 'Air One', 'Euro Freight', 'Nordic Express', 'Sea Bridge', 'Trade Link', 'Apex Logistics'][rowIndex % 10];
+  if (name.includes('EMAIL')) return `user${rowIndex + 1}@example.com`;
+  if (name.includes('STATUS')) return ['Active', 'Inactive', 'Pending', 'Completed'][rowIndex % 4];
+  if (name.includes('CODE')) return ['US', 'GB', 'DE', 'FR', 'CZ', 'NL', 'AT', 'PL'][rowIndex % 8];
+  if (name.includes('TYPE')) return ['Standard', 'Express', 'Economy', 'Premium'][rowIndex % 4];
+  if (name.includes('METHOD')) return ['Credit Card', 'Wire Transfer', 'PayPal', 'Invoice'][rowIndex % 4];
+  if (name.includes('CURRENCY')) return ['USD', 'EUR', 'GBP', 'CZK'][rowIndex % 4];
+  if (name.includes('COUNTRY')) return ['United States', 'Germany', 'France', 'Czech Republic', 'Netherlands'][rowIndex % 5];
+  if (name.includes('CITY')) return ['Prague', 'Berlin', 'Paris', 'Amsterdam', 'Vienna', 'London'][rowIndex % 6];
+  if (name.includes('DESCRIPTION') || name.includes('NOTE')) return `Sample description for row ${rowIndex + 1}`;
+  if (name.includes('PHONE')) return `+1-555-${String(1000 + rowIndex).padStart(4, '0')}`;
+  return `val_${rowIndex + 1}`;
+}
+
 /** Seeded random for reproducible mock data within a range. */
 function _mockRandom(min, max) {
   return min + Math.random() * (max - min);

@@ -1,13 +1,15 @@
 import { useEffect, useMemo } from 'react'
-import { Database, Rows3, HardDrive, Columns3, Clock, FlaskConical, Loader2, AlertTriangle } from 'lucide-react'
+import { Database, Rows3, HardDrive, Columns3, Clock, FlaskConical, Loader2, AlertTriangle, Table2 } from 'lucide-react'
 import { InlineEditor } from '@/components/ui/InlineEditor'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { TagEditor } from '@/components/tags/TagEditor'
 import { ColumnTable } from '@/components/table-detail/ColumnTable'
 import { RelationshipList } from '@/components/table-detail/RelationshipList'
+import { DataPreviewTable } from './DataPreviewTable'
 import { formatNumber, formatBytes, timeAgo } from '@/lib/utils'
 import { useDescriptionEditor } from '@/hooks/useDescriptionEditor'
 import { useProfile } from '@/hooks/useProfile'
+import { useDataPreview } from '@/hooks/useDataPreview'
 import type { MetadataResponse, TableSummary } from '@/lib/types'
 
 interface TableExpandedDetailProps {
@@ -25,11 +27,13 @@ export function TableExpandedDetail({
 }: TableExpandedDetailProps) {
   const editor = useDescriptionEditor()
   const { profile, isLoading: profileLoading, error: profileError, fetchProfile, clearProfile } = useProfile()
+  const { data: previewData, isLoading: previewLoading, error: previewError, fetchPreview, clearPreview } = useDataPreview()
 
-  // Clear profile when table changes
+  // Clear profile and preview when table changes
   useEffect(() => {
     clearProfile()
-  }, [table.id, clearProfile])
+    clearPreview()
+  }, [table.id, clearProfile, clearPreview])
 
   // Compute relationships
   const outgoing = useMemo(
@@ -90,11 +94,18 @@ export function TableExpandedDetail({
         />
       </div>
 
-      {/* Data Preview placeholder — will be replaced in Task 5 */}
+      {/* Data Preview */}
       <div className="px-5 pb-3">
-        <div className="rounded-lg border border-dashed border-[var(--border)] p-4 text-center text-xs text-[var(--muted-foreground)]">
-          Data preview coming soon
-        </div>
+        <h3 className="text-sm font-semibold text-[var(--foreground)] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <Table2 className="h-4 w-4" />
+          Data Preview
+        </h3>
+        <DataPreviewTable
+          data={previewData}
+          isLoading={previewLoading}
+          error={previewError}
+          onFetch={() => fetchPreview(table.id)}
+        />
       </div>
 
       {/* Columns section */}

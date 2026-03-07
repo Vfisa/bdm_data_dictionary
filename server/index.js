@@ -3,7 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { MetadataCache } from './metadata-cache.js';
 import { createProfilingCache } from './profiling-cache.js';
-import { generateMockMetadata, generateMockProfile } from './mock-data.js';
+import { generateMockMetadata, generateMockProfile, generateMockPreview } from './mock-data.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -254,6 +254,52 @@ app.get('/api/profile/:tableId', async (req, res) => {
   } catch (err) {
     console.error(`GET /api/profile/${tableId} failed:`, err.message);
     res.status(500).json({ error: `Profiling failed: ${err.message}` });
+  }
+});
+
+// Data preview — row-level sample data for a table
+app.get('/api/preview/:tableId', async (req, res) => {
+  const tableId = req.params.tableId;
+  const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+
+  // Mock mode
+  if (USE_MOCK && mockData) {
+    const table = mockData.tables.find((t) => t.id === tableId);
+    if (!table) {
+      return res.status(404).json({ error: `Table not found: ${tableId}` });
+    }
+    return res.json(generateMockPreview(table, limit));
+  }
+
+  if (!cache) {
+    return res.status(503).json({
+      error: 'Preview not available — KBC_TOKEN or KBC_URL not configured',
+    });
+  }
+
+  const metadata = cache.getMetadata();
+  if (!metadata) {
+    return res.status(503).json({ error: 'Metadata cache is still loading.' });
+  }
+
+  const table = metadata.tables.find((t) => t.id === tableId);
+  if (!table) {
+    return res.status(404).json({ error: `Table not found: ${tableId}` });
+  }
+
+  try {
+    const colNames = table.columns.map((c) => c.name);
+    const csvText = await cache.getClient().getDataPreview(tableId, limit, colNames);
+    const { parse } = await import('csv-parse/sync');
+    const rows = parse(csvText, { columns: true, skip_empty_lines: true, relax_column_count: true });
+    res.json({
+      columns: colNames,
+      rows: rows.slice(0, limit),
+      totalAvailable: rows.length,
+    });
+  } catch (err) {
+    console.error(`GET /api/preview/${tableId} failed:`, err.message);
+    res.status(500).json({ error: `Preview failed: ${err.message}` });
   }
 });
 

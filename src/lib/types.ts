@@ -104,5 +104,12 @@ export interface TableProfile {
   columns: ColumnProfile[]
 }
 
+/** Data preview result from GET /api/preview/:tableId */
+export interface DataPreviewResult {
+  columns: string[]
+  rows: Record<string, string>[]
+  totalAvailable: number
+}
+
 /** App navigation page */
 export type Page = 'erd' | 'tables'
