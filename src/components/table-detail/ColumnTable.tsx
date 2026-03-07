@@ -1,4 +1,4 @@
-import { Key, CircleDot, Info, Pencil, ChevronRight } from 'lucide-react'
+import { Key, CircleDot, Pencil, ChevronRight, ArrowRight } from 'lucide-react'
 import { useState } from 'react'
 import { TypeBadge } from './TypeBadge'
 import { NoValueBadge } from './NoValueBadge'
@@ -6,6 +6,7 @@ import { ColumnProfileDrawer } from './ColumnProfileDrawer'
 import { InlineEditor } from '@/components/ui/InlineEditor'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useDescriptionEditor } from '@/hooks/useDescriptionEditor'
+import { toHumanName } from '@/lib/human-name'
 import type { Column, TableProfile } from '@/lib/types'
 import { NOVALUE_SENTINEL } from '@/lib/qa-stats'
 
@@ -15,9 +16,13 @@ interface ColumnTableProps {
   tableId?: string
   onDescriptionUpdated?: () => void
   profile?: TableProfile | null
+  /** Map of column name → FK target table name (e.g. "CARRIER_ID" → "REF_CARRIER") */
+  fkTargetMap?: Map<string, string>
+  /** Navigate to a table by name */
+  onNavigate?: (tableName: string) => void
 }
 
-export function ColumnTable({ columns, primaryKey, tableId, onDescriptionUpdated, profile }: ColumnTableProps) {
+export function ColumnTable({ columns, primaryKey, tableId, onDescriptionUpdated, profile, fkTargetMap, onNavigate }: ColumnTableProps) {
   const pkSet = new Set(primaryKey)
   const editor = useDescriptionEditor()
   const [editingColumn, setEditingColumn] = useState<string | null>(null)
@@ -26,32 +31,28 @@ export function ColumnTable({ columns, primaryKey, tableId, onDescriptionUpdated
   const toggleExpanded = (colName: string) => {
     setExpandedColumns((prev) => {
       const next = new Set(prev)
-      if (next.has(colName)) {
-        next.delete(colName)
-      } else {
-        next.add(colName)
-      }
+      if (next.has(colName)) next.delete(colName)
+      else next.add(colName)
       return next
     })
   }
 
-  // Build lookup for column profiles
   const profileMap = new Map(
     (profile?.columns ?? []).map((cp) => [cp.columnName, cp])
   )
 
   return (
-    <div className="overflow-auto max-h-[500px]">
+    <div className="overflow-auto max-h-[400px]">
       <table className="w-full text-sm">
         <thead className="sticky top-0 bg-[var(--card)] z-10">
           <tr className="border-b border-[var(--border)]">
-            <th className="text-left py-2 px-2 font-medium text-[var(--muted-foreground)]">
+            <th className="text-left py-1.5 px-2 text-[11px] font-medium text-[var(--muted-foreground)]">
               Column
             </th>
-            <th className="text-left py-2 px-2 font-medium text-[var(--muted-foreground)]">
+            <th className="text-left py-1.5 px-2 text-[11px] font-medium text-[var(--muted-foreground)]">
               Type
             </th>
-            <th className="text-center py-2 px-1 font-medium text-[var(--muted-foreground)]" title="Nullable">
+            <th className="text-center py-1.5 px-1 text-[11px] font-medium text-[var(--muted-foreground)] w-10" title="Nullable">
               Null
             </th>
           </tr>
@@ -63,6 +64,7 @@ export function ColumnTable({ columns, primaryKey, tableId, onDescriptionUpdated
             const colProfile = profileMap.get(col.name)
             const isExpanded = expandedColumns.has(col.name)
             const canExpand = !!colProfile
+            const fkTarget = fkTargetMap?.get(col.name)
 
             return (
               <tr
@@ -75,8 +77,9 @@ export function ColumnTable({ columns, primaryKey, tableId, onDescriptionUpdated
                     className={`flex items-start hover:bg-[var(--muted)] transition-colors ${canExpand ? 'cursor-pointer' : ''}`}
                     onClick={() => canExpand && toggleExpanded(col.name)}
                   >
-                    {/* Column name + description */}
-                    <div className="flex-1 py-2 px-2">
+                    {/* Column name + FK link + description */}
+                    <div className="flex-1 py-1.5 px-2">
+                      {/* Line 1: column metadata */}
                       <div className="flex items-center gap-1.5">
                         {canExpand && (
                           <ChevronRight className={`h-3 w-3 text-[var(--muted-foreground)] shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
@@ -87,15 +90,31 @@ export function ColumnTable({ columns, primaryKey, tableId, onDescriptionUpdated
                         <span className={`font-mono text-xs ${isPK ? 'font-semibold text-[var(--foreground)]' : 'text-[var(--foreground)]'}`}>
                           {col.name}
                         </span>
-                        {isIdColumn && !isPK && !colProfile && (
+                        {isIdColumn && !colProfile && !fkTarget && (
                           <span title={`May contain ${NOVALUE_SENTINEL} for missing references`}>
-                            <Info className="h-3 w-3 text-[var(--muted-foreground)] opacity-40 shrink-0" />
+                            <span className="text-[var(--muted-foreground)] opacity-40 text-[10px]">ℹ</span>
                           </span>
                         )}
                         {isIdColumn && colProfile && profile && (
                           <NoValueBadge columnProfile={colProfile} sampleSize={profile.sampleSize} />
                         )}
+                        {/* FK link */}
+                        {fkTarget && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onNavigate?.(fkTarget)
+                            }}
+                            className="inline-flex items-center gap-0.5 text-[10px] text-[var(--primary)] hover:underline cursor-pointer shrink-0"
+                            title={`Navigate to ${fkTarget}`}
+                          >
+                            <ArrowRight className="h-2.5 w-2.5" />
+                            {toHumanName(fkTarget)}
+                          </button>
+                        )}
                       </div>
+
+                      {/* Line 2: description subtitle (always visible) */}
                       {tableId && editingColumn === col.name ? (
                         <div className="mt-0.5" onClick={(e) => e.stopPropagation()}>
                           <InlineEditor
@@ -116,14 +135,14 @@ export function ColumnTable({ columns, primaryKey, tableId, onDescriptionUpdated
                       ) : (
                         <div className="group/desc flex items-center gap-1 mt-0.5">
                           {col.description ? (
-                            <p className="text-[11px] text-[var(--muted-foreground)] line-clamp-2">
+                            <p className="text-[11px] text-[var(--muted-foreground)] line-clamp-1">
                               {col.description}
                             </p>
-                          ) : tableId ? (
-                            <p className="text-[11px] text-[var(--muted-foreground)] italic opacity-0 group-hover/desc:opacity-50 transition-opacity">
-                              Add description...
+                          ) : (
+                            <p className="text-[11px] text-[var(--muted-foreground)]/50 italic">
+                              No description
                             </p>
-                          ) : null}
+                          )}
                           {tableId && (
                             <button
                               onClick={(e) => {
@@ -141,7 +160,7 @@ export function ColumnTable({ columns, primaryKey, tableId, onDescriptionUpdated
                     </div>
 
                     {/* Type */}
-                    <div className="py-2 px-2 shrink-0">
+                    <div className="py-1.5 px-2 shrink-0">
                       <TypeBadge
                         baseType={col.keboolaBaseType}
                         nativeType={col.databaseNativeType}
@@ -149,7 +168,7 @@ export function ColumnTable({ columns, primaryKey, tableId, onDescriptionUpdated
                     </div>
 
                     {/* Nullable */}
-                    <div className="py-2 px-1 shrink-0 w-10 text-center">
+                    <div className="py-1.5 px-1 shrink-0 w-10 text-center">
                       {col.nullable ? (
                         <span title="Nullable"><CircleDot className="h-3 w-3 text-[var(--muted-foreground)] mx-auto" /></span>
                       ) : (
@@ -176,7 +195,6 @@ export function ColumnTable({ columns, primaryKey, tableId, onDescriptionUpdated
         </tbody>
       </table>
 
-      {/* Confirm dialog for column description edits */}
       <ConfirmDialog
         open={!!editor.pendingEdit}
         title="Update Column Description"

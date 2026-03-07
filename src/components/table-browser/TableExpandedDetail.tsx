@@ -29,13 +29,11 @@ export function TableExpandedDetail({
   const { profile, isLoading: profileLoading, error: profileError, fetchProfile, clearProfile } = useProfile()
   const { data: previewData, isLoading: previewLoading, error: previewError, fetchPreview, clearPreview } = useDataPreview()
 
-  // Clear profile and preview when table changes
   useEffect(() => {
     clearProfile()
     clearPreview()
   }, [table.id, clearProfile, clearPreview])
 
-  // Compute relationships
   const outgoing = useMemo(
     () => metadata.edges.filter((e) => e.source === table.name),
     [metadata.edges, table.name],
@@ -45,14 +43,22 @@ export function TableExpandedDetail({
     [metadata.edges, table.name],
   )
 
+  // Build FK target map: columnName → target table name (for _ID columns with outgoing edges)
+  const fkTargetMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const edge of outgoing) {
+      map.set(edge.sourceColumn, edge.target)
+    }
+    return map
+  }, [outgoing])
+
   return (
     <div
       className="border-t border-[var(--border)] bg-[var(--muted)]/30"
       onClick={(e) => e.stopPropagation()}
     >
-      {/* Description + Stats */}
+      {/* Description + Stats + Tags */}
       <div className="px-5 py-4 space-y-3">
-        {/* Description editor */}
         <div className="text-sm text-[var(--muted-foreground)]">
           <InlineEditor
             value={table.description}
@@ -64,7 +70,6 @@ export function TableExpandedDetail({
           />
         </div>
 
-        {/* Stats bar */}
         <div className="flex items-center gap-4 px-3 py-2 rounded-md bg-[var(--muted)]">
           <span className="flex items-center gap-1 text-xs text-[var(--muted-foreground)]">
             <Columns3 className="h-3.5 w-3.5" />
@@ -86,7 +91,6 @@ export function TableExpandedDetail({
           )}
         </div>
 
-        {/* Tags */}
         <TagEditor
           tableId={table.id}
           tags={table.tags || []}
@@ -94,26 +98,12 @@ export function TableExpandedDetail({
         />
       </div>
 
-      {/* Data Preview */}
-      <div className="px-5 pb-3">
-        <h3 className="text-sm font-semibold text-[var(--foreground)] uppercase tracking-wider mb-2 flex items-center gap-1.5">
-          <Table2 className="h-4 w-4" />
-          Data Preview
-        </h3>
-        <DataPreviewTable
-          data={previewData}
-          isLoading={previewLoading}
-          error={previewError}
-          onFetch={() => fetchPreview(table.id)}
-        />
-      </div>
-
-      {/* Columns section */}
+      {/* 1. Columns section (max-height 400px with scroll) */}
       <div className="px-5 pb-4">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-semibold text-[var(--foreground)] uppercase tracking-wider flex items-center gap-1.5">
-            <Database className="h-4 w-4" />
-            Columns
+          <h3 className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider flex items-center gap-1.5">
+            <Database className="h-3.5 w-3.5" />
+            Columns ({table.columnCount})
           </h3>
           <div className="flex items-center gap-2">
             {profile && (
@@ -154,19 +144,37 @@ export function TableExpandedDetail({
           tableId={table.id}
           onDescriptionUpdated={onDescriptionUpdated}
           profile={profile}
+          fkTargetMap={fkTargetMap}
+          onNavigate={onNavigate}
         />
       </div>
 
-      {/* Relationships section */}
+      {/* 2. Relationships section */}
+      {(outgoing.length > 0 || incoming.length > 0) && (
+        <div className="px-5 pb-4">
+          <h3 className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider mb-2">
+            Relationships ({outgoing.length + incoming.length})
+          </h3>
+          <RelationshipList
+            outgoing={outgoing}
+            incoming={incoming}
+            onNavigate={onNavigate}
+            categories={metadata.categories}
+          />
+        </div>
+      )}
+
+      {/* 3. Data Preview (moved to bottom) */}
       <div className="px-5 pb-4">
-        <h3 className="text-sm font-semibold text-[var(--foreground)] uppercase tracking-wider mb-2">
-          Relationships
+        <h3 className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <Table2 className="h-3.5 w-3.5" />
+          Data Preview
         </h3>
-        <RelationshipList
-          outgoing={outgoing}
-          incoming={incoming}
-          onNavigate={onNavigate}
-          categories={metadata.categories}
+        <DataPreviewTable
+          data={previewData}
+          isLoading={previewLoading}
+          error={previewError}
+          onFetch={() => fetchPreview(table.id)}
         />
       </div>
 
@@ -177,7 +185,6 @@ export function TableExpandedDetail({
         </div>
       )}
 
-      {/* Confirm dialog for description edits */}
       <ConfirmDialog
         open={!!editor.pendingEdit}
         title="Update Description"
