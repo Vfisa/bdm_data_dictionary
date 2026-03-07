@@ -87,6 +87,7 @@ export function DataPreviewTable({ data, isLoading, error, onFetch }: DataPrevie
                   const val = row[col]
                   const isNovalue = val === '$NOVALUE'
                   const isEmpty = val === '' || val === null || val === undefined
+                  const isBool = typeof val === 'string' && /^(true|false)$/i.test(val)
 
                   return (
                     <td
@@ -99,7 +100,7 @@ export function DataPreviewTable({ data, isLoading, error, onFetch }: DataPrevie
                             : 'text-[var(--foreground)]'
                       }`}
                     >
-                      {isNovalue ? '$NOVALUE' : isEmpty ? 'NULL' : val}
+                      {isNovalue ? '$NOVALUE' : isEmpty ? 'NULL' : isBool ? val.toUpperCase() : val}
                     </td>
                   )
                 })}

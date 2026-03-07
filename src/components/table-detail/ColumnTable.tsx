@@ -42,14 +42,14 @@ export function ColumnTable({ columns, primaryKey, tableId, onDescriptionUpdated
   )
 
   return (
-    <div className="overflow-auto max-h-[400px]">
+    <div>
       <table className="w-full text-sm">
-        <thead className="sticky top-0 bg-[var(--card)] z-10">
+        <thead className="bg-[var(--card)]">
           <tr className="border-b border-[var(--border)]">
             <th className="text-left py-1.5 px-2 text-[11px] font-medium text-[var(--muted-foreground)]">
               Column
             </th>
-            <th className="text-left py-1.5 px-2 text-[11px] font-medium text-[var(--muted-foreground)]">
+            <th className="text-left py-1.5 px-2 text-[11px] font-medium text-[var(--muted-foreground)] w-20">
               Type
             </th>
             <th className="text-center py-1.5 px-1 text-[11px] font-medium text-[var(--muted-foreground)] w-10" title="Nullable">
@@ -160,7 +160,7 @@ export function ColumnTable({ columns, primaryKey, tableId, onDescriptionUpdated
                     </div>
 
                     {/* Type */}
-                    <div className="py-1.5 px-2 shrink-0">
+                    <div className="py-1.5 px-2 shrink-0 w-20">
                       <TypeBadge
                         baseType={col.keboolaBaseType}
                         nativeType={col.databaseNativeType}

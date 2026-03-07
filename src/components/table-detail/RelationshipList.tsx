@@ -40,24 +40,22 @@ export function RelationshipList({ outgoing, incoming, onNavigate, categories }:
           <h4 className="text-[11px] font-semibold text-[var(--muted-foreground)] uppercase tracking-wider mb-1.5">
             References ({sortedOutgoing.length})
           </h4>
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             {sortedOutgoing.map((edge) => (
               <button
                 key={edge.id}
                 onClick={() => onNavigate(edge.target)}
-                className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded-md
+                className="flex items-center gap-1.5 w-full text-left px-2 py-1 rounded-md
                   hover:bg-[var(--muted)] transition-colors group cursor-pointer"
               >
-                <ArrowRight className="h-3.5 w-3.5 text-[var(--muted-foreground)] shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <span className="text-sm font-medium text-[var(--primary)] group-hover:underline truncate block">
-                    {edge.target}
-                  </span>
-                  <span className="text-xs text-[var(--muted-foreground)] truncate block">
-                    {edge.sourceColumn} → {edge.targetColumn}
-                  </span>
-                </div>
-                <span className="text-[10px] text-[var(--muted-foreground)] px-1.5 py-0.5 rounded bg-[var(--muted)] shrink-0">
+                <ArrowRight className="h-3 w-3 text-[var(--muted-foreground)] shrink-0" />
+                <span className="text-xs text-[var(--primary)] group-hover:underline truncate">
+                  {edge.target}
+                </span>
+                <span className="text-[11px] text-[var(--muted-foreground)] truncate">
+                  {edge.sourceColumn} → {edge.targetColumn}
+                </span>
+                <span className="text-[9px] text-[var(--muted-foreground)]/60 px-1 py-0.5 rounded bg-[var(--muted)] shrink-0 ml-auto">
                   {edge.inferenceMethod}
                 </span>
               </button>
@@ -72,24 +70,22 @@ export function RelationshipList({ outgoing, incoming, onNavigate, categories }:
           <h4 className="text-[11px] font-semibold text-[var(--muted-foreground)] uppercase tracking-wider mb-1.5">
             Referenced By ({sortedIncoming.length})
           </h4>
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             {sortedIncoming.map((edge) => (
               <button
                 key={edge.id}
                 onClick={() => onNavigate(edge.source)}
-                className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded-md
+                className="flex items-center gap-1.5 w-full text-left px-2 py-1 rounded-md
                   hover:bg-[var(--muted)] transition-colors group cursor-pointer"
               >
-                <ArrowLeft className="h-3.5 w-3.5 text-[var(--muted-foreground)] shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <span className="text-sm font-medium text-[var(--primary)] group-hover:underline truncate block">
-                    {edge.source}
-                  </span>
-                  <span className="text-xs text-[var(--muted-foreground)] truncate block">
-                    {edge.sourceColumn} → {edge.targetColumn}
-                  </span>
-                </div>
-                <span className="text-[10px] text-[var(--muted-foreground)] px-1.5 py-0.5 rounded bg-[var(--muted)] shrink-0">
+                <ArrowLeft className="h-3 w-3 text-[var(--muted-foreground)] shrink-0" />
+                <span className="text-xs text-[var(--primary)] group-hover:underline truncate">
+                  {edge.source}
+                </span>
+                <span className="text-[11px] text-[var(--muted-foreground)] truncate">
+                  {edge.sourceColumn} → {edge.targetColumn}
+                </span>
+                <span className="text-[9px] text-[var(--muted-foreground)]/60 px-1 py-0.5 rounded bg-[var(--muted)] shrink-0 ml-auto">
                   {edge.inferenceMethod}
                 </span>
               </button>
