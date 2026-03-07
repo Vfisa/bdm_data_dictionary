@@ -6,6 +6,7 @@ import { SortControls, type SortField, type SortDirection } from '@/components/t
 import { TableList } from '@/components/table-browser/TableList'
 import { StatsDashboard } from '@/components/table-browser/StatsDashboard'
 import { CATEGORY_ORDER, CATEGORY_SORT_PRIORITY, TAG_CONFIG } from '@/lib/constants'
+import { toHumanName } from '@/lib/human-name'
 import type { MetadataResponse, Category } from '@/lib/types'
 
 interface TableBrowserPageProps {
@@ -78,13 +79,14 @@ export function TableBrowserPage({ metadata, onDescriptionUpdated }: TableBrowse
       // Tag filter
       if (activeTagFilter && !(t.tags || []).includes(activeTagFilter)) return false
 
-      // Search filter: match table name OR column names
+      // Search filter: match table name, human name, OR column names
       if (q) {
         const nameMatch = t.name.toLowerCase().includes(q)
+        const humanMatch = toHumanName(t.name).toLowerCase().includes(q)
         const columnMatch = t.columns.some((c) =>
           c.name.toLowerCase().includes(q),
         )
-        if (!nameMatch && !columnMatch) return false
+        if (!nameMatch && !humanMatch && !columnMatch) return false
       }
 
       return true

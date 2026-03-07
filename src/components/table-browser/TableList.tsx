@@ -5,6 +5,7 @@ import { TagChips } from '@/components/tags/TagEditor'
 import { TableExpandedDetail } from './TableExpandedDetail'
 import { CATEGORY_CONFIG } from '@/lib/constants'
 import { formatNumber, formatBytes } from '@/lib/utils'
+import { toHumanName } from '@/lib/human-name'
 import type { TableSummary, MetadataResponse } from '@/lib/types'
 
 interface TableListProps {
@@ -92,9 +93,14 @@ export function TableList({ tables, onSelectTable, searchQuery, expandedTable, m
                     >
                       {table.category}
                     </Badge>
-                    <span className="text-base font-medium text-[var(--foreground)] truncate group-hover:text-[var(--primary)]">
-                      {table.name}
-                    </span>
+                    <div className="min-w-0">
+                      <span className="text-base font-medium text-[var(--foreground)] truncate block group-hover:text-[var(--primary)]">
+                        {toHumanName(table.name)}
+                      </span>
+                      <span className="text-[11px] font-mono text-[var(--muted-foreground)] truncate block">
+                        {table.name}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Description */}
