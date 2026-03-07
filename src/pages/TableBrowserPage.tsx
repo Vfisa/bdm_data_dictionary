@@ -128,80 +128,80 @@ export function TableBrowserPage({ metadata, onDescriptionUpdated }: TableBrowse
   return (
     <div className="relative h-full flex flex-col">
       {/* Toolbar */}
-      <div className="shrink-0 border-b border-[var(--border)] bg-[var(--card)] px-4 py-3 space-y-3">
-        {/* Stats Dashboard */}
+      <div className="shrink-0 border-b border-[var(--border)] bg-[var(--card)] px-4 py-2 space-y-2">
+        {/* Row 1: Stats Dashboard */}
         <StatsDashboard metadata={metadata} />
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--muted-foreground)]" />
-          <Input
-            placeholder="Search tables and columns..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-
-        {/* Filters + Sort */}
-        <div className="flex items-center justify-between gap-4">
+        {/* Row 2: Search + Category filters + Sort — all on one line */}
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--muted-foreground)]" />
+            <Input
+              placeholder="Search tables and columns..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-8 text-sm"
+            />
+          </div>
           <CategoryFilter
             visibleCategories={visibleCategories}
             onToggleCategory={toggleCategory}
             tableCounts={tableCounts}
           />
-          <SortControls
-            sortField={sortField}
-            sortDirection={sortDirection}
-            onSortChange={handleSortChange}
-          />
+          <div className="shrink-0 ml-auto">
+            <SortControls
+              sortField={sortField}
+              sortDirection={sortDirection}
+              onSortChange={handleSortChange}
+            />
+          </div>
         </div>
 
-        {/* Tag filter */}
-        {allTags.length > 0 && (
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <Tag className="h-3 w-3 text-[var(--muted-foreground)] shrink-0" />
-            {allTags.map((tag) => {
-              const isActive = activeTagFilter === tag
-              const config = TAG_CONFIG[tag as keyof typeof TAG_CONFIG]
-              const color = config?.color || '#8b5cf6'
-              const bg = config?.bg || '#8b5cf618'
-              return (
+        {/* Row 3: Tags + results count */}
+        <div className="flex items-center justify-between gap-2">
+          {allTags.length > 0 && (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <Tag className="h-3 w-3 text-[var(--muted-foreground)] shrink-0" />
+              {allTags.map((tag) => {
+                const isActive = activeTagFilter === tag
+                const tagConfig = TAG_CONFIG[tag as keyof typeof TAG_CONFIG]
+                const color = tagConfig?.color || '#8b5cf6'
+                const bg = tagConfig?.bg || '#8b5cf618'
+                return (
+                  <button
+                    key={tag}
+                    onClick={() => setActiveTagFilter(isActive ? null : tag)}
+                    className={`
+                      px-1.5 py-0.5 text-[11px] font-medium rounded-md border cursor-pointer transition-all
+                      ${isActive ? 'ring-1 ring-offset-1 ring-offset-[var(--background)]' : 'opacity-60 hover:opacity-100'}
+                    `}
+                    style={{
+                      backgroundColor: bg,
+                      color: color,
+                      borderColor: `${color}30`,
+                      ...(isActive ? { ringColor: color } : {}),
+                    }}
+                  >
+                    {tag}
+                  </button>
+                )
+              })}
+              {activeTagFilter && (
                 <button
-                  key={tag}
-                  onClick={() => setActiveTagFilter(isActive ? null : tag)}
-                  className={`
-                    px-1.5 py-0.5 text-[11px] font-medium rounded-md border cursor-pointer transition-all
-                    ${isActive ? 'ring-1 ring-offset-1 ring-offset-[var(--background)]' : 'opacity-60 hover:opacity-100'}
-                  `}
-                  style={{
-                    backgroundColor: bg,
-                    color: color,
-                    borderColor: `${color}30`,
-                    ...(isActive ? { ringColor: color } : {}),
-                  }}
+                  onClick={() => setActiveTagFilter(null)}
+                  className="text-[11px] text-[var(--muted-foreground)] hover:text-[var(--foreground)] cursor-pointer"
                 >
-                  {tag}
+                  clear
                 </button>
-              )
-            })}
-            {activeTagFilter && (
-              <button
-                onClick={() => setActiveTagFilter(null)}
-                className="text-[11px] text-[var(--muted-foreground)] hover:text-[var(--foreground)] cursor-pointer"
-              >
-                clear
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Results count */}
-        <p className="text-xs text-[var(--muted-foreground)]">
-          {filteredTables.length} of {metadata.tables.length} tables
-          {searchQuery && ` matching "${searchQuery}"`}
-          {activeTagFilter && ` tagged "${activeTagFilter}"`}
-        </p>
+              )}
+            </div>
+          )}
+          <p className="text-xs text-[var(--muted-foreground)] shrink-0 ml-auto">
+            {filteredTables.length} of {metadata.tables.length} tables
+            {searchQuery && ` matching "${searchQuery}"`}
+            {activeTagFilter && ` tagged "${activeTagFilter}"`}
+          </p>
+        </div>
       </div>
 
       {/* Table list */}

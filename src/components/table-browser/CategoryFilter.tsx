@@ -25,7 +25,7 @@ export function CategoryFilter({
             key={cat}
             onClick={() => onToggleCategory(cat)}
             className={`
-              inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full
+              inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded-full
               border transition-all cursor-pointer
               ${isVisible
                 ? 'border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] shadow-sm'
