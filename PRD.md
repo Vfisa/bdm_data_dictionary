@@ -563,41 +563,42 @@ All features below were implemented and committed:
 - [x] **Data preview** — `GET /api/preview/:tableId?limit=N` endpoint serving row-level data from Keboola Storage API (CSV parsed) or mock generator. DataPreviewTable component with load button, spinner, scrollable table with sticky header, `$NOVALUE` highlighting in red, NULL cells italic. Footer shows row count.
 - [x] **Clickable KPI stats** — Missing Table Desc, Missing Col Desc, and Empty Tables cards are clickable filter buttons. Active filter highlighted with ring, status text shows filter description with clear link. Toggle behavior: click active card to clear. Cards with zero value are non-clickable.
 
-### Phase 6 — Table Browser UI Refinements
+### Phase 6 — Table Browser UI Refinements (DONE)
 
 > Design mockups: `resources/PHASE6-FINAL-MOCKUP.md`
 > Earlier exploration: `resources/PHASE6-UI-PLAN.md`, `resources/PHASE6-MOCKUPS.md`, `resources/PHASE6-OPTION-D.md`
 
 **6.1 Compact Toolbar (2 rows, ~76px total — down from ~210px)**
-- [ ] **Row 1**: Search input + category chips using short codes (`FCT 3`, `REF 42`, `DIM 1`, `FCTH 1`, `MAP 6`, `AUX 7`) — colored backgrounds matching category color, all on one line
-- [ ] **Row 2**: Sort controls (Category, Name, Columns only — no Rows/Size) + QA badge (`QA 39%` color-coded) + issues badge (`⚠ 27`) + tag filter pills
-- [ ] **KPI popover**: Hovering or clicking `QA 39%` shows a popover with full project stats (60 tables, 1,046 columns, 62.1M rows, 3.2 GB, QA score bar, missing description breakdown)
-- [ ] **Stats filter via ⚠ badge**: Clicking `⚠ 27` cycles through stat filters (missing table desc → missing col desc → empty tables → clear). Active filter shown as removable chip in toolbar
-- [ ] Remove the 7 KPI stat cards row entirely — replaced by inline badges + popover
+- [x] **Row 1**: Search input + category chips using short codes (`FCT 3`, `REF 42`, `DIM 1`, `FCTH 1`, `MAP 6`, `AUX 7`)
+- [x] **Row 2**: Sort controls (Category, Name, Columns only) + QA badge (`QA 39%` color-coded) + issues badge (`⚠ 671`) + tag filter pills
+- [x] **KPI popover**: Hovering or clicking `QA 39%` shows popover with full project stats (tables, columns, rows, size, QA score bar, issues breakdown)
+- [x] **Stats filter via ⚠ badge**: Clicking cycles through stat filters (missing table desc → missing col desc → empty tables → clear). Active filter shown with ring highlight and removable ✕
+- [x] Removed 7 KPI stat cards row — replaced by inline badges + popover
 
 **6.2 Condensed Table Cards (~52px, single-line + subtitle)**
-- [ ] **Line 1**: Category color bar (4px left border) + human-friendly table name + `N columns` right-aligned (e.g. "45 columns")
-- [ ] **Line 2**: Description as muted subtitle (truncated with …), or `No description` in faint italic
-- [ ] Remove from collapsed card: row count, data size, technical name (FCT_DISPATCH), tag chips
-- [ ] Tags, rows, size, technical name all move to expanded detail only
+- [x] **Line 1**: Category color bar (4px left border) + human-friendly table name + `N columns` right-aligned
+- [x] **Line 2**: Description as muted subtitle (truncated), or `No description` in faint italic
+- [x] Removed from collapsed card: category badge, row count, data size, technical name, tag chips
+- [x] ~5x more tables visible on screen (from ~6 to ~13 cards in viewport)
 
 **6.3 Category Group Headers**
-- [ ] Tables grouped under collapsible category headers: `▼ FACT TABLES (3)`, `▼ REFERENCE (42)`, etc.
-- [ ] Click ▼/► to collapse/expand a category group
-- [ ] Collapsed state shows just the header line (all 60 tables representable in 6 lines)
-- [ ] Category header styled as subtle separator with category name + count
+- [x] Tables grouped under collapsible category headers: `▼ FACT TABLES (3)`, `▼ REFERENCE (42)`, etc.
+- [x] Click ▼/► chevron to collapse/expand a category group
+- [x] All groups expanded by default; collapsed state shows just the header line
+- [x] Groups only shown when sorted by category; flat list for name/columns sort
+- [x] `groupLabel` field added to CATEGORY_CONFIG for human-friendly group names
 
 **6.4 Expanded Detail — Vertical Layout (Columns → Relationships → Data Preview)**
-- [ ] Section order changed to: **Columns → Relationships → Data Preview** (was: Data Preview → Columns → Relationships)
-- [ ] Description editor + stats bar + tags at top of expanded area (existing behavior, but stats bar now shows rows/size/last import since they're hidden from collapsed card)
-- [ ] **Column descriptions as subtitles**: Each column row is 2 lines — column name + type on line 1, description as muted subtitle on line 2. `No description` shown as faint italic (`text-muted-foreground/50`). Consistent ~48px per column row
-- [ ] **FK link annotations in column list**: `_ID` columns show clickable `→ REF_TABLE_NAME` link inline, navigates to that table
-- [ ] Column table max-height: 400px with scroll
-- [ ] Relationships section: outgoing references + incoming references (existing, just moved below columns)
-- [ ] Data preview section: moved to bottom (existing behavior, just reordered)
+- [x] Section order: **Columns → Relationships → Data Preview** (was: Data Preview → Columns → Relationships)
+- [x] Description editor + stats bar + tags at top of expanded area
+- [x] **Column descriptions as subtitles**: Always-visible 2-line rows — column name + type on line 1, description subtitle on line 2. `No description` shown as faint italic
+- [x] **FK link annotations**: `_ID` columns with FK relationships show clickable `→ Human Name` link that navigates to target table
+- [x] Column table max-height: 400px with scroll
+- [x] Relationships section hidden when no relationships exist
+- [x] Compact section headers with counts (e.g. `COLUMNS (45)`, `RELATIONSHIPS (18)`)
 
 **6.5 Sort Controls Update**
-- [ ] Sort options reduced to: Category, Name, Columns (removed Rows and Size since they're not visible in collapsed cards)
+- [x] Sort options reduced to: Category, Name, Columns (removed Rows and Size)
 
 
 ### Phase 7 — Query Service Profiling (planned)
