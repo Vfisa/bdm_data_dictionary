@@ -299,17 +299,30 @@ export function createClient(kbcUrl, kbcToken) {
       const body = await res.text().catch(() => '');
       throw new Error(`Failed to get profile: ${res.status} ${res.statusText}\n${body}`);
     }
-    return res.json();
+    const data = await res.json();
+    // Empty object {} means no profile exists yet
+    if (!data || !data.columns || data.columns.length === 0) return null;
+    return data;
   }
 
   /**
    * Fetch up to 1000 rows of actual data from a table as CSV.
+   * For tables with >30 columns, batches requests in chunks of 30
+   * and merges results (Keboola sync export limit is 30 columns).
    *
    * @param {string} tableId - e.g. "out.c-bdm.REF_CLIENT"
    * @param {number} [limit=1000] - max rows
+   * @param {string[]} [columnNames] - column names (required for tables >30 cols)
    * @returns {Promise<string>} Raw CSV text
    */
-  async function getDataPreview(tableId, limit = 1000) {
+  async function getDataPreview(tableId, limit = 1000, columnNames = null) {
+    const MAX_SYNC_COLUMNS = 30;
+
+    // If column names provided and >30, batch the requests
+    if (columnNames && columnNames.length > MAX_SYNC_COLUMNS) {
+      return _batchedDataPreview(tableId, limit, columnNames, MAX_SYNC_COLUMNS);
+    }
+
     const url = `${baseUrl}/v2/storage/tables/${encodeURIComponent(tableId)}/data-preview?limit=${limit}`;
     const res = await fetch(url, {
       headers: {
@@ -322,6 +335,66 @@ export function createClient(kbcUrl, kbcToken) {
       throw new Error(`Data preview error: ${res.status} ${res.statusText} — ${tableId}\n${body}`);
     }
     return res.text();
+  }
+
+  /**
+   * Fetch data preview in column batches for wide tables.
+   * Each batch requests up to batchSize columns, then merges CSV results.
+   */
+  async function _batchedDataPreview(tableId, limit, columnNames, batchSize) {
+    const chunks = [];
+    for (let i = 0; i < columnNames.length; i += batchSize) {
+      chunks.push(columnNames.slice(i, i + batchSize));
+    }
+
+    // Fetch all batches (sequential to respect rate limits)
+    const batchResults = [];
+    for (const chunk of chunks) {
+      const colsParam = chunk.join(',');
+      const url = `${baseUrl}/v2/storage/tables/${encodeURIComponent(tableId)}/data-preview?limit=${limit}&columns=${encodeURIComponent(colsParam)}`;
+      const res = await fetch(url, {
+        headers: {
+          'X-StorageApi-Token': token,
+          'Accept': 'text/csv',
+        },
+      });
+      if (!res.ok) {
+        const body = await res.text().catch(() => '');
+        throw new Error(`Data preview error: ${res.status} ${res.statusText} — ${tableId} (batch)\n${body}`);
+      }
+      batchResults.push(await res.text());
+    }
+
+    // Merge CSV batches: each has same rows, different columns
+    // Parse each, merge row-by-row, re-serialize as CSV
+    if (batchResults.length === 0) return '';
+
+    const { parse: csvParse } = await import('csv-parse/sync');
+    const parsedBatches = batchResults.map((csv) =>
+      csvParse(csv, { columns: true, skip_empty_lines: true, relax_column_count: true })
+    );
+
+    // All batches should have the same number of rows
+    const rowCount = parsedBatches[0].length;
+    const mergedRows = [];
+    for (let i = 0; i < rowCount; i++) {
+      const merged = {};
+      for (const batch of parsedBatches) {
+        if (batch[i]) Object.assign(merged, batch[i]);
+      }
+      mergedRows.push(merged);
+    }
+
+    // Re-serialize as CSV for the profiling cache to parse
+    const allCols = columnNames;
+    const header = allCols.map((c) => `"${c}"`).join(',');
+    const rows = mergedRows.map((row) =>
+      allCols.map((c) => {
+        const v = row[c] ?? '';
+        return `"${String(v).replace(/"/g, '""')}"`;
+      }).join(',')
+    );
+    return [header, ...rows].join('\n');
   }
 
   return {

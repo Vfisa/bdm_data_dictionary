@@ -83,26 +83,30 @@ export function createProfilingCache({ client, cacheTTL = 1800000, requestDelay 
       // If no profile exists, trigger one for next time (fire-and-forget)
       if (!nativeProfile) {
         client.createProfile(tableId).catch((err) => {
-          console.warn(`Failed to trigger profiling for ${tableId}:`, err.message);
+          console.warn(`[profile] Failed to trigger profiling for ${tableId}:`, err.message);
         });
       }
     } catch (err) {
-      console.warn(`Native profile fetch failed for ${tableId}:`, err.message);
+      console.warn(`[profile] Native profile fetch failed for ${tableId}:`, err.message);
     }
 
     // 2. Fetch data preview (CSV sample)
     try {
       await _rateLimit();
-      const csvText = await client.getDataPreview(tableId);
+      const colNames = columns.map((c) => c.name);
+      const csvText = await client.getDataPreview(tableId, 1000, colNames);
       if (csvText && csvText.trim()) {
         previewRows = parse(csvText, {
           columns: true,
           skip_empty_lines: true,
           relax_column_count: true,
         });
+        console.log(`[profile] ${tableId}: ${previewRows.length} sample rows, ${colNames.length} columns`);
+      } else {
+        console.warn(`[profile] Data preview returned empty for ${tableId}`);
       }
     } catch (err) {
-      console.warn(`Data preview fetch failed for ${tableId}:`, err.message);
+      console.warn(`[profile] Data preview failed for ${tableId}:`, err.message);
     }
 
     // If both failed, throw
