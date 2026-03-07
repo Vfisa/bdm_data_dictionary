@@ -24,6 +24,16 @@ export function TableBrowserPage({ metadata, onDescriptionUpdated }: TableBrowse
   const [selectedTable, setSelectedTable] = useState<string | null>(null)
   const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null)
   const [activeStatsFilter, setActiveStatsFilter] = useState<StatsFilter>(null)
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<Category>>(() => new Set())
+
+  const toggleGroup = useCallback((category: Category) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(category)) next.delete(category)
+      else next.add(category)
+      return next
+    })
+  }, [])
 
   // Toggle category filter
   const toggleCategory = useCallback((category: Category) => {
@@ -218,6 +228,9 @@ export function TableBrowserPage({ metadata, onDescriptionUpdated }: TableBrowse
           metadata={metadata}
           onNavigate={handleSelectTable}
           onDescriptionUpdated={onDescriptionUpdated}
+          sortField={sortField}
+          collapsedGroups={collapsedGroups}
+          onToggleGroup={toggleGroup}
         />
       </div>
     </div>
