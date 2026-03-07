@@ -5,7 +5,6 @@ import { CategoryFilter } from '@/components/table-browser/CategoryFilter'
 import { SortControls, type SortField, type SortDirection } from '@/components/table-browser/SortControls'
 import { TableList } from '@/components/table-browser/TableList'
 import { StatsDashboard } from '@/components/table-browser/StatsDashboard'
-import { TableDetailPanel } from '@/components/table-detail/TableDetailPanel'
 import { CATEGORY_ORDER, CATEGORY_SORT_PRIORITY, TAG_CONFIG } from '@/lib/constants'
 import type { MetadataResponse, Category } from '@/lib/types'
 
@@ -126,10 +125,6 @@ export function TableBrowserPage({ metadata, onDescriptionUpdated }: TableBrowse
     setSelectedTable((prev) => (prev === tableName ? null : tableName))
   }, [])
 
-  const handleCloseDetail = useCallback(() => {
-    setSelectedTable(null)
-  }, [])
-
   return (
     <div className="relative h-full flex flex-col">
       {/* Toolbar */}
@@ -215,19 +210,12 @@ export function TableBrowserPage({ metadata, onDescriptionUpdated }: TableBrowse
           tables={filteredTables}
           onSelectTable={handleSelectTable}
           searchQuery={searchQuery}
-        />
-      </div>
-
-      {/* Detail panel */}
-      {selectedTable && (
-        <TableDetailPanel
-          tableName={selectedTable}
+          expandedTable={selectedTable}
           metadata={metadata}
-          onClose={handleCloseDetail}
           onNavigate={handleSelectTable}
           onDescriptionUpdated={onDescriptionUpdated}
         />
-      )}
+      </div>
     </div>
   )
 }
