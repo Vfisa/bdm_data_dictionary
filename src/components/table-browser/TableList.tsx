@@ -69,7 +69,7 @@ function TableCard({
 
   return (
     <div
-      ref={isExpanded ? expandedRef : undefined}
+      ref={isExpanded ? (expandedRef as React.Ref<HTMLDivElement>) : undefined}
       className={`rounded-lg border transition-all ${
         isExpanded
           ? 'border-[var(--primary)]/50 ring-1 ring-[var(--primary)]/20 shadow-sm'

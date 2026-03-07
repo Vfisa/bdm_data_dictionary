@@ -51,7 +51,7 @@ export function StatsDashboard({ metadata, activeFilter, onFilterClick }: StatsD
     if (!onFilterClick) return
     const currentIdx = FILTER_CYCLE.indexOf(activeFilter ?? null)
     const nextIdx = (currentIdx + 1) % FILTER_CYCLE.length
-    onFilterClick(FILTER_CYCLE[nextIdx])
+    onFilterClick(FILTER_CYCLE[nextIdx] ?? null)
   }
 
   // Active filter label
