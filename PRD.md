@@ -554,13 +554,23 @@ All features below were implemented and committed:
 - [x] **On-demand profiling** — Manual "Profile" button in detail panel Columns header. Flask icon + loading spinner. Shows "Profiled Xs ago" after completion. Error state with retry link.
 - [x] **Mock profiling** — `generateMockProfile()` produces realistic stats per column for local dev (PKs: unique, _ID columns: randomized $NOVALUE, numerics: min/max, dates: date ranges, booleans: true/false distribution).
 
-### Phase 5 — Data Lineage (planned)
+### Phase 5 — Table Browser UI updates (DONE)
 
-- [ ] **Data lineage graph** — Full upstream/downstream visualization via Keboola component config + flow APIs. New LineagePage with LR Dagre layout showing extractors, transformations, writers as distinct node types.
+- [x] **Default tab switch** — Table Browser is now the landing page; ERD is the second tab.
+- [x] **Inline expanded detail** — Clicking a table card in Table Browser expands detail below the card (description editor, stats bar, tags, data preview, columns with profiling, relationships). ERD keeps its floating sidebar unchanged.
+- [x] **Streamlined toolbar** — Compacted 5-row toolbar into 3 rows: stats dashboard, search + category filters + sort controls, tag pills + results count. Smaller filter pill sizing.
+- [x] **Human-friendly names** — `toHumanName()` strips BDM prefixes (FCTH_, FCT_, MAP_, REF_, DIM_, AUX_) and converts to Title Case with spaces. Two-line display: human name primary, technical name secondary in mono font. Search matches both.
+- [x] **Data preview** — `GET /api/preview/:tableId?limit=N` endpoint serving row-level data from Keboola Storage API (CSV parsed) or mock generator. DataPreviewTable component with load button, spinner, scrollable table with sticky header, `$NOVALUE` highlighting in red, NULL cells italic. Footer shows row count.
+- [x] **Clickable KPI stats** — Missing Table Desc, Missing Col Desc, and Empty Tables cards are clickable filter buttons. Active filter highlighted with ring, status text shows filter description with clear link. Toggle behavior: click active card to clear. Cards with zero value are non-clickable.
+
 
 ### Phase 6 — Query Service Profiling (planned)
 
 - [ ] **SQL-based exact profiling** — Use Keboola Query Service (`POST /api/v1/branches/{branchId}/workspaces/{workspaceId}/queries`) for full SQL-based profiling over all rows. Requires `KBC_BRANCHID` + `KBC_WORKSPACE_ID` env vars. Async job-based: submit → poll → get results.
+
+### Phase 7 — Data Lineage (planned)
+
+- [ ] **Data lineage graph** — Full upstream/downstream visualization via Keboola component config + flow APIs. New LineagePage with LR Dagre layout showing extractors, transformations, writers as distinct node types.
 
 ### Backlog
 
