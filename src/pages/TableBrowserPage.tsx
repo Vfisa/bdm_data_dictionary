@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react'
-import { Search, Tag } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { CategoryFilter } from '@/components/table-browser/CategoryFilter'
 import { SortControls, type SortField, type SortDirection } from '@/components/table-browser/SortControls'
@@ -135,20 +135,17 @@ export function TableBrowserPage({ metadata, onDescriptionUpdated }: TableBrowse
 
   return (
     <div className="relative h-full flex flex-col">
-      {/* Toolbar */}
-      <div className="shrink-0 border-b border-[var(--border)] bg-[var(--card)] px-4 py-2 space-y-2">
-        {/* Row 1: Stats Dashboard */}
-        <StatsDashboard metadata={metadata} activeFilter={activeStatsFilter} onFilterClick={setActiveStatsFilter} />
-
-        {/* Row 2: Search + Category filters + Sort — all on one line */}
+      {/* Toolbar — 2 rows */}
+      <div className="shrink-0 border-b border-[var(--border)] bg-[var(--card)] px-4 py-2 space-y-1.5">
+        {/* Row 1: Search + Category chips */}
         <div className="flex items-center gap-3">
-          <div className="relative flex-1 max-w-sm">
+          <div className="relative flex-1 max-w-xs">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--muted-foreground)]" />
             <Input
-              placeholder="Search tables and columns..."
+              placeholder="Search tables..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-8 text-sm"
+              className="pl-9 h-7 text-sm"
             />
           </div>
           <CategoryFilter
@@ -156,20 +153,30 @@ export function TableBrowserPage({ metadata, onDescriptionUpdated }: TableBrowse
             onToggleCategory={toggleCategory}
             tableCounts={tableCounts}
           />
-          <div className="shrink-0 ml-auto">
-            <SortControls
-              sortField={sortField}
-              sortDirection={sortDirection}
-              onSortChange={handleSortChange}
-            />
-          </div>
         </div>
 
-        {/* Row 3: Tags + results count */}
-        <div className="flex items-center justify-between gap-2">
+        {/* Row 2: Sort + QA badge + Issues badge + Tag filters + Results count */}
+        <div className="flex items-center gap-2">
+          <SortControls
+            sortField={sortField}
+            sortDirection={sortDirection}
+            onSortChange={handleSortChange}
+          />
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Results count */}
+          <p className="text-[11px] text-[var(--muted-foreground)] shrink-0">
+            {filteredTables.length} of {metadata.tables.length}
+          </p>
+
+          {/* QA + Issues badges */}
+          <StatsDashboard metadata={metadata} activeFilter={activeStatsFilter} onFilterClick={setActiveStatsFilter} />
+
+          {/* Tag filters */}
           {allTags.length > 0 && (
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <Tag className="h-3 w-3 text-[var(--muted-foreground)] shrink-0" />
+            <div className="flex items-center gap-1">
               {allTags.map((tag) => {
                 const isActive = activeTagFilter === tag
                 const tagConfig = TAG_CONFIG[tag as keyof typeof TAG_CONFIG]
@@ -199,27 +206,11 @@ export function TableBrowserPage({ metadata, onDescriptionUpdated }: TableBrowse
                   onClick={() => setActiveTagFilter(null)}
                   className="text-[11px] text-[var(--muted-foreground)] hover:text-[var(--foreground)] cursor-pointer"
                 >
-                  clear
+                  ✕
                 </button>
               )}
             </div>
           )}
-          <p className="text-xs text-[var(--muted-foreground)] shrink-0 ml-auto flex items-center gap-1.5">
-            {filteredTables.length} of {metadata.tables.length} tables
-            {searchQuery && ` matching "${searchQuery}"`}
-            {activeTagFilter && ` tagged "${activeTagFilter}"`}
-            {activeStatsFilter === 'missingTableDesc' && ' — missing table description'}
-            {activeStatsFilter === 'missingColDesc' && ' — missing column descriptions'}
-            {activeStatsFilter === 'emptyTables' && ' — empty tables'}
-            {activeStatsFilter && (
-              <button
-                onClick={() => setActiveStatsFilter(null)}
-                className="underline hover:no-underline cursor-pointer"
-              >
-                clear
-              </button>
-            )}
-          </p>
         </div>
       </div>
 
