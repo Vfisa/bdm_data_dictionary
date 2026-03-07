@@ -110,14 +110,8 @@ export function TableBrowserPage({ metadata, onDescriptionUpdated }: TableBrowse
         case 'name':
           cmp = a.name.localeCompare(b.name)
           break
-        case 'rowsCount':
-          cmp = a.rowsCount - b.rowsCount
-          break
         case 'columnCount':
           cmp = a.columnCount - b.columnCount
-          break
-        case 'dataSizeBytes':
-          cmp = a.dataSizeBytes - b.dataSizeBytes
           break
         default:
           cmp = 0
