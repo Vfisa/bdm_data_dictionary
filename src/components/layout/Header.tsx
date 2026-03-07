@@ -12,8 +12,8 @@ interface HeaderProps {
 }
 
 const tabs: { id: Page; label: string }[] = [
-  { id: 'erd', label: 'ERD Diagram' },
   { id: 'tables', label: 'Table Browser' },
+  { id: 'erd', label: 'ERD Diagram' },
 ]
 
 export function Header({ currentPage, onNavigate, isDark, onToggleTheme, onOpenSearch }: HeaderProps) {

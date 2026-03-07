@@ -10,7 +10,7 @@ import { Loader2, AlertCircle } from 'lucide-react'
 import type { Page } from '@/lib/types'
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<Page>('erd')
+  const [currentPage, setCurrentPage] = useState<Page>('tables')
   const [searchOpen, setSearchOpen] = useState(false)
   const { isDark, toggleTheme } = useTheme()
   const { data, isLoading, error, refresh, refetch, isRefreshing } = useMetadata()
