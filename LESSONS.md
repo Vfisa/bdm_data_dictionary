@@ -385,6 +385,30 @@ this._pendingRequests.set(tableId, promise);
 
 ---
 
+## 27. Keboola Sync Export 30-Column Limit (Phase 4 Bugfix)
+
+**Problem:** `GET /v2/storage/tables/{tableId}/data-preview` returns `400 Bad Request` for tables with >30 columns: `"Max 30 columns can be exported by synchronous export, 57 columns requested. Please use async export."`
+
+**Root cause:** Keboola's synchronous data-preview endpoint has a hard limit of 30 columns. FCT_ORDER has 57. The error was caught silently, leaving `previewRows = null` and `sampleSize: 0`.
+
+**Fix:** Batch column requests using the `columns` query parameter. Split column names into chunks of 30, make sequential requests, parse each CSV batch, merge row-by-row via `Object.assign`, then re-serialize as unified CSV.
+
+**Lesson:** Always check API limits for parameterized endpoints. When a "preview" or "export" endpoint has column/row limits, implement batching with column selection parameters rather than switching to async exports (which add polling complexity). Sequential batching also naturally respects rate limits.
+
+---
+
+## 28. Empty Object `{}` Is Truthy — Keboola Profile Edge Case (Phase 4 Bugfix)
+
+**Problem:** `getLatestProfile()` returned `{}` (empty object) when no native profile existed for a table. Our code checked `if (!nativeProfile)` — but `!{}` is `false`, so the empty object was treated as a valid profile with 0 columns.
+
+**Root cause:** The Keboola `/profile/latest` endpoint returns `{}` instead of `404` when no profile has been computed yet. JavaScript's `!{}` evaluates to `false`.
+
+**Fix:** After parsing JSON, check for actual content: `if (!data || !data.columns || data.columns.length === 0) return null;`
+
+**Lesson:** Never trust that an API returns `404` for "not found" — some return `200` with empty objects. Always validate the response body for expected structure before using it. In JavaScript, empty objects/arrays are truthy — use property checks instead of truthiness.
+
+---
+
 ## General Principles Discovered
 
 1. **Build early, build often** — Run `npm run build` after every file creation, not just at step completion. Catches errors when context is fresh.

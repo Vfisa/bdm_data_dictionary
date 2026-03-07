@@ -516,6 +516,12 @@
 
 **Result:** PASS — Build succeeds (575.18 KB JS / 184.45 KB gzip, 57.87 KB CSS / 10.54 KB gzip). Profile button fetches data, chevrons appear, $NV badges color-coded, drawers expand with full stats, empty table profiles cleanly, zero console errors.
 
+**Bugfix (post-commit):** Two issues found when profiling real Keboola data:
+1. **Wide table batching** — Data-preview API rejects sync export for >30 columns. Added `_batchedDataPreview()` to split columns into chunks of 30, fetch each batch with `columns` parameter, parse CSV, merge row-by-row, re-serialize. FCT_ORDER (57 cols) now profiles correctly via 2 batches.
+2. **Empty native profile** — `/profile/latest` returns `{}` (not 404) when no profile exists. Empty object is truthy in JS, so it was treated as valid. Added explicit check: `if (!data.columns || data.columns.length === 0) return null`.
+
+**Verified on live data:** FCT_ORDER — 1000-row sample across all 57 columns, 9 $NOVALUE badges (ORDER_TYPE_ID: 97.1%, HANDLED_BY_USER_ID: 44.9%, ORDER_VALUE_CURRENCY_ID: 80.9%, etc.), expandable drawers with null rate bars, distinct counts, top values.
+
 ---
 
 ## Summary
