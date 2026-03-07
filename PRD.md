@@ -563,12 +563,48 @@ All features below were implemented and committed:
 - [x] **Data preview** — `GET /api/preview/:tableId?limit=N` endpoint serving row-level data from Keboola Storage API (CSV parsed) or mock generator. DataPreviewTable component with load button, spinner, scrollable table with sticky header, `$NOVALUE` highlighting in red, NULL cells italic. Footer shows row count.
 - [x] **Clickable KPI stats** — Missing Table Desc, Missing Col Desc, and Empty Tables cards are clickable filter buttons. Active filter highlighted with ring, status text shows filter description with clear link. Toggle behavior: click active card to clear. Cards with zero value are non-clickable.
 
+### Phase 6 — Table Browser UI Refinements
 
-### Phase 6 — Query Service Profiling (planned)
+> Design mockups: `resources/PHASE6-FINAL-MOCKUP.md`
+> Earlier exploration: `resources/PHASE6-UI-PLAN.md`, `resources/PHASE6-MOCKUPS.md`, `resources/PHASE6-OPTION-D.md`
 
-- [ ] **SQL-based exact profiling** — Use Keboola Query Service (`POST /api/v1/branches/{branchId}/workspaces/{workspaceId}/queries`) for full SQL-based profiling over all rows. Requires `KBC_BRANCHID` + `KBC_WORKSPACE_ID` env vars. Async job-based: submit → poll → get results.
+**6.1 Compact Toolbar (2 rows, ~76px total — down from ~210px)**
+- [ ] **Row 1**: Search input + category chips using short codes (`FCT 3`, `REF 42`, `DIM 1`, `FCTH 1`, `MAP 6`, `AUX 7`) — colored backgrounds matching category color, all on one line
+- [ ] **Row 2**: Sort controls (Category, Name, Columns only — no Rows/Size) + QA badge (`QA 39%` color-coded) + issues badge (`⚠ 27`) + tag filter pills
+- [ ] **KPI popover**: Hovering or clicking `QA 39%` shows a popover with full project stats (60 tables, 1,046 columns, 62.1M rows, 3.2 GB, QA score bar, missing description breakdown)
+- [ ] **Stats filter via ⚠ badge**: Clicking `⚠ 27` cycles through stat filters (missing table desc → missing col desc → empty tables → clear). Active filter shown as removable chip in toolbar
+- [ ] Remove the 7 KPI stat cards row entirely — replaced by inline badges + popover
 
-### Phase 7 — Data Lineage (planned)
+**6.2 Condensed Table Cards (~52px, single-line + subtitle)**
+- [ ] **Line 1**: Category color bar (4px left border) + human-friendly table name + `N columns` right-aligned (e.g. "45 columns")
+- [ ] **Line 2**: Description as muted subtitle (truncated with …), or `No description` in faint italic
+- [ ] Remove from collapsed card: row count, data size, technical name (FCT_DISPATCH), tag chips
+- [ ] Tags, rows, size, technical name all move to expanded detail only
+
+**6.3 Category Group Headers**
+- [ ] Tables grouped under collapsible category headers: `▼ FACT TABLES (3)`, `▼ REFERENCE (42)`, etc.
+- [ ] Click ▼/► to collapse/expand a category group
+- [ ] Collapsed state shows just the header line (all 60 tables representable in 6 lines)
+- [ ] Category header styled as subtle separator with category name + count
+
+**6.4 Expanded Detail — Vertical Layout (Columns → Relationships → Data Preview)**
+- [ ] Section order changed to: **Columns → Relationships → Data Preview** (was: Data Preview → Columns → Relationships)
+- [ ] Description editor + stats bar + tags at top of expanded area (existing behavior, but stats bar now shows rows/size/last import since they're hidden from collapsed card)
+- [ ] **Column descriptions as subtitles**: Each column row is 2 lines — column name + type on line 1, description as muted subtitle on line 2. `No description` shown as faint italic (`text-muted-foreground/50`). Consistent ~48px per column row
+- [ ] **FK link annotations in column list**: `_ID` columns show clickable `→ REF_TABLE_NAME` link inline, navigates to that table
+- [ ] Column table max-height: 400px with scroll
+- [ ] Relationships section: outgoing references + incoming references (existing, just moved below columns)
+- [ ] Data preview section: moved to bottom (existing behavior, just reordered)
+
+**6.5 Sort Controls Update**
+- [ ] Sort options reduced to: Category, Name, Columns (removed Rows and Size since they're not visible in collapsed cards)
+
+
+### Phase 7 — Query Service Profiling (planned)
+
+- [ ] **SQL-based exact profiling** — Use Keboola Query Service (`POST /api/v1/branches/{branchId}/workspaces/{workspaceId}/queries`) for full SQL-based profiling over all rows. Requires `KBC_BRANCHID` + `KBC_WORKSPACE_ID` env vars. Async job-based: submit → poll → get results. It has been confirmed Keboola auto-injects those variables: (WORKSPACE_ID, BRANCH_ID)
+
+### Phase 8 — Data Lineage (planned)
 
 - [ ] **Data lineage graph** — Full upstream/downstream visualization via Keboola component config + flow APIs. New LineagePage with LR Dagre layout showing extractors, transformations, writers as distinct node types.
 
@@ -637,4 +673,20 @@ All features below were implemented and committed:
 | 19 | Profile UI pattern | Expandable rows in ColumnTable with chevron toggle. ColumnProfileDrawer renders below each row. |
 | 20 | CSV parsing | `csv-parse/sync` npm package for data-preview CSV parsing |
 | 21 | Profile cache | Server-side ProfilingCache, 30-min TTL per table, request deduplication, 200ms rate limiting between API calls |
-| 22 | Query service | Deferred to Phase 6. Requires KBC_BRANCHID + KBC_WORKSPACE_ID env vars (not confirmed auto-injected into Data Apps). |
+| 22 | Query service | Deferred to Phase 7. Requires KBC_BRANCHID + KBC_WORKSPACE_ID env vars (confirmed auto-injected). |
+
+## 16. Resolved Phase 6 Decisions
+
+| # | Question | Decision |
+|---|----------|----------|
+| 23 | Table Browser layout approach | Condensed cards (Option B style) with compact toolbar (Option A.4), vertical stacked expanded detail |
+| 24 | KPI stats display | Remove 7-card row. Replace with inline badges (`QA 39%`, `⚠ 27`) + hover popover for full stats |
+| 25 | Category chips format | Short codes (`FCT 3`, `REF 42`) instead of full names (`Fact 3`, `Reference 42`) — to be validated live |
+| 26 | Collapsed card content | Name + description subtitle + "N columns" only. No rows, size, or technical name |
+| 27 | Description placement | Subtitle line under table/column name, not inline in same row |
+| 28 | Column descriptions | Always show 2-line rows: name+type on line 1, description subtitle on line 2. `No description` as faint italic |
+| 29 | Expanded section order | Columns → Relationships → Data Preview (moved data preview to bottom) |
+| 30 | Category grouping | Collapsible headers with ▼/► toggle. All groups expanded by default |
+| 31 | Sort options | Category, Name, Columns only (removed Rows and Size since hidden from collapsed cards) |
+| 32 | Slide-out vs inline detail | Inline expansion (consistent with Phase 5 decision), not slide-out panel |
+| 33 | FK links in column list | `_ID` columns show clickable `→ REF_TARGET` link, navigates to that table |
