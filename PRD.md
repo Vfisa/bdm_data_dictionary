@@ -628,6 +628,13 @@ All features below were implemented and committed:
 - [x] Reduce vertical gap between ranks: `RANK_SEP: 100 → 60px`
 - [x] Node dimensions unchanged (220×80px)
 
+**6b.4 Collapsible Detail Panel**
+- [x] `>` (ChevronRight) button in panel header to collapse panel, preserving table selection + highlights
+- [x] Collapsed state shows thin 32px bar on right edge with `<` (ChevronLeft) expand button, category color dot, and vertical table name
+- [x] Clicking expand bar re-opens full detail panel
+- [x] Clicking pane background deselects table and hides collapsed bar
+- [x] Selecting a different table while collapsed auto-expands the panel
+
 ### Phase 7 — Query Service Profiling (planned)
 
 - [ ] **SQL-based exact profiling** — Use Keboola Query Service (`POST /api/v1/branches/{branchId}/workspaces/{workspaceId}/queries`) for full SQL-based profiling over all rows. Requires `KBC_BRANCHID` + `KBC_WORKSPACE_ID` env vars. Async job-based: submit → poll → get results. It has been confirmed Keboola auto-injects those variables: (WORKSPACE_ID, BRANCH_ID)

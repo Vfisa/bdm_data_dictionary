@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useState, useMemo } from 'react'
-import { X, Database, Rows3, HardDrive, Columns3, Clock, FlaskConical, Loader2, AlertTriangle } from 'lucide-react'
+import { X, ChevronRight, Database, Rows3, HardDrive, Columns3, Clock, FlaskConical, Loader2, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { InlineEditor } from '@/components/ui/InlineEditor'
@@ -19,6 +19,7 @@ interface TableDetailPanelProps {
   onClose: () => void
   onNavigate: (tableName: string) => void
   onDescriptionUpdated?: () => void
+  onCollapse?: () => void
 }
 
 export function TableDetailPanel({
@@ -27,6 +28,7 @@ export function TableDetailPanel({
   onClose,
   onNavigate,
   onDescriptionUpdated,
+  onCollapse,
 }: TableDetailPanelProps) {
   const [isVisible, setIsVisible] = useState(false)
   const editor = useDescriptionEditor()
@@ -129,15 +131,27 @@ export function TableDetailPanel({
             </div>
           </div>
 
-          {/* Close button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleClose}
-            className="shrink-0 -mt-1 -mr-1"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          {/* Collapse / Close buttons */}
+          <div className="flex items-center gap-0.5 shrink-0 -mt-1 -mr-1">
+            {onCollapse && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onCollapse}
+                title="Collapse panel"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleClose}
+              title="Close panel"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Stats bar */}

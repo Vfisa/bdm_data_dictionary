@@ -7,6 +7,7 @@
 - Removed category rank hints — Dagre determines hierarchy purely from FK graph structure
 - Edge direction reversed so lines flow downward (parent.bottom → child.top)
 - Condensed spacing: NODE_SEP 60→35px, RANK_SEP 100→60px
+- Collapsible detail panel: `>` to collapse (keeps highlights), `<` to expand; thin bar shows category dot + vertical table name
 
 ## Phase 6a — UI Polish Hotfixes (2026-03-07)
 - Boolean values display as uppercase TRUE/FALSE in data preview

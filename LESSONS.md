@@ -409,6 +409,20 @@ this._pendingRequests.set(tableId, promise);
 
 ---
 
+## 29. Dagre Layout vs React Flow Visual Edge Direction (Phase 6b)
+
+**Problem:** After reversing Dagre edge direction (`g.setEdge(target, source)`) to place parent tables above children, the React Flow visual edges still pointed upward (child.bottom → parent.top), creating visual clutter with lines crossing against the intended flow.
+
+**Root cause:** Two independent edge direction decisions exist: (1) Dagre layout edges determine node positioning — `g.setEdge(A, B)` places A above B. (2) React Flow visual edges determine rendering direction — `source` connects via bottom handle, `target` via top handle. Fixing the Dagre direction without also swapping the React Flow source/target leaves the arrows flowing upward.
+
+**Fix:** Swap source/target in BOTH places:
+- Dagre: `g.setEdge(edge.target, edge.source)` — positions parent above child
+- React Flow: `{ source: edge.target, target: edge.source }` — draws line downward from parent.bottom to child.top
+
+**Lesson:** When using Dagre + React Flow, layout direction and visual direction are independent. Always swap edges in both systems when reversing flow. The same applies to date edges or any auxiliary edge types.
+
+---
+
 ## General Principles Discovered
 
 1. **Build early, build often** — Run `npm run build` after every file creation, not just at step completion. Catches errors when context is fresh.
