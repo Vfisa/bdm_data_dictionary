@@ -1,86 +1,83 @@
 # BDM Data Dictionary & ERD Viewer
 
-Interactive Entity Relationship Diagram, data dictionary, and quality dashboard for the Business Data Model (BDM), built as a [Keboola Data App](https://help.keboola.com/components/data-apps/).
+Interactive data dictionary, ERD visualization, and quality dashboard for the Business Data Model (BDM), built as a [Keboola Data App](https://help.keboola.com/components/data-apps/).
+
+![Table Browser](docs/screenshots/table-browser.png)
 
 ## Features
 
+### Table Browser & Data Quality
+
+Browse all 60 BDM tables organized by category with search, filtering, and sort. Category-colored cards show human-friendly names, descriptions, and column counts. Collapsible group headers keep large table sets manageable.
+
+- **QA Stats** — Inline badges show QA score and issue count. Hover for full project stats (tables, columns, rows, data size, description coverage).
+- **Category Filters** — Toggle categories (REF, DIM, FCT, FCTH, MAP, AUX) with short-code chips showing table counts.
+- **Collaborative Tags** — Predefined tags (verified, needs-review, deprecated, core, wip, sensitive) plus custom free-form tags. Stored in Keboola metadata, filterable in the toolbar.
+
+Click any table to expand its detail inline — columns with types, FK links, descriptions, tags, and data preview:
+
+![Table Detail](docs/screenshots/table-detail.png)
+
 ### ERD Visualization
-- **Interactive ERD Diagram** — Pan, zoom, and explore tables with auto-layout via Dagre. Category-colored nodes with filter toggles and minimap.
-- **Floating Detail Panel** — Click a table node to open the detail sidebar without blocking the ERD canvas. Pan, zoom, and click other nodes while the panel is open.
-- **Connection Highlighting** — Click a table node to dim unconnected nodes and glow connected ones with drop-shadow effect.
-- **Date Link Visualization** — Toggle (off by default) shows assumed DIM_DATE connections from DATE/TIMESTAMP columns as dashed purple lines.
-- **Multi-Format Export** — Download ERD as PNG (3x resolution), SVG (vector), or Mermaid `.mmd` file via dropdown menu.
+
+Interactive Entity Relationship Diagram with all tables and inferred FK relationships. Tables are color-coded by category and auto-laid out using Dagre.
+
+![ERD Diagram](docs/screenshots/erd-diagram.png)
+
+- **Floating Detail Panel** — Click a table node to open the detail sidebar. The ERD canvas stays fully interactive (pan, zoom, click) while the panel is open.
+- **Connection Highlighting** — Click a node to dim unconnected tables and glow connected ones.
+- **Date Link Visualization** — Toggle to show assumed DIM_DATE connections from DATE/TIMESTAMP columns.
+- **Multi-Format Export** — Download as PNG (3x resolution), SVG (vector), or Mermaid `.mmd` file.
+
+![ERD Detail Panel](docs/screenshots/erd-detail-panel.png)
 
 ### Data Profiling
-- **On-Demand Profiling** — Click "Profile" button in table detail panel to fetch column statistics. Hybrid engine: Keboola native profiling API (exact stats over all rows) + data-preview API (1000-row sample for $NOVALUE rates, min/max, top values).
-- **$NOVALUE Detection** — Color-coded `$NV: X%` badges on `_ID` columns showing $NOVALUE rates. Green <5%, yellow 5-20%, red >=20%.
-- **Expandable Column Stats** — Click chevron on any column row to see null rate bar, distinct count, min/max (type-aware), $NOVALUE section, top 5 values. Footer shows whether stats are exact (native profile) or approximate (sample).
-- **Profiling Cache** — Server-side 30-minute TTL cache per table with request deduplication and rate limiting.
 
-### Table Browser & Data Quality
-- **Table Browser** — Full-page searchable listing with category filters, tag filters, and sort (by category, name, rows, columns, size).
-- **Collaborative Tags** — Predefined tags (verified, needs-review, deprecated, core, wip, sensitive) + custom free-form tags. Stored as JSON in Keboola metadata (`bdm.tags` key). Tag chips on table cards, tag editor in detail panel, filter-by-tag in browser toolbar.
-- **QA Stats Dashboard** — KPI cards showing total tables, columns, rows, QA score (% with descriptions), missing descriptions count, and empty tables. QA score is color-coded: green >80%, yellow 50-80%, red <50%.
-- **$NOVALUE Convention** — Info tooltips on `_ID` columns documenting the BDM sentinel value for missing FK references.
+On-demand column profiling via a hybrid engine: Keboola native profiling API (exact stats over all rows) combined with data-preview API (1000-row sample for value-level analysis).
+
+- **$NOVALUE Detection** — Color-coded `$NV: X%` badges on `_ID` columns. Green <5%, yellow 5-20%, red >=20%.
+- **Expandable Column Stats** — Null rate bar, distinct count, min/max (type-aware), top 5 values. Footer shows whether stats are exact or approximate.
+- **Profiling Cache** — Server-side 30-minute TTL with request deduplication.
 
 ### Search & Navigation
-- **Global Search (Cmd+K)** — Fuzzy search across all tables and columns with filter toggles (Both / Tables Only / Columns Only).
-- **Table Detail Panel** — Click any table to see columns, data types, primary keys, nullable flags, descriptions, row counts, data size, and last import time. Navigate between related tables.
+
+Global search (Cmd+K) with fuzzy matching across all tables and columns. Filter by Tables Only or Columns Only. Select a result to navigate directly to that table.
+
+![Search](docs/screenshots/search.png)
 
 ### Inline Editing
-- **Edit Descriptions** — Click-to-edit table and column descriptions with confirmation dialog. Changes propagate to Keboola Storage API via metadata endpoint and update the in-memory cache optimistically.
 
-### General
-- **Dark / Light Theme** — System preference default with manual toggle. Persists via localStorage.
-- **Dynamic FK Inference** — No static manifest needed. Relationships discovered at runtime by scanning `_ID` columns and matching to target tables. New tables auto-discovered on refresh.
+Click-to-edit table and column descriptions with confirmation dialog. Changes propagate to Keboola Storage API and update the in-memory cache optimistically.
+
+### Dark Mode
+
+System preference default with manual toggle. Persists via localStorage.
+
+![Dark Mode](docs/screenshots/dark-mode.png)
+
+### Additional Features
+
+- **Dynamic FK Inference** — No static manifest needed. Relationships discovered at runtime from `_ID` columns. New tables auto-discovered on refresh.
 - **Auto-Refresh** — Metadata refreshed every 15 minutes. Manual refresh via toolbar button.
-- **Mock Data Mode** — Auto-detected when Keboola credentials are missing. Serves 10 sample tables for local development.
-
-## Architecture
-
-```
-Browser (port 8888)
-  +-- nginx reverse proxy
-        +-- Express.js (port 3000)
-              +-- React SPA (dist/)            <- Vite build output
-              +-- GET  /api/metadata           <- All tables + edges + dateEdges + categories
-              +-- GET  /api/table/:tableId     <- Single table with relationships
-              +-- PUT  /api/descriptions       <- Update table/column descriptions -> Keboola API
-              +-- PUT  /api/tags               <- Update table tags -> Keboola metadata (bdm.tags)
-              +-- GET  /api/profile/:tableId   <- On-demand column profiling (hybrid native + sample)
-              +-- POST /api/refresh            <- Trigger cache refresh
-              +-- GET  /api/health             <- Health check
-```
-
-**Backend:** Node.js/Express server that fetches metadata from the Keboola Storage API, runs FK inference, caches results in memory, and serves the React SPA. Supports mock data fallback when credentials are absent.
-
-**Frontend:** React 18 + TypeScript + Tailwind CSS 4 + @xyflow/react (React Flow) for the ERD + cmdk for the command palette + html-to-image for PNG export.
+- **Mock Data Mode** — Auto-detected when Keboola credentials are missing. Serves sample tables for local development.
 
 ## Keboola Data App Configuration
 
 ### Required Environment Variables
 
-These are **automatically injected by Keboola** when deploying as a Data App.
+Automatically injected by Keboola when deploying as a Data App.
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `KBC_TOKEN` | **Yes** | Keboola Storage API token. Must have read access to the target bucket(s). Needs **write** permissions for inline description editing. |
+| `KBC_TOKEN` | **Yes** | Keboola Storage API token. Needs read access to target bucket(s), write access for inline description editing. |
 | `KBC_URL` | **Yes** | Keboola connection URL (e.g., `https://connection.eu-central-1.keboola.com`). |
 
 ### Optional Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `BUCKET_ID` | `out.c-bdm` | Primary bucket containing the BDM tables. The app also fetches from `{BUCKET_ID}_aux` automatically. |
+| `BUCKET_ID` | `out.c-bdm` | Primary bucket. The app also fetches from `{BUCKET_ID}_aux` automatically. |
 | `PORT` | `3000` | Express server port. |
-
-### Token Permissions
-
-The `KBC_TOKEN` needs:
-- **Read access** to `out.c-bdm` and `out.c-bdm_aux` (or your custom bucket IDs)
-- **Write access** to table/column metadata (for inline description editing)
-
-If the token is read-only, the app works fully except description editing will fail with an error message.
 
 ### Keboola Deployment Files
 
@@ -107,7 +104,7 @@ npm run dev
 # -> http://localhost:5173 (mock data mode — 10 sample tables)
 ```
 
-When `KBC_TOKEN` and `KBC_URL` are not set, the app auto-detects this and serves mock data. All features work including description editing (changes persist in-memory until server restart).
+When `KBC_TOKEN` and `KBC_URL` are not set, the app serves mock data. All features work including description editing (changes persist in-memory until server restart).
 
 ### With Keboola Credentials
 
@@ -168,46 +165,6 @@ Edit `server/overrides.json`:
 }
 ```
 
-## API Endpoints
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/health` | Health check with cache status |
-| `GET` | `/api/metadata` | Full payload: tables, edges, dateEdges, categories, stats |
-| `GET` | `/api/table/:tableId` | Single table with columns + relationships |
-| `PUT` | `/api/descriptions` | Update table/column descriptions -> Keboola Storage API |
-| `PUT` | `/api/tags` | Update table tags -> Keboola metadata (`bdm.tags` key) |
-| `GET` | `/api/profile/:tableId` | On-demand column profiling (hybrid native + sample) |
-| `POST` | `/api/refresh` | Trigger server-side metadata refresh |
-| `GET/POST` | `/` | React SPA (POST supported for Keboola liveness checks) |
-
-### Description Update Format
-
-```bash
-curl -X PUT /api/descriptions \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "updates": [
-      { "itemId": "out.c-bdm.FCT_ORDER", "description": "New table description" },
-      { "itemId": "out.c-bdm.FCT_ORDER.CLIENT_ID", "description": "New column description" }
-    ]
-  }'
-```
-
-The `itemId` format determines the target:
-- 3 dot-separated parts (e.g., `out.c-bdm.TABLE`) -> table description
-- 4 dot-separated parts (e.g., `out.c-bdm.TABLE.COLUMN`) -> column description
-
-### Tag Update Format
-
-```bash
-curl -X PUT /api/tags \
-  -H 'Content-Type: application/json' \
-  -d '{ "tableId": "out.c-bdm.FCT_ORDER", "tags": ["verified", "core", "custom-tag"] }'
-```
-
-Tags are stored in Keboola metadata under the `bdm.tags` key as a JSON array.
-
 ## Tech Stack
 
 | Layer | Technology |
@@ -222,77 +179,3 @@ Tags are stored in Keboola metadata under the `bdm.tags` key as a JSON array.
 | API | Keboola Storage API v2 (JSON format) |
 | Build | Vite 6 |
 | Deployment | Keboola JS Data App (nginx + supervisord) |
-
-## Project Structure
-
-```
-bdm-data-dictionary/
-+-- server/
-|   +-- index.js                     # Express server + API routes + mock data fallback
-|   +-- keboola-client.js            # Keboola Storage API wrapper (read + write)
-|   +-- metadata-cache.js            # In-memory cache with auto-refresh
-|   +-- profiling-cache.js           # Hybrid profiling engine (native + sample)
-|   +-- inference.js                 # FK inference engine
-|   +-- mock-data.js                 # Mock data generator for local development
-|   +-- overrides.json               # FK alias/skip/add/remove rules
-+-- src/
-|   +-- App.tsx                      # Root component, routing, search, description callbacks
-|   +-- main.tsx                     # Entry point
-|   +-- index.css                    # Tailwind + theme tokens + React Flow overrides
-|   +-- components/
-|   |   +-- erd/                     # ERD diagram components
-|   |   |   +-- ErdCanvas.tsx        # React Flow canvas, selection, zoom/fit/export
-|   |   |   +-- ErdToolbar.tsx       # Category filters, date links, refresh, export dropdown
-|   |   |   +-- TableNode.tsx        # Custom node rendering
-|   |   |   +-- useErdLayout.ts      # Dagre layout + highlight logic
-|   |   +-- table-detail/            # Table detail panel
-|   |   |   +-- TableDetailPanel.tsx # Floating sidebar with inline editing + tags + profiling
-|   |   |   +-- ColumnTable.tsx      # Column grid with expandable profile rows
-|   |   |   +-- ColumnProfileDrawer.tsx # Expandable stats drawer per column
-|   |   |   +-- NoValueBadge.tsx     # Inline $NOVALUE rate badge for _ID columns
-|   |   |   +-- RelationshipList.tsx # FK relationships grouped by direction
-|   |   |   +-- TypeBadge.tsx        # Type-specific color badges
-|   |   +-- table-browser/           # Table browser page
-|   |   |   +-- CategoryFilter.tsx   # Toggle chips with counts
-|   |   |   +-- SortControls.tsx     # Sort field + direction
-|   |   |   +-- TableList.tsx        # Table rows with category badges + tag chips
-|   |   |   +-- StatsDashboard.tsx   # QA stats KPI cards
-|   |   +-- tags/                    # Tag system
-|   |   |   +-- TagEditor.tsx        # Add/remove tags + predefined suggestions + TagChips
-|   |   +-- search/                  # Global search
-|   |   |   +-- CommandPalette.tsx   # Cmd+K modal with filter toggles
-|   |   |   +-- useSearch.ts         # Search index
-|   |   +-- layout/                  # App shell
-|   |   |   +-- Header.tsx           # Nav tabs, search, theme
-|   |   |   +-- Layout.tsx           # Page wrapper
-|   |   |   +-- ErrorBoundary.tsx    # React error boundary
-|   |   +-- ui/                      # Shared UI primitives
-|   |       +-- button.tsx, badge.tsx, input.tsx, tooltip.tsx
-|   |       +-- InlineEditor.tsx     # Click-to-edit text component
-|   |       +-- ConfirmDialog.tsx    # Confirmation modal
-|   +-- hooks/
-|   |   +-- useMetadata.ts           # Fetch + refresh + refetch metadata
-|   |   +-- useTheme.ts              # Dark/light theme
-|   |   +-- useDescriptionEditor.ts  # Edit state + API submission
-|   |   +-- useTags.ts               # Tag update API hook
-|   |   +-- useProfile.ts            # On-demand profiling fetch
-|   +-- lib/
-|   |   +-- types.ts                 # TypeScript interfaces + tag types
-|   |   +-- constants.ts             # Category colors, sort priority, tag config
-|   |   +-- utils.ts                 # cn(), formatNumber(), timeAgo()
-|   |   +-- qa-stats.ts              # QA metrics computation
-|   |   +-- mermaid.ts               # Mermaid erDiagram text generation
-|   +-- pages/
-|       +-- ErdPage.tsx              # ERD + detail panel
-|       +-- TableBrowserPage.tsx     # Search + filter + sort + stats
-+-- keboola-config/                  # Keboola deployment
-|   +-- setup.sh, nginx/, supervisord/
-+-- dist/                            # Build output (git-ignored)
-+-- .env.example
-+-- package.json
-+-- vite.config.ts
-+-- tsconfig.json
-+-- PRD.md                           # Original product requirements
-+-- PROGRESS.md                      # Development progress log
-+-- LESSONS.md                       # Development lessons learned
-```

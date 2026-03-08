@@ -115,6 +115,7 @@ Browser → nginx (:8888) → Express (:3000)
 - PRD kept up to date with all decisions
 - Docs committed before implementation starts
 - Code tested and committed after each section
+- When developing new features: finish the feature definition/plan, implement, test (`npx tsc -b` + verify in browser), and commit before moving to the next step. Never leave uncommitted work when switching tasks.
 - Business-user friendly labels ("45 columns" not "45")
 - Description as subtitle, not inline
 
