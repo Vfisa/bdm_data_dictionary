@@ -121,7 +121,7 @@ Browser → nginx (:8888) → Express (:3000)
 
 ## Phase Status
 
-- Phases 1-6 + 6a hotfixes: **DONE**
+- Phases 1-6 + 6a hotfixes + 6b ERD nav/layout: **DONE**
 - Phase 7: SQL-based Query Service profiling (planned)
 - Phase 8: Data Lineage graph (planned)
 

@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import dagre from 'dagre'
 import type { Node, Edge as FlowEdge } from '@xyflow/react'
 import type { MetadataResponse, Edge as DataEdge, Category } from '@/lib/types'
-import { CATEGORY_CONFIG, CATEGORY_ORDER } from '@/lib/constants'
+import { CATEGORY_CONFIG } from '@/lib/constants'
 
 /** Width/height of the custom table node */
 const NODE_WIDTH = 220
@@ -61,26 +61,20 @@ export function useErdLayout(
     })
     g.setDefaultEdgeLabel(() => ({}))
 
-    // Create a rank index for each category
-    const categoryRank = new Map<Category, number>()
-    CATEGORY_ORDER.forEach((cat, idx) => {
-      categoryRank.set(cat, idx)
-    })
-
-    // Add nodes with rank hints
+    // Add nodes (no rank hints — hierarchy determined purely by FK edges)
     filteredTables.forEach((table) => {
-      const rawRank = categoryRank.get(table.category) ?? CATEGORY_ORDER.length
-      const rank = CATEGORY_ORDER.length - 1 - rawRank
       g.setNode(table.name, {
         width: NODE_WIDTH,
         height: NODE_HEIGHT,
-        rank: rank,
       })
     })
 
-    // Add edges (only FK edges for layout — date edges excluded to avoid distortion)
+    // Add edges with reversed direction for layout:
+    // source = table with FK column (child), target = referenced table (parent)
+    // Dagre places the first arg above the second in TB mode,
+    // so setEdge(target, source) puts parent tables above child tables.
     filteredEdges.forEach((edge) => {
-      g.setEdge(edge.source, edge.target)
+      g.setEdge(edge.target, edge.source)
     })
 
     // Run Dagre layout
@@ -145,14 +139,16 @@ export function useErdLayout(
     })
 
     // Convert to React Flow edges (FK edges)
+    // Visual source/target are swapped so edges flow downward:
+    // parent (above, source handle = bottom) → child (below, target handle = top)
     const flowEdges: FlowEdge[] = filteredEdges.map((edge) => {
       const isConnected = connectedEdgeIds.has(edge.id)
       const isDimmed = hasSelection && !isConnected
 
       return {
         id: edge.id,
-        source: edge.source,
-        target: edge.target,
+        source: edge.target,
+        target: edge.source,
         type: 'default',
         animated: false,
         label: edge.label,
@@ -187,8 +183,8 @@ export function useErdLayout(
 
         flowEdges.push({
           id: edge.id,
-          source: edge.source,
-          target: edge.target,
+          source: edge.target,
+          target: edge.source,
           type: 'default',
           animated: false,
           label: edge.label,

@@ -1,5 +1,13 @@
 # Changelog
 
+## Phase 6b — ERD Navigation & Layout (2026-03-07)
+- Zoom controls (+/−/fit) button group in bottom-right corner
+- Fit View moved from toolbar to zoom control group
+- Reference-based layout hierarchy: parent/referenced tables above, child/referencing tables below
+- Removed category rank hints — Dagre determines hierarchy purely from FK graph structure
+- Edge direction reversed so lines flow downward (parent.bottom → child.top)
+- Condensed spacing: NODE_SEP 60→35px, RANK_SEP 100→60px
+
 ## Phase 6a — UI Polish Hotfixes (2026-03-07)
 - Boolean values display as uppercase TRUE/FALSE in data preview
 - Fixed Type column alignment with `w-20` on header and body

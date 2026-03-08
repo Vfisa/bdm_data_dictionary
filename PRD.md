@@ -608,22 +608,25 @@ All features below were implemented and committed:
 - [x] **Compact relationships**: Flattened from two-line items (`text-sm`) to single-line rows (`text-xs` names, `text-[11px]` column mappings, tighter padding) — columns section is now the clear visual primary
 
 
-### Phase 6b — ERD Navigation & Layout (IN PROGRESS)
+### Phase 6b — ERD Navigation & Layout (DONE)
 
 **6b.1 Zoom Controls (+/− Buttons)**
-- [ ] Vertical button group in bottom-right corner (above MiniMap): Zoom In (+), Zoom Out (−), Fit View (⊡)
-- [ ] Fit View button moved from top toolbar to this control group
-- [ ] Uses React Flow's `zoomIn()`, `zoomOut()`, `fitView()` APIs
+- [x] Vertical button group in bottom-right corner (above MiniMap): Zoom In (+), Zoom Out (−), Fit View (⊡)
+- [x] Fit View button moved from top toolbar to this control group
+- [x] Uses React Flow's `zoomIn()`, `zoomOut()`, `fitView()` APIs
 
-**6b.2 Reverse Table Order**
-- [ ] Invert category rank in ERD layout: tables currently at bottom (AUX, OTHER) move to top, tables currently at top (REF) move to bottom
-- [ ] Achieved by inverting rank: `rank = CATEGORY_ORDER.length - 1 - indexOf(cat)` in `useErdLayout.ts`
-- [ ] Toolbar category filter order remains unchanged
+**6b.2 Reference-Based Layout Hierarchy**
+- [x] ERD vertical ordering driven by FK relationships, not category rank hints
+- [x] Referenced (parent) tables placed above referencing (child) tables
+- [x] Achieved by reversing Dagre edge direction: `g.setEdge(target, source)` — tells Dagre the target (referenced table) should be at a higher rank (closer to top)
+- [x] Category rank hints removed — Dagre determines hierarchy purely from FK graph structure
+- [x] Effect: REF/DIM "master" tables float to top, FCT/MAP tables sink below their references, AUX bridge tables land between the tables they connect
+- [x] Toolbar category filter order unchanged
 
 **6b.3 Condense ERD Layout**
-- [ ] Reduce horizontal gap between nodes: `NODE_SEP: 60 → 35px`
-- [ ] Reduce vertical gap between ranks: `RANK_SEP: 100 → 60px`
-- [ ] Node dimensions unchanged (220×80px)
+- [x] Reduce horizontal gap between nodes: `NODE_SEP: 60 → 35px`
+- [x] Reduce vertical gap between ranks: `RANK_SEP: 100 → 60px`
+- [x] Node dimensions unchanged (220×80px)
 
 ### Phase 7 — Query Service Profiling (planned)
 
