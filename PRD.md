@@ -593,12 +593,19 @@ All features below were implemented and committed:
 - [x] Description editor + stats bar + tags at top of expanded area
 - [x] **Column descriptions as subtitles**: Always-visible 2-line rows — column name + type on line 1, description subtitle on line 2. `No description` shown as faint italic
 - [x] **FK link annotations**: `_ID` columns with FK relationships show clickable `→ Human Name` link that navigates to target table
-- [x] Column table max-height: 400px with scroll
+- [x] ~~Column table max-height: 400px with scroll~~ → Removed inner scroll (6a hotfix)
 - [x] Relationships section hidden when no relationships exist
 - [x] Compact section headers with counts (e.g. `COLUMNS (45)`, `RELATIONSHIPS (18)`)
 
 **6.5 Sort Controls Update**
 - [x] Sort options reduced to: Category, Name, Columns (removed Rows and Size)
+
+**6a — UI Polish Hotfixes (DONE)**
+- [x] **Boolean display**: Data preview formats `true`/`false` string values as uppercase `TRUE`/`FALSE`
+- [x] **Type column alignment**: Fixed-width `w-20` on both header and body so "Type" label aligns with TypeBadge content below
+- [x] **Sticky card header**: Expanded card's table name button is `sticky top-0 z-20` so it stays visible while scrolling through columns
+- [x] **No inner column scroll**: Removed `overflow-auto max-h-[400px]` from ColumnTable — all columns render inline, page scrolls naturally
+- [x] **Compact relationships**: Flattened from two-line items (`text-sm`) to single-line rows (`text-xs` names, `text-[11px]` column mappings, tighter padding) — columns section is now the clear visual primary
 
 
 ### Phase 7 — Query Service Profiling (planned)
