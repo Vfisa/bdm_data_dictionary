@@ -107,7 +107,7 @@ export const CATEGORY_CONFIG: Record<Category, {
   },
 }
 
-/** Ordered list of categories for display (rank order for ERD layout: REF top → AUX bottom) */
+/** Ordered list of categories for display and toolbar filters (ERD layout rank is inverted: OTHER/AUX top → REF bottom) */
 export const CATEGORY_ORDER: Category[] = [
   'REF', 'DIM', 'FCT', 'FCTH', 'MAP', 'AUX', 'OTHER',
 ]

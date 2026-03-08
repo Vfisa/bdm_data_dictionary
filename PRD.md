@@ -608,6 +608,23 @@ All features below were implemented and committed:
 - [x] **Compact relationships**: Flattened from two-line items (`text-sm`) to single-line rows (`text-xs` names, `text-[11px]` column mappings, tighter padding) — columns section is now the clear visual primary
 
 
+### Phase 6b — ERD Navigation & Layout (IN PROGRESS)
+
+**6b.1 Zoom Controls (+/− Buttons)**
+- [ ] Vertical button group in bottom-right corner (above MiniMap): Zoom In (+), Zoom Out (−), Fit View (⊡)
+- [ ] Fit View button moved from top toolbar to this control group
+- [ ] Uses React Flow's `zoomIn()`, `zoomOut()`, `fitView()` APIs
+
+**6b.2 Reverse Table Order**
+- [ ] Invert category rank in ERD layout: tables currently at bottom (AUX, OTHER) move to top, tables currently at top (REF) move to bottom
+- [ ] Achieved by inverting rank: `rank = CATEGORY_ORDER.length - 1 - indexOf(cat)` in `useErdLayout.ts`
+- [ ] Toolbar category filter order remains unchanged
+
+**6b.3 Condense ERD Layout**
+- [ ] Reduce horizontal gap between nodes: `NODE_SEP: 60 → 35px`
+- [ ] Reduce vertical gap between ranks: `RANK_SEP: 100 → 60px`
+- [ ] Node dimensions unchanged (220×80px)
+
 ### Phase 7 — Query Service Profiling (planned)
 
 - [ ] **SQL-based exact profiling** — Use Keboola Query Service (`POST /api/v1/branches/{branchId}/workspaces/{workspaceId}/queries`) for full SQL-based profiling over all rows. Requires `KBC_BRANCHID` + `KBC_WORKSPACE_ID` env vars. Async job-based: submit → poll → get results. It has been confirmed Keboola auto-injects those variables: (WORKSPACE_ID, BRANCH_ID)

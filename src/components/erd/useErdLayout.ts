@@ -8,8 +8,8 @@ import { CATEGORY_CONFIG, CATEGORY_ORDER } from '@/lib/constants'
 const NODE_WIDTH = 220
 const NODE_HEIGHT = 80
 
-const NODE_SEP = 60
-const RANK_SEP = 100
+const NODE_SEP = 35
+const RANK_SEP = 60
 
 export interface TableNodeData {
   tableName: string
@@ -69,7 +69,8 @@ export function useErdLayout(
 
     // Add nodes with rank hints
     filteredTables.forEach((table) => {
-      const rank = categoryRank.get(table.category) ?? CATEGORY_ORDER.length
+      const rawRank = categoryRank.get(table.category) ?? CATEGORY_ORDER.length
+      const rank = CATEGORY_ORDER.length - 1 - rawRank
       g.setNode(table.name, {
         width: NODE_WIDTH,
         height: NODE_HEIGHT,

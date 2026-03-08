@@ -4,7 +4,6 @@ import {
   MiniMap,
   Background,
   BackgroundVariant,
-  useReactFlow,
   ReactFlowProvider,
   type NodeTypes,
   type Node,
@@ -13,6 +12,7 @@ import '@xyflow/react/dist/style.css'
 import { toPng, toSvg } from 'html-to-image'
 import { TableNode } from './TableNode'
 import { ErdToolbar, type ExportFormat } from './ErdToolbar'
+import { ZoomControls } from './ZoomControls'
 import { useErdLayout, type TableNodeData } from './useErdLayout'
 import { CATEGORY_ORDER } from '@/lib/constants'
 import { generateMermaidERD } from '@/lib/mermaid'
@@ -38,7 +38,6 @@ function ErdCanvasInner({
   onSelectTable,
   selectedTable,
 }: ErdCanvasInnerProps) {
-  const { fitView } = useReactFlow()
   const containerRef = useRef<HTMLDivElement>(null)
 
   // Category visibility state — all visible by default
@@ -79,11 +78,6 @@ function ErdCanvasInner({
   const handlePaneClick = useCallback(() => {
     onSelectTable('')
   }, [onSelectTable])
-
-  // Handle fit view
-  const handleFitView = useCallback(() => {
-    fitView({ padding: 0.1, duration: 300 })
-  }, [fitView])
 
   // Handle export in multiple formats
   const handleExport = useCallback(async (format: ExportFormat) => {
@@ -139,7 +133,6 @@ function ErdCanvasInner({
         lastRefresh={metadata.lastRefresh}
         isRefreshing={isRefreshing}
         onRefresh={onRefresh}
-        onFitView={handleFitView}
         onExport={handleExport}
         tableCount={visibleTableCount}
         edgeCount={visibleEdgeCount}
@@ -194,6 +187,7 @@ function ErdCanvasInner({
           zoomable
         />
       </ReactFlow>
+      <ZoomControls />
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { RefreshCw, Maximize2, Download, CalendarDays, Image, FileCode, ChevronDown } from 'lucide-react'
+import { RefreshCw, Download, CalendarDays, Image, FileCode, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CATEGORY_CONFIG, CATEGORY_ORDER } from '@/lib/constants'
 import type { Category } from '@/lib/types'
@@ -13,7 +13,6 @@ interface ErdToolbarProps {
   lastRefresh: string | null
   isRefreshing: boolean
   onRefresh: () => void
-  onFitView: () => void
   onExport: (format: ExportFormat) => void
   tableCount: number
   edgeCount: number
@@ -28,7 +27,6 @@ export function ErdToolbar({
   lastRefresh,
   isRefreshing,
   onRefresh,
-  onFitView,
   onExport,
   tableCount,
   edgeCount,
@@ -115,16 +113,6 @@ export function ErdToolbar({
 
         {/* Export dropdown */}
         <ExportDropdown onExport={onExport} />
-
-        {/* Fit view button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onFitView}
-          title="Fit diagram to view"
-        >
-          <Maximize2 className="h-4 w-4" />
-        </Button>
       </div>
     </div>
   )
