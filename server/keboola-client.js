@@ -500,6 +500,15 @@ export function createClient(kbcUrl, kbcToken) {
     };
   }
 
+  /**
+   * Fetch metadata for a specific branch.
+   * @param {string} branchId - Branch ID or "default"
+   * @returns {Promise<Array<{ id: string, key: string, value: string, provider: string, timestamp: string }>>}
+   */
+  async function getBranchMetadata(branchId) {
+    return request(`branch/${encodeURIComponent(branchId)}/metadata`);
+  }
+
   return {
     listBucketTables,
     getTable,
@@ -513,5 +522,6 @@ export function createClient(kbcUrl, kbcToken) {
     listTransformationConfigs,
     listRecentJobs,
     verifyToken,
+    getBranchMetadata,
   };
 }

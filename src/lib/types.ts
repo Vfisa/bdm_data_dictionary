@@ -134,4 +134,4 @@ export interface DataPreviewResult {
 export type StatsFilter = 'missingTableDesc' | 'missingColDesc' | 'emptyTables' | null
 
 /** App navigation page */
-export type Page = 'erd' | 'tables'
+export type Page = 'overview' | 'tables' | 'erd' | 'docs'

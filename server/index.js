@@ -13,6 +13,7 @@ const PORT = process.env.PORT || 3000;
 const KBC_TOKEN = process.env.KBC_TOKEN;
 const KBC_URL = process.env.KBC_URL;
 const BUCKET_ID = process.env.BUCKET_ID || 'out.c-bdm';
+const BRANCH_ID = process.env.BRANCH_ID || 'default';
 
 const USE_MOCK = !KBC_TOKEN || !KBC_URL;
 let mockData = null;
@@ -86,6 +87,37 @@ app.get('/api/metadata', (_req, res) => {
   }
 
   res.json(metadata);
+});
+
+// Project overview — branch metadata (project description, etc.)
+app.get('/api/project-overview', async (_req, res) => {
+  if (USE_MOCK) {
+    return res.json({
+      metadata: [
+        {
+          id: '1',
+          key: 'KBC.projectDescription',
+          value: '# Horizon Air Freight — BDM\n\nThis project contains the **Business Data Model** for Horizon Air Freight.\n\n## Data Architecture\n\n- **60 tables** across dimension, fact, reference, and mapping categories\n- **~3.2 GB** total data volume\n- Snowflake-backed transformations\n\n## Key Domains\n\n1. **Client Management** — REF_CLIENT, DIM_CLIENT_SEGMENT\n2. **Product Catalog** — REF_PRODUCT, REF_CATEGORY\n3. **Order Processing** — FCT_ORDER, FCT_PAYMENT, MAP_ORDER_PRODUCT\n4. **Geography** — REF_COUNTRY, DIM_STORE\n\n> Last updated by the data engineering team.',
+          provider: 'system',
+          timestamp: new Date().toISOString(),
+        },
+      ],
+    });
+  }
+
+  if (!cache) {
+    return res.status(503).json({
+      error: 'Project overview not available — KBC_TOKEN or KBC_URL not configured',
+    });
+  }
+
+  try {
+    const metadata = await cache.getClient().getBranchMetadata(BRANCH_ID);
+    res.json({ metadata });
+  } catch (err) {
+    console.error('GET /api/project-overview failed:', err.message);
+    res.status(500).json({ error: `Failed to fetch project overview: ${err.message}` });
+  }
 });
 
 // Single table detail with relationships
@@ -357,6 +389,7 @@ async function start() {
     console.log(`  KBC_URL:   ${KBC_URL || '(not set)'}`);
     console.log(`  KBC_TOKEN: ${KBC_TOKEN ? '***' + KBC_TOKEN.slice(-4) : '(not set)'}`);
     console.log(`  BUCKET_ID: ${BUCKET_ID}`);
+    console.log(`  BRANCH_ID: ${BRANCH_ID}`);
     if (cache) {
       const status = cache.getStatus();
       console.log(`  Cache:     ${status.tableCount} tables, ${status.edgeCount} edges`);

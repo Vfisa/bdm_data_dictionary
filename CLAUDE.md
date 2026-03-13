@@ -34,6 +34,7 @@ BDM Data Dictionary & ERD Viewer — a React-based Keboola Data App for the Hori
 | Backend | Express.js | SPA serving + Keboola Storage API proxy |
 | Search | cmdk | Cmd+K command palette with fuzzy search |
 | Icons | lucide-react | Wrap in `<span>` for title/aria attributes |
+| Markdown | react-markdown + rehype-sanitize | Secure markdown rendering for project overview |
 | Deploy | Keboola JS Data App | nginx + supervisord + setup.sh |
 
 ## Architecture
@@ -41,13 +42,14 @@ BDM Data Dictionary & ERD Viewer — a React-based Keboola Data App for the Hori
 ```
 Browser → nginx (:8888) → Express (:3000)
                               ├── Serve SPA (dist/)
-                              ├── GET  /api/metadata      ← tables + edges + categories
-                              ├── GET  /api/table/:id     ← single table detail
-                              ├── PUT  /api/descriptions  ← edit descriptions → Keboola API
-                              ├── PUT  /api/tags          ← edit tags → Keboola metadata
-                              ├── GET  /api/profile/:id   ← on-demand column profiling
-                              ├── GET  /api/preview/:id   ← data preview (CSV parsed)
-                              ├── POST /api/refresh       ← trigger cache refresh
+                              ├── GET  /api/metadata         ← tables + edges + categories
+                              ├── GET  /api/project-overview ← branch metadata (project description)
+                              ├── GET  /api/table/:id        ← single table detail
+                              ├── PUT  /api/descriptions     ← edit descriptions → Keboola API
+                              ├── PUT  /api/tags             ← edit tags → Keboola metadata
+                              ├── GET  /api/profile/:id      ← on-demand column profiling
+                              ├── GET  /api/preview/:id      ← data preview (CSV parsed)
+                              ├── POST /api/refresh          ← trigger cache refresh
                               └── GET  /api/health
 ```
 
@@ -60,8 +62,10 @@ Browser → nginx (:8888) → Express (:3000)
 ## Key File Map
 
 ### Pages
-- `src/pages/TableBrowserPage.tsx` — landing page, all filter/sort/group state
+- `src/pages/ProjectOverviewPage.tsx` — default landing page, renders branch metadata markdown
+- `src/pages/TableBrowserPage.tsx` — table list with filter/sort/group state
 - `src/pages/ErdPage.tsx` — ERD diagram with floating detail panel
+- `src/pages/ProjectDocumentationPage.tsx` — placeholder (coming soon)
 
 ### Components
 - `src/components/table-browser/` — StatsDashboard, CategoryFilter, SortControls, TableList, TableExpandedDetail, DataPreviewTable
@@ -125,7 +129,8 @@ Browser → nginx (:8888) → Express (:3000)
 
 - Phases 1-6 + 6a hotfixes + 6b ERD nav/layout: **DONE**
 - Phase 7: Transformation Lineage: **DONE**
-- Phase 8: SQL-based Query Service profiling (planned)
+- Phase 8: Project Overview & Documentation Tabs: **DONE**
+- Phase 9: SQL-based Query Service profiling (planned)
 
 ## Keboola API Notes
 

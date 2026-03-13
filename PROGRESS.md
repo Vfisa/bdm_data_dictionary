@@ -335,6 +335,30 @@
 
 ---
 
+## Phase 8: Project Overview & Documentation Tabs
+**Status:** DONE
+**Date:** 2026-03-13
+
+**New files:**
+- `src/pages/ProjectOverviewPage.tsx` — renders `KBC.projectDescription` markdown from branch metadata
+- `src/pages/ProjectDocumentationPage.tsx` — placeholder page ("Coming soon")
+- `src/hooks/useProjectOverview.ts` — fetches `/api/project-overview`, extracts description + project name
+
+**Modified files:**
+- `server/keboola-client.js` — added `getBranchMetadata(branchId)` calling `/v2/storage/branch/{id}/metadata`
+- `server/index.js` — added `BRANCH_ID` env var + `GET /api/project-overview` route with mock mode
+- `.env.example` — added `BRANCH_ID=default`
+- `src/lib/types.ts` — extended `Page` type: `'overview' | 'tables' | 'erd' | 'docs'`
+- `src/components/layout/Header.tsx` — 4-tab navigation (Overview, Table Browser, ERD Diagram, Documentation)
+- `src/components/layout/Layout.tsx` — expanded aria-label for all 4 pages
+- `src/App.tsx` — default page `'overview'`, conditional renders for new pages
+
+**New dependencies:** `react-markdown`, `rehype-sanitize`
+
+**Test:** `npx tsc -b` passes. All 4 tabs render correctly in browser. Markdown renders with headings, bold, lists, blockquotes. Dark mode works.
+
+---
+
 ---
 
 ## Phase 1: Visual Polish & Layout

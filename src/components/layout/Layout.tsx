@@ -28,7 +28,12 @@ export function Layout({
         onToggleTheme={onToggleTheme}
         onOpenSearch={onOpenSearch}
       />
-      <main className="flex-1 overflow-hidden" role="main" aria-label={currentPage === 'erd' ? 'ERD Diagram' : 'Table Browser'}>
+      <main className="flex-1 overflow-hidden" role="main" aria-label={
+        currentPage === 'overview' ? 'Project Overview' :
+        currentPage === 'erd' ? 'ERD Diagram' :
+        currentPage === 'docs' ? 'Project Documentation' :
+        'Table Browser'
+      }>
         {children}
       </main>
     </div>

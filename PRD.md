@@ -744,7 +744,16 @@ All features below were implemented and committed:
 ├─────────────────────────────────────────────────────────────────┤
 ```
 
-### Phase 8 — Query Service Profiling (planned)
+### Phase 8 — Project Overview & Documentation Tabs ✅
+
+- [x] **Project Overview tab** — New default landing page. Fetches branch metadata from Keboola API (`/v2/storage/branch/{BRANCH_ID}/metadata`), extracts `KBC.projectDescription` key, renders as sanitized markdown using `react-markdown` + `rehype-sanitize`
+- [x] **Project Documentation tab** — Placeholder page ("Coming soon") for future documentation features
+- [x] **4-tab navigation** — Expanded from 2 tabs to 4: Overview → Table Browser → ERD Diagram → Documentation
+- [x] **New API endpoint** — `GET /api/project-overview` returns raw branch metadata array; mock mode returns sample markdown
+- [x] **BRANCH_ID env var** — New environment variable (defaults to `"default"`), injected by Keboola platform at runtime
+- [x] **Markdown rendering** — Hand-rolled styled components (h1–h3, p, lists, blockquotes, tables, code blocks) using oklch custom properties — no `@tailwindcss/typography` dependency
+
+### Phase 9 — Query Service Profiling (planned)
 
 - [ ] **SQL-based exact profiling** — Use Keboola Query Service (`POST /api/v1/branches/{branchId}/workspaces/{workspaceId}/queries`) for full SQL-based profiling over all rows. Requires `KBC_BRANCHID` + `KBC_WORKSPACE_ID` env vars. Async job-based: submit → poll → get results. It has been confirmed Keboola auto-injects those variables: (WORKSPACE_ID, BRANCH_ID)
 

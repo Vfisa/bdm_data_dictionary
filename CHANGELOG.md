@@ -1,5 +1,15 @@
 # Changelog
 
+## Phase 8 — Project Overview & Documentation Tabs (2026-03-13)
+- **Project Overview tab** (new default landing page): Fetches branch metadata from Keboola API (`/v2/storage/branch/{BRANCH_ID}/metadata`), renders `KBC.projectDescription` as sanitized markdown
+- **Project Documentation tab**: Placeholder page with "Coming soon" empty state
+- **4-tab navigation**: Overview → Table Browser → ERD Diagram → Documentation
+- **New API endpoint**: `GET /api/project-overview` with mock mode support
+- **New server method**: `getBranchMetadata(branchId)` in keboola-client.js
+- **New env var**: `BRANCH_ID` (defaults to `default`, injected by Keboola platform)
+- **New dependencies**: `react-markdown` + `rehype-sanitize` for secure markdown rendering
+- **New hook**: `useProjectOverview()` following existing data-fetching patterns
+
 ## Phase 7.7 — Keboola URL Path Fix (2026-03-13)
 - **Fixed transformation URL path**: Changed `/transformations/bucket/` to `/transformations-v2/` in `buildKeboolaUrl()` — URLs now correctly open transformation configs in the Keboola UI
 

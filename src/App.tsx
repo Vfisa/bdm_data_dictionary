@@ -3,6 +3,8 @@ import { Layout } from '@/components/layout/Layout'
 import { ErrorBoundary } from '@/components/layout/ErrorBoundary'
 import { ErdPage } from '@/pages/ErdPage'
 import { TableBrowserPage } from '@/pages/TableBrowserPage'
+import { ProjectOverviewPage } from '@/pages/ProjectOverviewPage'
+import { ProjectDocumentationPage } from '@/pages/ProjectDocumentationPage'
 import { CommandPalette } from '@/components/search/CommandPalette'
 import { useTheme } from '@/hooks/useTheme'
 import { useMetadata } from '@/hooks/useMetadata'
@@ -10,7 +12,7 @@ import { Loader2, AlertCircle } from 'lucide-react'
 import type { Page } from '@/lib/types'
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<Page>('tables')
+  const [currentPage, setCurrentPage] = useState<Page>('overview')
   const [searchOpen, setSearchOpen] = useState(false)
   const { isDark, toggleTheme } = useTheme()
   const { data, isLoading, error, refresh, refetch, isRefreshing } = useMetadata()
@@ -84,13 +86,8 @@ function App() {
         onToggleTheme={toggleTheme}
         onOpenSearch={handleOpenSearch}
       >
-        {currentPage === 'erd' && (
-          <ErdPage
-            metadata={data}
-            isRefreshing={isRefreshing}
-            onRefresh={refresh}
-            onDescriptionUpdated={refetch}
-          />
+        {currentPage === 'overview' && (
+          <ProjectOverviewPage />
         )}
         {currentPage === 'tables' && (
           <TableBrowserPage
@@ -99,6 +96,17 @@ function App() {
             isRefreshing={isRefreshing}
             onRefresh={refresh}
           />
+        )}
+        {currentPage === 'erd' && (
+          <ErdPage
+            metadata={data}
+            isRefreshing={isRefreshing}
+            onRefresh={refresh}
+            onDescriptionUpdated={refetch}
+          />
+        )}
+        {currentPage === 'docs' && (
+          <ProjectDocumentationPage />
         )}
       </Layout>
 
