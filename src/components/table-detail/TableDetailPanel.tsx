@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useState, useMemo } from 'react'
-import { X, ChevronRight, Database, Rows3, HardDrive, Columns3, Clock, FlaskConical, Loader2, AlertTriangle } from 'lucide-react'
+import { X, ChevronRight, Database, Rows3, HardDrive, Columns3, Clock, FlaskConical, Loader2, AlertTriangle, ArrowLeftRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { InlineEditor } from '@/components/ui/InlineEditor'
@@ -242,7 +242,8 @@ export function TableDetailPanel({
 
           {/* Relationships section */}
           <div className="p-5">
-            <h3 className="text-sm font-semibold text-[var(--foreground)] uppercase tracking-wider mb-2">
+            <h3 className="text-sm font-semibold text-[var(--foreground)] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <ArrowLeftRight className="h-4 w-4" />
               Relationships
             </h3>
             <RelationshipList

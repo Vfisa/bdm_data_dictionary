@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react'
-import { Database, Rows3, HardDrive, Columns3, Clock, FlaskConical, Loader2, AlertTriangle, Table2 } from 'lucide-react'
+import { Database, Rows3, HardDrive, Columns3, Clock, FlaskConical, Loader2, AlertTriangle, Table2, ArrowLeftRight } from 'lucide-react'
 import { InlineEditor } from '@/components/ui/InlineEditor'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { TagEditor } from '@/components/tags/TagEditor'
@@ -102,8 +102,8 @@ export function TableExpandedDetail({
       {/* 1. Columns section */}
       <div className="px-5 py-4">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider flex items-center gap-1.5">
-            <Database className="h-3.5 w-3.5" />
+          <h3 className="text-sm font-semibold text-[var(--foreground)] uppercase tracking-wider flex items-center gap-1.5">
+            <Database className="h-4 w-4" />
             Columns ({table.columnCount})
           </h3>
           <div className="flex items-center gap-2">
@@ -157,7 +157,8 @@ export function TableExpandedDetail({
       {(outgoing.length > 0 || incoming.length > 0) && (
         <>
           <div className="px-5 py-4">
-            <h3 className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider mb-2">
+            <h3 className="text-sm font-semibold text-[var(--foreground)] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <ArrowLeftRight className="h-4 w-4" />
               Relationships ({outgoing.length + incoming.length})
             </h3>
             <RelationshipList
@@ -191,8 +192,8 @@ export function TableExpandedDetail({
 
       {/* 4. Data Preview (moved to bottom) */}
       <div className="px-5 py-4">
-        <h3 className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider mb-2 flex items-center gap-1.5">
-          <Table2 className="h-3.5 w-3.5" />
+        <h3 className="text-sm font-semibold text-[var(--foreground)] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <Table2 className="h-4 w-4" />
           Data Preview
         </h3>
         <DataPreviewTable

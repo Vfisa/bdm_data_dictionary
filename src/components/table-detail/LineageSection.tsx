@@ -151,8 +151,8 @@ function LineageRow({ entry }: { entry: LineageEntry }) {
 /** Section header with icon and count — for use in parent components */
 export function LineageSectionHeader({ count }: { count: number }) {
   return (
-    <h3 className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider mb-2 flex items-center gap-1.5">
-      <GitBranch className="h-3.5 w-3.5" />
+    <h3 className="text-sm font-semibold text-[var(--foreground)] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+      <GitBranch className="h-4 w-4" />
       Lineage ({count})
     </h3>
   )
