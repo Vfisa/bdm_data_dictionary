@@ -466,7 +466,7 @@ export function createClient(kbcUrl, kbcToken) {
    */
   async function listRecentJobs(limit = 500) {
     try {
-      const jobs = await request(`jobs?limit=${limit}&sortBy=id&sortOrder=desc`);
+      const jobs = await request(`jobs?limit=${limit}`);
 
       // Build map: "componentId:configId" → most recent job
       const jobMap = new Map();
