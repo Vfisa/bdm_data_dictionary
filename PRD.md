@@ -651,7 +651,7 @@ All features below were implemented and committed:
   - `lastChangeDate` — ISO timestamp of last config modification
   - `lastRunDate` — ISO timestamp of last successful job (from jobs API, most recent per config)
   - `lastRunStatus` — `success` | `error` | `warning` | `null` (never run)
-  - `keboolaUrl` — direct link to transformation config in Keboola UI (`{KBC_URL}/admin/projects/{projectId}/transformations/bucket/{componentId}/{configId}`)
+  - `keboolaUrl` — direct link to transformation config in Keboola UI (`{KBC_URL}/admin/projects/{projectId}/transformations-v2/{componentId}/{configId}`)
 - [x] **LineageCache** — Stored alongside MetadataCache, same refresh lifecycle. Built at startup, refreshed on `POST /api/refresh` and every 15 minutes with the rest of the metadata
 - [x] **API endpoint** — `GET /api/metadata` response extended with `lineage` field containing the full `producedBy` and `usedBy` maps. No separate endpoint needed — lineage ships with the metadata payload
 - [x] **Mock lineage data** — Auto-generate sample lineage entries in mock mode (2-3 transformations referencing mock tables)
@@ -705,20 +705,19 @@ All features below were implemented and committed:
 - [x] Shows time since last refresh (e.g., "Refreshed 2m ago")
 - [x] Refresh updates both metadata (tables, columns, edges) AND lineage index (transformation configs + last run info)
 
-**7.5 Lineage Hotfixes**
-- [ ] **Fix Keboola URL project ID** — URL currently uses `_` placeholder instead of actual project ID. Add `verifyToken()` to keboola-client that calls `/v2/storage/tokens/verify` at startup to retrieve `owner.id`, then pass project ID into `buildKeboolaUrl()`
-- [ ] **Fix Lineage header styling** — `LineageSectionHeader` should match sibling section headers. In Table Browser: `text-xs font-semibold text-[var(--muted-foreground)]` with icon. In ERD panel: `text-sm font-semibold text-[var(--foreground)]`. Both panels' lineage header should match their respective Columns/Relationships style
+**7.5 Lineage Hotfixes** ✅
+- [x] **Fix Keboola URL project ID** — Added `verifyToken()` to keboola-client that calls `/v2/storage/tokens/verify` at startup to retrieve `owner.id`, passes project ID into `buildKeboolaUrl()`
+- [x] **Fix Lineage header styling** — `LineageSectionHeader` matches sibling section headers. Table Browser: `text-xs font-semibold text-[var(--muted-foreground)]` with icon. ERD panel: `text-sm font-semibold text-[var(--foreground)]`
 
-**7.6 Lineage UI Polish**
-- [ ] **Labeled timestamps** — Replace bare `timeAgo()` timestamps with `Last change: 2d ago` and `Last run: 1h ago` labels for clarity
-- [ ] **Color-coded type badges** — Replace monochrome muted badges with semantic colors:
-  - SQL: light blue bg / blue text
-  - PY: yellow-orange bg / amber text
-  - dbt: red bg / red text
-  - Other (R, JL, OR, etc.): gray bg / gray text (current behavior)
-- [ ] **Keboola logo** — Replace `ExternalLink` icon (↗) with small round Keboola octopus logo in blue (inline SVG or asset). Signals "this links to Keboola" more clearly
-- [ ] **Section separators** — Add thin `border-t` line separators between major sections: Columns, Relationships, Lineage, Data Preview. Applies to both Table Browser and ERD panel
-- [ ] **Section spacing** — Increase vertical padding between sections for visual clarity. Streamline spacing between Table Browser (`px-5 pb-4`) and ERD panel (`p-5 pt-0`) to be consistent
+**7.6 Lineage UI Polish** ✅
+- [ ] **Labeled timestamps** — Replace bare `timeAgo()` timestamps with `Last change: 2d ago` and `Last run: 1h ago` labels for clarity *(deferred — low priority)*
+- [x] **Color-coded type badges** — SQL: light blue bg / blue text, PY: yellow-orange bg / amber text, dbt: red bg / red text, Other: gray bg / gray text
+- [x] **Keboola logo** — Replaced `ExternalLink` icon with transparent-background blue Keboola octopus inline SVG, shown on hover
+- [x] **Section separators** — Thin `border-t` line separators between Columns, Relationships, Lineage, Data Preview in both panels
+- [x] **Section spacing** — Unified `py-4` / `p-5` padding across Table Browser and ERD panel
+
+**7.7 Keboola URL Path Fix** ✅
+- [x] **Fix transformation URL path** — URL used `/transformations/bucket/{componentId}/{configId}` but Keboola UI uses `/transformations-v2/{componentId}/{configId}`. Fixed `buildKeboolaUrl()` in `lineage-cache.js`
 
 ```
 ├─────────────────────────────────────────────────────────────────┤

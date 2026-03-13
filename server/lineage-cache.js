@@ -43,7 +43,7 @@ function buildKeboolaUrl(kbcUrl, componentId, configId, projectId) {
   if (!kbcUrl) return '';
   const base = kbcUrl.replace(/\/+$/, '');
   const pid = projectId || '_';
-  return `${base}/admin/projects/${pid}/transformations/bucket/${encodeURIComponent(componentId)}/${encodeURIComponent(configId)}`;
+  return `${base}/admin/projects/${pid}/transformations-v2/${encodeURIComponent(componentId)}/${encodeURIComponent(configId)}`;
 }
 
 /**

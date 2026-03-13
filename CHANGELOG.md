@@ -1,5 +1,8 @@
 # Changelog
 
+## Phase 7.7 — Keboola URL Path Fix (2026-03-13)
+- **Fixed transformation URL path**: Changed `/transformations/bucket/` to `/transformations-v2/` in `buildKeboolaUrl()` — URLs now correctly open transformation configs in the Keboola UI
+
 ## Phase 7.5/7.6 — Lineage Hotfixes & UI Polish (2026-03-13)
 - **Fixed Keboola URL**: Added `verifyToken()` to fetch project ID at startup; URLs now include actual project ID instead of `_` placeholder
 - **Color-coded type badges**: SQL (blue), PY (amber), dbt (red), others (gray) — replaces monochrome muted badges
