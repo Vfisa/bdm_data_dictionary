@@ -635,13 +635,79 @@ All features below were implemented and committed:
 - [x] Clicking pane background deselects table and hides collapsed bar
 - [x] Selecting a different table while collapsed auto-expands the panel
 
-### Phase 7 — Query Service Profiling (planned)
+### Phase 7 — Transformation Lineage (planned)
+
+> Design mockups below. Lineage section appears in both Table Browser expanded detail and ERD floating detail panel.
+
+**7.1 Lineage Data Collection (Server-side)**
+- [ ] **Parse transformation configs** — At startup (and on refresh), fetch all transformation configurations from the project via Keboola API (`list_configs` with `component_types: ["transformation"]`). Parse each config's input/output storage mappings to build a lineage index:
+  - `producedBy[tableId]` → list of transformations whose output mapping includes this table
+  - `usedBy[tableId]` → list of transformations whose input mapping includes this table
+- [ ] **Lineage index structure** — Each lineage entry contains:
+  - `configId` — transformation configuration ID
+  - `configName` — human-readable name
+  - `componentId` — component ID (e.g., `keboola.snowflake-transformation`, `keboola.python-transformation-v2`)
+  - `componentType` — short label derived from componentId: `SQL`, `PY`, `dbt`, `R`, etc.
+  - `lastChangeDate` — ISO timestamp of last config modification
+  - `lastRunDate` — ISO timestamp of last successful job (from jobs API, most recent per config)
+  - `lastRunStatus` — `success` | `error` | `warning` | `null` (never run)
+  - `keboolaUrl` — direct link to transformation config in Keboola UI (`{KBC_URL}/admin/projects/{projectId}/transformations/bucket/{componentId}/{configId}`)
+- [ ] **LineageCache** — Stored alongside MetadataCache, same refresh lifecycle. Built at startup, refreshed on `POST /api/refresh` and every 15 minutes with the rest of the metadata
+- [ ] **API endpoint** — `GET /api/metadata` response extended with `lineage` field containing the full `producedBy` and `usedBy` maps. No separate endpoint needed — lineage ships with the metadata payload
+- [ ] **Mock lineage data** — Auto-generate sample lineage entries in mock mode (2-3 transformations referencing mock tables)
+
+**7.2 Lineage UI — Table Browser Expanded Detail**
+- [ ] **Lineage section** — New collapsible section between Relationships and Data Preview: `▼ LINEAGE (N)`
+- [ ] **Two subsections**: "Created by" (output-of) and "Used by" (input-to), each listing transformations
+- [ ] **Transformation row** — Single line per transformation:
+  - Type badge: `[SQL]`, `[PY]`, `[dbt]`, `[R]` — small muted badge
+  - Config name in **bold blue**, clickable → opens Keboola UI in new tab (external link icon `↗`)
+  - Right-aligned metadata: `Changed 2d ago · Ran 1h ago` (relative timestamps)
+  - Last run status indicator: green check (success), red cross (error), yellow warning, or dash (never run)
+- [ ] **Empty state** — When no transformations reference the table, show section header with muted message: *"No transformations reference this table"*
+
+```
+├─────────────────────────────────────────────────────────────────┤
+│ ▼ LINEAGE (3)                                                   │
+│                                                                  │
+│   Created by                                                     │
+│   [SQL] Build FCT Order  ↗      Changed 2d ago · ✓ Ran 1h ago  │
+│                                                                  │
+│   Used by                                                        │
+│   [SQL] Enrich Dispatch  ↗      Changed 5d ago · ✓ Ran 3h ago  │
+│   [PY]  Export to DWH    ↗      Changed 1d ago · ✗ Ran 1d ago  │
+├─────────────────────────────────────────────────────────────────┤
+```
+
+**7.3 Lineage UI — ERD Floating Detail Panel**
+- [ ] **Same Lineage section** in the ERD's 560px floating sidebar, same position (after Relationships, before Data Preview)
+- [ ] **Narrower layout** — Two-line per transformation (name on line 1, metadata on line 2) to fit the 560px panel width
+
+```
+├──────────────────────────────────────┤
+│ ▼ LINEAGE (3)                        │
+│                                      │
+│   Created by                         │
+│   [SQL] Build FCT Order       ↗     │
+│         Changed 2d ago · ✓ Ran 1h   │
+│                                      │
+│   Used by                            │
+│   [SQL] Enrich Dispatch       ↗     │
+│         Changed 5d ago · ✓ Ran 3h   │
+│   [PY]  Export to DWH         ↗     │
+│         Changed 1d ago · ✗ Ran 1d   │
+├──────────────────────────────────────┤
+```
+
+**7.4 Refresh Button on Table Browser**
+- [ ] **Add refresh button** to Table Browser toolbar (currently only exists on ERD tab)
+- [ ] Same behavior: `POST /api/refresh` → spinner while backend re-fetches metadata + lineage from Keboola API → toast notification on completion
+- [ ] Shows time since last refresh (e.g., "Refreshed 2m ago")
+- [ ] Refresh updates both metadata (tables, columns, edges) AND lineage index (transformation configs + last run info)
+
+### Phase 8 — Query Service Profiling (planned)
 
 - [ ] **SQL-based exact profiling** — Use Keboola Query Service (`POST /api/v1/branches/{branchId}/workspaces/{workspaceId}/queries`) for full SQL-based profiling over all rows. Requires `KBC_BRANCHID` + `KBC_WORKSPACE_ID` env vars. Async job-based: submit → poll → get results. It has been confirmed Keboola auto-injects those variables: (WORKSPACE_ID, BRANCH_ID)
-
-### Phase 8 — Data Lineage (planned)
-
-- [ ] **Data lineage graph** — Full upstream/downstream visualization via Keboola component config + flow APIs. New LineagePage with LR Dagre layout showing extractors, transformations, writers as distinct node types.
 
 ### Backlog
 
@@ -688,7 +754,7 @@ All features below were implemented and committed:
 
 1. **Auth**: Default Keboola basic auth is currently used. OIDC integration deferred.
 2. ~~**Data profiling API limits**: Keboola data preview returns max 1,000 rows. Sufficient for sampling or need full-scan approach?~~ **Resolved:** Hybrid approach — native profiling API for exact stats (all rows) + data preview for $NOVALUE/samples (1000 rows). Query service for Phase 6.
-3. **Lineage API scope**: Start with transformation-only lineage or include extractors/writers from the start?
+3. ~~**Lineage API scope**: Start with transformation-only lineage or include extractors/writers from the start?~~ **Resolved:** Transformation-only lineage in Phase 7. Scoped to input/output mappings from transformation configs. Extractors/writers deferred to backlog.
 
 ## 14. Resolved Phase 3 Decisions
 
@@ -708,7 +774,7 @@ All features below were implemented and committed:
 | 19 | Profile UI pattern | Expandable rows in ColumnTable with chevron toggle. ColumnProfileDrawer renders below each row. |
 | 20 | CSV parsing | `csv-parse/sync` npm package for data-preview CSV parsing |
 | 21 | Profile cache | Server-side ProfilingCache, 30-min TTL per table, request deduplication, 200ms rate limiting between API calls |
-| 22 | Query service | Deferred to Phase 7. Requires KBC_BRANCHID + KBC_WORKSPACE_ID env vars (confirmed auto-injected). |
+| 22 | Query service | Deferred to Phase 8. Requires KBC_BRANCHID + KBC_WORKSPACE_ID env vars (confirmed auto-injected). |
 
 ## 16. Resolved Phase 6 Decisions
 
@@ -720,8 +786,20 @@ All features below were implemented and committed:
 | 26 | Collapsed card content | Name + description subtitle + "N columns" only. No rows, size, or technical name |
 | 27 | Description placement | Subtitle line under table/column name, not inline in same row |
 | 28 | Column descriptions | Always show 2-line rows: name+type on line 1, description subtitle on line 2. `No description` as faint italic |
-| 29 | Expanded section order | Columns → Relationships → Data Preview (moved data preview to bottom) |
+| 29 | Expanded section order | Columns → Relationships → Lineage → Data Preview (lineage added in Phase 7) |
 | 30 | Category grouping | Collapsible headers with ▼/► toggle. All groups expanded by default |
 | 31 | Sort options | Category, Name, Columns only (removed Rows and Size since hidden from collapsed cards) |
 | 32 | Slide-out vs inline detail | Inline expansion (consistent with Phase 5 decision), not slide-out panel |
 | 33 | FK links in column list | `_ID` columns show clickable `→ REF_TARGET` link, navigates to that table |
+
+## 17. Resolved Phase 7 Decisions
+
+| # | Question | Decision |
+|---|----------|----------|
+| 34 | Lineage scope | Transformation-only (input/output mappings). Extractors/writers deferred to backlog |
+| 35 | Lineage section position | After Relationships, before Data Preview (Columns → Relationships → Lineage → Data Preview) |
+| 36 | Transformation click action | Open in Keboola UI (external link, new tab). URL constructed from KBC_URL + componentId + configId |
+| 37 | Show transformation type | Yes, as small badge: `[SQL]`, `[PY]`, `[dbt]`, `[R]` derived from componentId |
+| 38 | Empty lineage state | Show section header with muted message: "No transformations reference this table" |
+| 39 | Lineage data source | Parse all transformation configs' input/output storage mappings at startup. Cached with metadata, same refresh lifecycle |
+| 40 | Refresh button placement | Added to Table Browser toolbar (was ERD-only). Both tabs share the same refresh action |

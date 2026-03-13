@@ -8,6 +8,7 @@
 
 import { createClient } from './keboola-client.js';
 import { inferRelationships, inferDateConnections, getCategory } from './inference.js';
+import { buildLineageIndex } from './lineage-cache.js';
 
 export class MetadataCache {
   /**
@@ -21,6 +22,7 @@ export class MetadataCache {
    */
   constructor(options) {
     this.client = createClient(options.kbcUrl, options.kbcToken);
+    this.kbcUrl = options.kbcUrl;
     this.bucketId = options.bucketId || 'out.c-bdm';
     this.bucketIds = options.bucketIds || [this.bucketId, `${this.bucketId}_aux`];
     this.overridesPath = options.overridesPath || undefined;
@@ -110,6 +112,21 @@ export class MetadataCache {
     // Run date connection inference
     const { dateEdges } = inferDateConnections(tables);
 
+    // Build lineage index from transformation configs
+    let lineage = { producedBy: {}, usedBy: {} };
+    try {
+      const [transformationConfigs, jobMap] = await Promise.all([
+        this.client.listTransformationConfigs(),
+        this.client.listRecentJobs(),
+      ]);
+      lineage = buildLineageIndex(transformationConfigs, jobMap, this.kbcUrl);
+      const prodCount = Object.keys(lineage.producedBy).length;
+      const usedCount = Object.keys(lineage.usedBy).length;
+      console.log(`MetadataCache: Lineage built — ${transformationConfigs.length} transformations, ${prodCount} produced, ${usedCount} used`);
+    } catch (err) {
+      console.warn('MetadataCache: Lineage build failed (non-fatal):', err.message);
+    }
+
     // Atomic swap — old data is replaced all at once
     this._data = {
       tables,
@@ -117,6 +134,7 @@ export class MetadataCache {
       dateEdges,
       categories,
       stats,
+      lineage,
       lastRefresh: new Date().toISOString(),
       tableCount: tables.length,
       edgeCount: edges.length,
@@ -151,6 +169,7 @@ export class MetadataCache {
       categories: this._data.categories,
       lastRefresh: this._data.lastRefresh,
       stats: this._data.stats,
+      lineage: this._data.lineage || { producedBy: {}, usedBy: {} },
     };
   }
 

@@ -1,5 +1,21 @@
 # Changelog
 
+## Phase 7 — Transformation Lineage (2026-03-13)
+- Lineage section in table detail panels (Table Browser + ERD) showing transformations that produce or consume each table
+- Server-side lineage index built from Keboola transformation configs: parses input/output storage mappings (root + row-based)
+- Component type badges: `SQL` (Snowflake/BigQuery/Synapse/Redshift), `PY` (Python), `R`, `dbt`, `JL` (Julia), `OR` (OpenRefine)
+- Run status icons: ✅ success (green), ❌ error (red), ⚠️ warning (yellow), — never run (muted)
+- Clickable transformation names open Keboola UI in new tab
+- Last change date + last run date timestamps with relative time display
+- Empty state: "No transformations reference this table" for tables with no lineage
+- Section order: Columns → Relationships → **Lineage** → Data Preview
+- Refresh button added to Table Browser toolbar (was ERD-only) with "Xm ago" timestamp
+- Lineage refreshed alongside metadata on manual refresh and 15-min auto-refresh cycle
+- New server module: `lineage-cache.js` — `buildLineageIndex()`, `deriveComponentType()`, `buildKeboolaUrl()`
+- New API methods: `listTransformationConfigs()`, `listRecentJobs()` in keboola-client.js
+- Mock lineage data for local development (8 transformation entries across 6 tables)
+- Extended `timeAgo()` to support days and months
+
 ## Phase 6b — ERD Navigation & Layout (2026-03-07)
 - Zoom controls (+/−/fit) button group in bottom-right corner
 - Fit View moved from toolbar to zoom control group

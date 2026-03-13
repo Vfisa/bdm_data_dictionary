@@ -5,6 +5,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { TagEditor } from '@/components/tags/TagEditor'
 import { ColumnTable } from '@/components/table-detail/ColumnTable'
 import { RelationshipList } from '@/components/table-detail/RelationshipList'
+import { LineageSection, LineageSectionHeader } from '@/components/table-detail/LineageSection'
 import { DataPreviewTable } from './DataPreviewTable'
 import { formatNumber, formatBytes, timeAgo } from '@/lib/utils'
 import { useDescriptionEditor } from '@/hooks/useDescriptionEditor'
@@ -164,7 +165,20 @@ export function TableExpandedDetail({
         </div>
       )}
 
-      {/* 3. Data Preview (moved to bottom) */}
+      {/* 3. Lineage section (after Relationships, before Data Preview) */}
+      {metadata.lineage && (
+        <div className="px-5 pb-4">
+          <LineageSectionHeader
+            count={
+              (metadata.lineage.producedBy[table.id]?.length || 0) +
+              (metadata.lineage.usedBy[table.id]?.length || 0)
+            }
+          />
+          <LineageSection tableId={table.id} lineage={metadata.lineage} />
+        </div>
+      )}
+
+      {/* 4. Data Preview (moved to bottom) */}
       <div className="px-5 pb-4">
         <h3 className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider mb-2 flex items-center gap-1.5">
           <Table2 className="h-3.5 w-3.5" />

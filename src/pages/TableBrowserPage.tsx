@@ -1,20 +1,24 @@
 import { useState, useMemo, useCallback } from 'react'
-import { Search } from 'lucide-react'
+import { Search, RefreshCw } from 'lucide-react'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { CategoryFilter } from '@/components/table-browser/CategoryFilter'
 import { SortControls, type SortField, type SortDirection } from '@/components/table-browser/SortControls'
 import { TableList } from '@/components/table-browser/TableList'
 import { StatsDashboard } from '@/components/table-browser/StatsDashboard'
 import { CATEGORY_ORDER, CATEGORY_SORT_PRIORITY, TAG_CONFIG } from '@/lib/constants'
 import { toHumanName } from '@/lib/human-name'
+import { timeAgo } from '@/lib/utils'
 import type { MetadataResponse, Category, StatsFilter } from '@/lib/types'
 
 interface TableBrowserPageProps {
   metadata: MetadataResponse
   onDescriptionUpdated?: () => void
+  isRefreshing?: boolean
+  onRefresh?: () => void
 }
 
-export function TableBrowserPage({ metadata, onDescriptionUpdated }: TableBrowserPageProps) {
+export function TableBrowserPage({ metadata, onDescriptionUpdated, isRefreshing, onRefresh }: TableBrowserPageProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [visibleCategories, setVisibleCategories] = useState<Set<Category>>(
     () => new Set(CATEGORY_ORDER),
@@ -213,6 +217,26 @@ export function TableBrowserPage({ metadata, onDescriptionUpdated }: TableBrowse
                   ✕
                 </button>
               )}
+            </div>
+          )}
+
+          {/* Refresh button + last refresh time */}
+          {onRefresh && (
+            <div className="flex items-center gap-1 shrink-0">
+              {metadata.lastRefresh && (
+                <span className="text-[11px] text-[var(--muted-foreground)] hidden lg:inline">
+                  {timeAgo(metadata.lastRefresh)}
+                </span>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onRefresh}
+                disabled={isRefreshing}
+                title="Refresh metadata from Keboola"
+              >
+                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              </Button>
             </div>
           )}
         </div>

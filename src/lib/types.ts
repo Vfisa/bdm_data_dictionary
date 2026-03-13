@@ -62,6 +62,24 @@ export interface InferenceStats {
   selfRefSkipped: number
 }
 
+/** Single transformation lineage entry */
+export interface LineageEntry {
+  configId: string
+  configName: string
+  componentId: string
+  componentType: string          // "SQL", "PY", "dbt", "R", etc.
+  lastChangeDate: string | null
+  lastRunDate: string | null
+  lastRunStatus: 'success' | 'error' | 'warning' | null
+  keboolaUrl: string
+}
+
+/** Lineage index: maps table IDs to transformation entries */
+export interface LineageIndex {
+  producedBy: Record<string, LineageEntry[]>
+  usedBy: Record<string, LineageEntry[]>
+}
+
 /** Full metadata response from /api/metadata */
 export interface MetadataResponse {
   tables: TableSummary[]
@@ -70,6 +88,7 @@ export interface MetadataResponse {
   categories: Record<string, Category>
   lastRefresh: string
   stats: InferenceStats
+  lineage: LineageIndex
 }
 
 /** Description update payload for PUT /api/descriptions */

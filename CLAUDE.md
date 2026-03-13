@@ -51,9 +51,10 @@ Browser → nginx (:8888) → Express (:3000)
                               └── GET  /api/health
 ```
 
-- **MetadataCache**: In-memory, built at startup, 15-min auto-refresh
+- **MetadataCache**: In-memory, built at startup, 15-min auto-refresh, includes lineage index
 - **ProfilingCache**: Per-table 30-min TTL, request deduplication
 - **FK Inference Engine**: Runtime discovery from `_ID` columns + `overrides.json`
+- **Lineage Index**: Built from transformation configs (input/output mappings) + recent job statuses
 - **Mock mode**: Auto-detected when KBC_TOKEN/KBC_URL missing
 
 ## Key File Map
@@ -64,7 +65,7 @@ Browser → nginx (:8888) → Express (:3000)
 
 ### Components
 - `src/components/table-browser/` — StatsDashboard, CategoryFilter, SortControls, TableList, TableExpandedDetail, DataPreviewTable
-- `src/components/table-detail/` — ColumnTable, ColumnProfileDrawer, RelationshipList, TypeBadge, NoValueBadge
+- `src/components/table-detail/` — ColumnTable, ColumnProfileDrawer, RelationshipList, LineageSection, TypeBadge, NoValueBadge
 - `src/components/erd/` — ErdCanvas, ErdToolbar, TableNode, useErdLayout
 - `src/components/search/` — CommandPalette, useSearch
 - `src/components/tags/` — TagEditor
@@ -81,11 +82,12 @@ Browser → nginx (:8888) → Express (:3000)
 
 ### Server
 - `server/index.js` — Express routes, mock mode detection
-- `server/keboola-client.js` — Keboola Storage API wrapper
+- `server/keboola-client.js` — Keboola Storage API wrapper (includes `listTransformationConfigs`, `listRecentJobs`)
 - `server/inference.js` — FK relationship inference engine
-- `server/metadata-cache.js` — In-memory cache with TTL
+- `server/metadata-cache.js` — In-memory cache with TTL, lineage integration
+- `server/lineage-cache.js` — Lineage index builder (producedBy/usedBy maps from transformation configs)
 - `server/profiling-cache.js` — Profiling cache with deduplication
-- `server/mock-data.js` — Mock data for local dev
+- `server/mock-data.js` — Mock data for local dev (includes lineage mock)
 - `server/overrides.json` — Manual FK corrections (12 aliases, 2 skips)
 
 ## Code Conventions
@@ -122,8 +124,8 @@ Browser → nginx (:8888) → Express (:3000)
 ## Phase Status
 
 - Phases 1-6 + 6a hotfixes + 6b ERD nav/layout: **DONE**
-- Phase 7: SQL-based Query Service profiling (planned)
-- Phase 8: Data Lineage graph (planned)
+- Phase 7: Transformation Lineage: **DONE**
+- Phase 8: SQL-based Query Service profiling (planned)
 
 ## Keboola API Notes
 

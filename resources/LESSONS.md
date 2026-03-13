@@ -50,8 +50,32 @@
 - Collapsible groups let users focus on what matters
 - Short codes (FCT, REF) save horizontal space while remaining recognizable
 
+## Phase 7 Lessons — Transformation Lineage
+
+### Separate Detail Panel Components
+- The ERD floating panel (`TableDetailPanel.tsx`) and the Table Browser expanded detail (`TableExpandedDetail.tsx`) are **separate components** — not shared. New sections like Lineage must be added to **both** independently.
+- Pattern: always check all consumers when adding a new detail section.
+
+### Keboola Transformation Config Parsing
+- Transformation configs use row-based storage mappings (`config.rows[].configuration.storage`) in addition to root-level mappings (`config.configuration.storage`). Both must be parsed to capture all input/output table references.
+- Component IDs are long strings (e.g., `keboola.snowflake-transformation`) — derive short display labels from substrings for UI badges.
+
+### Lineage as Non-Fatal Enhancement
+- Lineage index build is wrapped in try/catch in `MetadataCache._loadData()` — if it fails (e.g., API permission issue), the app still loads with empty lineage. This prevents lineage issues from breaking the core metadata experience.
+
+### Unused Import Detection
+- TypeScript strict mode catches unused imports (`TS6133`). When moving an icon (e.g., `GitBranch`) from one component to another during refactoring, remember to remove the import from the original file. Run `npx tsc -b` to catch this.
+
+### Vite Dev Server + Express Backend
+- `npm run dev` starts only the Vite dev server — the Express backend must be started separately (`node server/index.js`) for API calls to work. The Vite config proxies `/api` to `localhost:3000`, so both must be running.
+- Symptom: `ECONNREFUSED` on API calls during local dev means Express isn't running.
+
+### timeAgo Utility Extension
+- The original `timeAgo()` only handled seconds, minutes, hours. Lineage dates can be days or months old. Extended to support `Xd ago` and `Xmo ago` for longer intervals.
+
 ## Technical Debt / Watch Items
 - Column profile drawers expand within scrollable column table — can feel nested
 - `toHumanName()` strips known prefixes only — unknown prefixes pass through as-is
 - Mock data server auto-detects missing credentials — be careful not to accidentally run in mock mode with stale .env
 - Keboola metadata writes use `provider: 'user'` — distinct from system metadata
+- ERD `TableDetailPanel` and Table Browser `TableExpandedDetail` are separate — features must be added to both

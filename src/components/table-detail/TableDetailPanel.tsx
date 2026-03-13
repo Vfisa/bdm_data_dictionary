@@ -7,6 +7,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { TagEditor } from '@/components/tags/TagEditor'
 import { ColumnTable } from './ColumnTable'
 import { RelationshipList } from './RelationshipList'
+import { LineageSection, LineageSectionHeader } from './LineageSection'
 import { CATEGORY_CONFIG } from '@/lib/constants'
 import { formatNumber, formatBytes, timeAgo } from '@/lib/utils'
 import { useDescriptionEditor } from '@/hooks/useDescriptionEditor'
@@ -250,6 +251,19 @@ export function TableDetailPanel({
               categories={metadata.categories}
             />
           </div>
+
+          {/* Lineage section */}
+          {metadata.lineage && (
+            <div className="p-5 pt-0">
+              <LineageSectionHeader
+                count={
+                  (metadata.lineage.producedBy[table.id]?.length || 0) +
+                  (metadata.lineage.usedBy[table.id]?.length || 0)
+                }
+              />
+              <LineageSection tableId={table.id} lineage={metadata.lineage} />
+            </div>
+          )}
         </div>
         {/* Error toast */}
         {editor.error && (

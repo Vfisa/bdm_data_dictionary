@@ -397,6 +397,95 @@ export function createClient(kbcUrl, kbcToken) {
     return [header, ...rows].join('\n');
   }
 
+  /**
+   * List all transformation component configurations.
+   * Fetches configs for all transformation component types.
+   * Each config includes input/output storage mappings for lineage building.
+   *
+   * @returns {Promise<Array>} Array of { componentId, configId, configName, lastChangeDate, storage }
+   */
+  async function listTransformationConfigs() {
+    // First, list all components to find transformation types
+    const components = await request('components?componentType=transformation');
+
+    const allConfigs = [];
+
+    for (const component of components) {
+      if (!component.id) continue;
+
+      try {
+        const configs = await request(
+          `components/${encodeURIComponent(component.id)}/configs`
+        );
+
+        for (const config of configs) {
+          // Extract input/output table mappings from configuration
+          const storage = config.configuration?.storage || {};
+          const inputTables = (storage.input?.tables || []).map(t => t.source).filter(Boolean);
+          const outputTables = (storage.output?.tables || []).map(t => t.destination).filter(Boolean);
+
+          // For row-based transformations, also check rows
+          const rows = config.rows || [];
+          for (const row of rows) {
+            const rowStorage = row.configuration?.storage || {};
+            const rowInputs = (rowStorage.input?.tables || []).map(t => t.source).filter(Boolean);
+            const rowOutputs = (rowStorage.output?.tables || []).map(t => t.destination).filter(Boolean);
+            inputTables.push(...rowInputs);
+            outputTables.push(...rowOutputs);
+          }
+
+          allConfigs.push({
+            componentId: component.id,
+            componentName: component.name || component.id,
+            configId: config.id,
+            configName: config.name || `Config ${config.id}`,
+            description: config.description || '',
+            lastChangeDate: config.changeDescription
+              ? config.currentVersion?.created || null
+              : config.created || null,
+            version: config.version || null,
+            inputTables: [...new Set(inputTables)],
+            outputTables: [...new Set(outputTables)],
+          });
+        }
+      } catch (err) {
+        // Skip components that fail (e.g., no access)
+        console.warn(`Warning: Failed to fetch configs for ${component.id}: ${err.message}`);
+      }
+    }
+
+    return allConfigs;
+  }
+
+  /**
+   * List recent jobs to find last run date/status per configuration.
+   * Returns a map of configId → { lastRunDate, lastRunStatus }.
+   *
+   * @param {number} [limit=100] - Max jobs to fetch
+   * @returns {Promise<Map<string, { lastRunDate: string, lastRunStatus: string }>>}
+   */
+  async function listRecentJobs(limit = 500) {
+    try {
+      const jobs = await request(`jobs?limit=${limit}&sortBy=id&sortOrder=desc`);
+
+      // Build map: "componentId:configId" → most recent job
+      const jobMap = new Map();
+      for (const job of jobs) {
+        const key = `${job.component}:${job.config}`;
+        if (!jobMap.has(key)) {
+          jobMap.set(key, {
+            lastRunDate: job.endTime || job.startTime || job.createdTime || null,
+            lastRunStatus: job.status || null,
+          });
+        }
+      }
+      return jobMap;
+    } catch (err) {
+      console.warn(`Warning: Failed to fetch jobs: ${err.message}`);
+      return new Map();
+    }
+  }
+
   return {
     listBucketTables,
     getTable,
@@ -407,5 +496,7 @@ export function createClient(kbcUrl, kbcToken) {
     createProfile,
     getLatestProfile,
     getDataPreview,
+    listTransformationConfigs,
+    listRecentJobs,
   };
 }

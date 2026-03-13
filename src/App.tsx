@@ -93,7 +93,12 @@ function App() {
           />
         )}
         {currentPage === 'tables' && (
-          <TableBrowserPage metadata={data} onDescriptionUpdated={refetch} />
+          <TableBrowserPage
+            metadata={data}
+            onDescriptionUpdated={refetch}
+            isRefreshing={isRefreshing}
+            onRefresh={refresh}
+          />
         )}
       </Layout>
 

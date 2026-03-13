@@ -226,11 +226,124 @@ export function generateMockMetadata() {
     categories[t.name] = t.category;
   }
 
+  // Mock lineage data — transformations producing and using tables
+  const lineage = {
+    producedBy: {
+      'out.c-bdm.FCT_ORDER': [
+        {
+          configId: '101',
+          configName: 'Build FCT Order',
+          componentId: 'keboola.snowflake-transformation',
+          componentType: 'SQL',
+          lastChangeDate: new Date(Date.now() - 2 * 86400000).toISOString(),
+          lastRunDate: new Date(Date.now() - 3600000).toISOString(),
+          lastRunStatus: 'success',
+          keboolaUrl: '#mock/transformations/keboola.snowflake-transformation/101',
+        },
+      ],
+      'out.c-bdm.FCT_PAYMENT': [
+        {
+          configId: '102',
+          configName: 'Build FCT Payment',
+          componentId: 'keboola.snowflake-transformation',
+          componentType: 'SQL',
+          lastChangeDate: new Date(Date.now() - 5 * 86400000).toISOString(),
+          lastRunDate: new Date(Date.now() - 2 * 3600000).toISOString(),
+          lastRunStatus: 'success',
+          keboolaUrl: '#mock/transformations/keboola.snowflake-transformation/102',
+        },
+      ],
+      'out.c-bdm.MAP_ORDER_PRODUCT': [
+        {
+          configId: '101',
+          configName: 'Build FCT Order',
+          componentId: 'keboola.snowflake-transformation',
+          componentType: 'SQL',
+          lastChangeDate: new Date(Date.now() - 2 * 86400000).toISOString(),
+          lastRunDate: new Date(Date.now() - 3600000).toISOString(),
+          lastRunStatus: 'success',
+          keboolaUrl: '#mock/transformations/keboola.snowflake-transformation/101',
+        },
+      ],
+    },
+    usedBy: {
+      'out.c-bdm.REF_CLIENT': [
+        {
+          configId: '101',
+          configName: 'Build FCT Order',
+          componentId: 'keboola.snowflake-transformation',
+          componentType: 'SQL',
+          lastChangeDate: new Date(Date.now() - 2 * 86400000).toISOString(),
+          lastRunDate: new Date(Date.now() - 3600000).toISOString(),
+          lastRunStatus: 'success',
+          keboolaUrl: '#mock/transformations/keboola.snowflake-transformation/101',
+        },
+        {
+          configId: '103',
+          configName: 'Export Client Report',
+          componentId: 'keboola.python-transformation-v2',
+          componentType: 'PY',
+          lastChangeDate: new Date(Date.now() - 1 * 86400000).toISOString(),
+          lastRunDate: new Date(Date.now() - 86400000).toISOString(),
+          lastRunStatus: 'error',
+          keboolaUrl: '#mock/transformations/keboola.python-transformation-v2/103',
+        },
+      ],
+      'out.c-bdm.REF_PRODUCT': [
+        {
+          configId: '101',
+          configName: 'Build FCT Order',
+          componentId: 'keboola.snowflake-transformation',
+          componentType: 'SQL',
+          lastChangeDate: new Date(Date.now() - 2 * 86400000).toISOString(),
+          lastRunDate: new Date(Date.now() - 3600000).toISOString(),
+          lastRunStatus: 'success',
+          keboolaUrl: '#mock/transformations/keboola.snowflake-transformation/101',
+        },
+      ],
+      'out.c-bdm.FCT_ORDER': [
+        {
+          configId: '102',
+          configName: 'Build FCT Payment',
+          componentId: 'keboola.snowflake-transformation',
+          componentType: 'SQL',
+          lastChangeDate: new Date(Date.now() - 5 * 86400000).toISOString(),
+          lastRunDate: new Date(Date.now() - 2 * 3600000).toISOString(),
+          lastRunStatus: 'success',
+          keboolaUrl: '#mock/transformations/keboola.snowflake-transformation/102',
+        },
+        {
+          configId: '104',
+          configName: 'Enrich Dispatch Data',
+          componentId: 'keboola.snowflake-transformation',
+          componentType: 'SQL',
+          lastChangeDate: new Date(Date.now() - 7 * 86400000).toISOString(),
+          lastRunDate: new Date(Date.now() - 4 * 3600000).toISOString(),
+          lastRunStatus: 'warning',
+          keboolaUrl: '#mock/transformations/keboola.snowflake-transformation/104',
+        },
+      ],
+      'out.c-bdm.FCT_PAYMENT': [
+        {
+          configId: '103',
+          configName: 'Export Client Report',
+          componentId: 'keboola.python-transformation-v2',
+          componentType: 'PY',
+          lastChangeDate: new Date(Date.now() - 1 * 86400000).toISOString(),
+          lastRunDate: new Date(Date.now() - 86400000).toISOString(),
+          lastRunStatus: 'error',
+          keboolaUrl: '#mock/transformations/keboola.python-transformation-v2/103',
+        },
+      ],
+    },
+  };
+
   return {
     tables,
     edges,
     dateEdges,
     categories,
+    lineage,
     lastRefresh: new Date().toISOString(),
     stats: {
       totalColumns: tables.reduce((acc, t) => acc + t.columns.length, 0),
