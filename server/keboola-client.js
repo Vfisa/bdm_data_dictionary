@@ -486,6 +486,20 @@ export function createClient(kbcUrl, kbcToken) {
     }
   }
 
+  /**
+   * Verify the API token and retrieve project info.
+   * Returns { projectId, projectName } from the token owner.
+   *
+   * @returns {Promise<{ projectId: string, projectName: string }>}
+   */
+  async function verifyToken() {
+    const data = await request('tokens/verify');
+    return {
+      projectId: String(data.owner?.id || ''),
+      projectName: data.owner?.name || '',
+    };
+  }
+
   return {
     listBucketTables,
     getTable,
@@ -498,5 +512,6 @@ export function createClient(kbcUrl, kbcToken) {
     getDataPreview,
     listTransformationConfigs,
     listRecentJobs,
+    verifyToken,
   };
 }

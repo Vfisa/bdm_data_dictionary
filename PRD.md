@@ -635,15 +635,15 @@ All features below were implemented and committed:
 - [x] Clicking pane background deselects table and hides collapsed bar
 - [x] Selecting a different table while collapsed auto-expands the panel
 
-### Phase 7 — Transformation Lineage (planned)
+### Phase 7 — Transformation Lineage ✅
 
 > Design mockups below. Lineage section appears in both Table Browser expanded detail and ERD floating detail panel.
 
 **7.1 Lineage Data Collection (Server-side)**
-- [ ] **Parse transformation configs** — At startup (and on refresh), fetch all transformation configurations from the project via Keboola API (`list_configs` with `component_types: ["transformation"]`). Parse each config's input/output storage mappings to build a lineage index:
+- [x] **Parse transformation configs** — At startup (and on refresh), fetch all transformation configurations from the project via Keboola API (`list_configs` with `component_types: ["transformation"]`). Parse each config's input/output storage mappings to build a lineage index:
   - `producedBy[tableId]` → list of transformations whose output mapping includes this table
   - `usedBy[tableId]` → list of transformations whose input mapping includes this table
-- [ ] **Lineage index structure** — Each lineage entry contains:
+- [x] **Lineage index structure** — Each lineage entry contains:
   - `configId` — transformation configuration ID
   - `configName` — human-readable name
   - `componentId` — component ID (e.g., `keboola.snowflake-transformation`, `keboola.python-transformation-v2`)
@@ -652,19 +652,19 @@ All features below were implemented and committed:
   - `lastRunDate` — ISO timestamp of last successful job (from jobs API, most recent per config)
   - `lastRunStatus` — `success` | `error` | `warning` | `null` (never run)
   - `keboolaUrl` — direct link to transformation config in Keboola UI (`{KBC_URL}/admin/projects/{projectId}/transformations/bucket/{componentId}/{configId}`)
-- [ ] **LineageCache** — Stored alongside MetadataCache, same refresh lifecycle. Built at startup, refreshed on `POST /api/refresh` and every 15 minutes with the rest of the metadata
-- [ ] **API endpoint** — `GET /api/metadata` response extended with `lineage` field containing the full `producedBy` and `usedBy` maps. No separate endpoint needed — lineage ships with the metadata payload
-- [ ] **Mock lineage data** — Auto-generate sample lineage entries in mock mode (2-3 transformations referencing mock tables)
+- [x] **LineageCache** — Stored alongside MetadataCache, same refresh lifecycle. Built at startup, refreshed on `POST /api/refresh` and every 15 minutes with the rest of the metadata
+- [x] **API endpoint** — `GET /api/metadata` response extended with `lineage` field containing the full `producedBy` and `usedBy` maps. No separate endpoint needed — lineage ships with the metadata payload
+- [x] **Mock lineage data** — Auto-generate sample lineage entries in mock mode (2-3 transformations referencing mock tables)
 
 **7.2 Lineage UI — Table Browser Expanded Detail**
-- [ ] **Lineage section** — New collapsible section between Relationships and Data Preview: `▼ LINEAGE (N)`
-- [ ] **Two subsections**: "Created by" (output-of) and "Used by" (input-to), each listing transformations
-- [ ] **Transformation row** — Single line per transformation:
+- [x] **Lineage section** — New collapsible section between Relationships and Data Preview: `▼ LINEAGE (N)`
+- [x] **Two subsections**: "Created by" (output-of) and "Used by" (input-to), each listing transformations
+- [x] **Transformation row** — Single line per transformation:
   - Type badge: `[SQL]`, `[PY]`, `[dbt]`, `[R]` — small muted badge
   - Config name in **bold blue**, clickable → opens Keboola UI in new tab (external link icon `↗`)
   - Right-aligned metadata: `Changed 2d ago · Ran 1h ago` (relative timestamps)
   - Last run status indicator: green check (success), red cross (error), yellow warning, or dash (never run)
-- [ ] **Empty state** — When no transformations reference the table, show section header with muted message: *"No transformations reference this table"*
+- [x] **Empty state** — When no transformations reference the table, show section header with muted message: *"No transformations reference this table"*
 
 ```
 ├─────────────────────────────────────────────────────────────────┤
@@ -680,8 +680,8 @@ All features below were implemented and committed:
 ```
 
 **7.3 Lineage UI — ERD Floating Detail Panel**
-- [ ] **Same Lineage section** in the ERD's 560px floating sidebar, same position (after Relationships, before Data Preview)
-- [ ] **Narrower layout** — Two-line per transformation (name on line 1, metadata on line 2) to fit the 560px panel width
+- [x] **Same Lineage section** in the ERD's 560px floating sidebar, same position (after Relationships, before Data Preview)
+- [x] **Narrower layout** — Two-line per transformation (name on line 1, metadata on line 2) to fit the 560px panel width
 
 ```
 ├──────────────────────────────────────┤
@@ -700,10 +700,50 @@ All features below were implemented and committed:
 ```
 
 **7.4 Refresh Button on Table Browser**
-- [ ] **Add refresh button** to Table Browser toolbar (currently only exists on ERD tab)
-- [ ] Same behavior: `POST /api/refresh` → spinner while backend re-fetches metadata + lineage from Keboola API → toast notification on completion
-- [ ] Shows time since last refresh (e.g., "Refreshed 2m ago")
-- [ ] Refresh updates both metadata (tables, columns, edges) AND lineage index (transformation configs + last run info)
+- [x] **Add refresh button** to Table Browser toolbar (currently only exists on ERD tab)
+- [x] Same behavior: `POST /api/refresh` → spinner while backend re-fetches metadata + lineage from Keboola API → toast notification on completion
+- [x] Shows time since last refresh (e.g., "Refreshed 2m ago")
+- [x] Refresh updates both metadata (tables, columns, edges) AND lineage index (transformation configs + last run info)
+
+**7.5 Lineage Hotfixes**
+- [ ] **Fix Keboola URL project ID** — URL currently uses `_` placeholder instead of actual project ID. Add `verifyToken()` to keboola-client that calls `/v2/storage/tokens/verify` at startup to retrieve `owner.id`, then pass project ID into `buildKeboolaUrl()`
+- [ ] **Fix Lineage header styling** — `LineageSectionHeader` should match sibling section headers. In Table Browser: `text-xs font-semibold text-[var(--muted-foreground)]` with icon. In ERD panel: `text-sm font-semibold text-[var(--foreground)]`. Both panels' lineage header should match their respective Columns/Relationships style
+
+**7.6 Lineage UI Polish**
+- [ ] **Labeled timestamps** — Replace bare `timeAgo()` timestamps with `Last change: 2d ago` and `Last run: 1h ago` labels for clarity
+- [ ] **Color-coded type badges** — Replace monochrome muted badges with semantic colors:
+  - SQL: light blue bg / blue text
+  - PY: yellow-orange bg / amber text
+  - dbt: red bg / red text
+  - Other (R, JL, OR, etc.): gray bg / gray text (current behavior)
+- [ ] **Keboola logo** — Replace `ExternalLink` icon (↗) with small round Keboola octopus logo in blue (inline SVG or asset). Signals "this links to Keboola" more clearly
+- [ ] **Section separators** — Add thin `border-t` line separators between major sections: Columns, Relationships, Lineage, Data Preview. Applies to both Table Browser and ERD panel
+- [ ] **Section spacing** — Increase vertical padding between sections for visual clarity. Streamline spacing between Table Browser (`px-5 pb-4`) and ERD panel (`p-5 pt-0`) to be consistent
+
+```
+├─────────────────────────────────────────────────────────────────┤
+│  ⊞ COLUMNS (7)                                    ▸ Profile    │
+│  ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄             │
+│  ORDER_ID ⓟ  Unique order identifier    # INTEGER      -      │
+│  CLIENT_ID 🔗 FK to REF_CLIENT          # INTEGER      ◯      │
+│  ...                                                            │
+│─────────────────────────────────────── separator ───────────────│
+│  RELATIONSHIPS (5)                                              │
+│  ...                                                            │
+│─────────────────────────────────────── separator ───────────────│
+│  ⑂ LINEAGE (3)                                                  │
+│                                                                  │
+│   Created by                                                     │
+│   [SQL] Build FCT Order  🐙    Last change: 2d ago · ✓ Last run: 1h ago  │
+│                                                                  │
+│   Used by                                                        │
+│   [SQL] Enrich Dispatch  🐙    Last change: 5d ago · ✓ Last run: 3h ago  │
+│   [PY]  Export to DWH    🐙    Last change: 1d ago · ✗ Last run: 1d ago  │
+│─────────────────────────────────────── separator ───────────────│
+│  ⊞ DATA PREVIEW                                                │
+│  ...                                                            │
+├─────────────────────────────────────────────────────────────────┤
+```
 
 ### Phase 8 — Query Service Profiling (planned)
 

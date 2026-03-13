@@ -33,6 +33,7 @@ export class MetadataCache {
     this._refreshTimer = null;
     this._isRefreshing = false;
     this._lastError = null;
+    this._projectId = null;
   }
 
   /**
@@ -42,6 +43,15 @@ export class MetadataCache {
   async init() {
     console.log('MetadataCache: Initializing...');
     const startTime = Date.now();
+
+    // Fetch project ID for building Keboola URLs
+    try {
+      const tokenInfo = await this.client.verifyToken();
+      this._projectId = tokenInfo.projectId;
+      console.log(`MetadataCache: Project ID ${this._projectId} (${tokenInfo.projectName})`);
+    } catch (err) {
+      console.warn('MetadataCache: Token verify failed (non-fatal):', err.message);
+    }
 
     await this._loadData();
 
@@ -119,7 +129,7 @@ export class MetadataCache {
         this.client.listTransformationConfigs(),
         this.client.listRecentJobs(),
       ]);
-      lineage = buildLineageIndex(transformationConfigs, jobMap, this.kbcUrl);
+      lineage = buildLineageIndex(transformationConfigs, jobMap, this.kbcUrl, this._projectId);
       const prodCount = Object.keys(lineage.producedBy).length;
       const usedCount = Object.keys(lineage.usedBy).length;
       console.log(`MetadataCache: Lineage built — ${transformationConfigs.length} transformations, ${prodCount} produced, ${usedCount} used`);

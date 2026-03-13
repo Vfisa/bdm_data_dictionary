@@ -99,8 +99,8 @@ export function TableExpandedDetail({
         />
       </div>
 
-      {/* 1. Columns section (max-height 400px with scroll) */}
-      <div className="px-5 pb-4">
+      {/* 1. Columns section */}
+      <div className="px-5 py-4">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider flex items-center gap-1.5">
             <Database className="h-3.5 w-3.5" />
@@ -150,36 +150,47 @@ export function TableExpandedDetail({
         />
       </div>
 
+      {/* Separator */}
+      <div className="mx-5 border-t border-[var(--border)]" />
+
       {/* 2. Relationships section */}
       {(outgoing.length > 0 || incoming.length > 0) && (
-        <div className="px-5 pb-4">
-          <h3 className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider mb-2">
-            Relationships ({outgoing.length + incoming.length})
-          </h3>
-          <RelationshipList
-            outgoing={outgoing}
-            incoming={incoming}
-            onNavigate={onNavigate}
-            categories={metadata.categories}
-          />
-        </div>
+        <>
+          <div className="px-5 py-4">
+            <h3 className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider mb-2">
+              Relationships ({outgoing.length + incoming.length})
+            </h3>
+            <RelationshipList
+              outgoing={outgoing}
+              incoming={incoming}
+              onNavigate={onNavigate}
+              categories={metadata.categories}
+            />
+          </div>
+          {/* Separator */}
+          <div className="mx-5 border-t border-[var(--border)]" />
+        </>
       )}
 
       {/* 3. Lineage section (after Relationships, before Data Preview) */}
       {metadata.lineage && (
-        <div className="px-5 pb-4">
-          <LineageSectionHeader
-            count={
-              (metadata.lineage.producedBy[table.id]?.length || 0) +
-              (metadata.lineage.usedBy[table.id]?.length || 0)
-            }
-          />
-          <LineageSection tableId={table.id} lineage={metadata.lineage} />
-        </div>
+        <>
+          <div className="px-5 py-4">
+            <LineageSectionHeader
+              count={
+                (metadata.lineage.producedBy[table.id]?.length || 0) +
+                (metadata.lineage.usedBy[table.id]?.length || 0)
+              }
+            />
+            <LineageSection tableId={table.id} lineage={metadata.lineage} />
+          </div>
+          {/* Separator */}
+          <div className="mx-5 border-t border-[var(--border)]" />
+        </>
       )}
 
       {/* 4. Data Preview (moved to bottom) */}
-      <div className="px-5 pb-4">
+      <div className="px-5 py-4">
         <h3 className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider mb-2 flex items-center gap-1.5">
           <Table2 className="h-3.5 w-3.5" />
           Data Preview

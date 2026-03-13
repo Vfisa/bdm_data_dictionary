@@ -1,5 +1,14 @@
 # Changelog
 
+## Phase 7.5/7.6 — Lineage Hotfixes & UI Polish (2026-03-13)
+- **Fixed Keboola URL**: Added `verifyToken()` to fetch project ID at startup; URLs now include actual project ID instead of `_` placeholder
+- **Color-coded type badges**: SQL (blue), PY (amber), dbt (red), others (gray) — replaces monochrome muted badges
+- **Keboola octopus logo**: Transparent-background SVG icon replaces generic ExternalLink icon on hover
+- **Section separators**: Thin border lines between Columns, Relationships, Lineage, and Data Preview in both panels
+- **Consistent section spacing**: Unified `py-4` / `p-5` padding across Table Browser and ERD detail panels
+- **Lineage header styling**: ERD panel uses `text-sm` (matching Columns/Relationships), Table Browser uses `text-xs` (matching its own headers)
+- **PRD updated**: Phase 7 marked as done, added 7.5 (fixes) and 7.6 (polish) sections
+
 ## Phase 7 — Transformation Lineage (2026-03-13)
 - Lineage section in table detail panels (Table Browser + ERD) showing transformations that produce or consume each table
 - Server-side lineage index built from Keboola transformation configs: parses input/output storage mappings (root + row-based)

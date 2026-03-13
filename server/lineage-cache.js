@@ -36,12 +36,14 @@ function deriveComponentType(componentId) {
  * @param {string} kbcUrl - Base URL (e.g. https://connection.eu-central-1.keboola.com)
  * @param {string} componentId
  * @param {string} configId
+ * @param {string} [projectId] - Project ID from token verify. Falls back to '_' if unavailable
  * @returns {string}
  */
-function buildKeboolaUrl(kbcUrl, componentId, configId) {
+function buildKeboolaUrl(kbcUrl, componentId, configId, projectId) {
   if (!kbcUrl) return '';
   const base = kbcUrl.replace(/\/+$/, '');
-  return `${base}/admin/projects/_/transformations/bucket/${encodeURIComponent(componentId)}/${encodeURIComponent(configId)}`;
+  const pid = projectId || '_';
+  return `${base}/admin/projects/${pid}/transformations/bucket/${encodeURIComponent(componentId)}/${encodeURIComponent(configId)}`;
 }
 
 /**
@@ -50,9 +52,10 @@ function buildKeboolaUrl(kbcUrl, componentId, configId) {
  * @param {Array} transformationConfigs - From keboola-client.listTransformationConfigs()
  * @param {Map} jobMap - From keboola-client.listRecentJobs(), keyed by "componentId:configId"
  * @param {string} kbcUrl - Keboola base URL for constructing links
+ * @param {string} [projectId] - Project ID for Keboola UI URLs
  * @returns {{ producedBy: Record<string, Array>, usedBy: Record<string, Array> }}
  */
-export function buildLineageIndex(transformationConfigs, jobMap, kbcUrl) {
+export function buildLineageIndex(transformationConfigs, jobMap, kbcUrl, projectId) {
   const producedBy = {};
   const usedBy = {};
 
@@ -68,7 +71,7 @@ export function buildLineageIndex(transformationConfigs, jobMap, kbcUrl) {
       lastChangeDate: config.lastChangeDate || null,
       lastRunDate: jobInfo.lastRunDate,
       lastRunStatus: jobInfo.lastRunStatus,
-      keboolaUrl: buildKeboolaUrl(kbcUrl, config.componentId, config.configId),
+      keboolaUrl: buildKeboolaUrl(kbcUrl, config.componentId, config.configId, projectId),
     };
 
     // Output tables → this transformation PRODUCES these tables
