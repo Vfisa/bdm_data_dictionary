@@ -86,10 +86,10 @@ Browser → nginx (:8888) → Express (:3000)
 
 ### Server
 - `server/index.js` — Express routes, mock mode detection
-- `server/keboola-client.js` — Keboola Storage API wrapper (includes `listTransformationConfigs`, `listRecentJobs`)
+- `server/keboola-client.js` — Keboola Storage API wrapper (includes `listAllComponentConfigs`, `buildBucketTableMap`, `listRecentJobs`)
 - `server/inference.js` — FK relationship inference engine
 - `server/metadata-cache.js` — In-memory cache with TTL, lineage integration
-- `server/lineage-cache.js` — Lineage index builder (producedBy/usedBy maps from all component types)
+- `server/lineage-cache.js` — Lineage index builder (producedBy/usedBy maps from all component types: extractors, transformations, writers, apps)
 - `server/profiling-cache.js` — Profiling cache with deduplication
 - `server/mock-data.js` — Mock data for local dev (includes lineage mock)
 - `server/overrides.json` — Manual FK corrections (12 aliases, 2 skips)
@@ -130,7 +130,7 @@ Browser → nginx (:8888) → Express (:3000)
 - Phases 1-6 + 6a hotfixes + 6b ERD nav/layout: **DONE**
 - Phase 7: Transformation Lineage: **DONE**
 - Phase 8: Project Overview & Documentation Tabs: **DONE**
-- Phase 9: Full Component Lineage (extractors, writers, apps): **IN PROGRESS**
+- Phase 9: Full Component Lineage (extractors, writers, apps): **DONE**
 - Phase 10: SQL-based Query Service profiling (planned)
 
 ## Keboola API Notes

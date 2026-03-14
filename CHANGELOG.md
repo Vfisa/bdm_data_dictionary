@@ -1,5 +1,14 @@
 # Changelog
 
+## Phase 9 — Full Component Lineage (2026-03-13)
+- **All component types in lineage**: Extractors (EXT, green), writers (WR, red), applications (APP, yellow) now tracked alongside transformations (SQL, PY, dbt, R)
+- **3-strategy output inference**: (1) Explicit `storage.input/output.tables` mappings, (2) row `parameters.outputTable` (Oracle, NetSuite extractors), (3) bucket naming convention `in.c-{componentId}-{configId}`
+- **New server functions**: `listAllComponentConfigs(bucketTableMap)`, `buildBucketTableMap()` in keboola-client.js
+- **ComponentCategory type**: `extractor | transformation | writer | application` added to LineageEntry
+- **Keboola URL routing**: Transformations → `/transformations-v2/`, all others → `/components/`
+- **Tab rename**: "Table Browser" → "BDM Tables", "ERD Diagram" → "BDM Diagram"
+- **Mock data updated**: Added EXT (Salesforce, Oracle) and APP (Data Quality Monitor) entries
+
 ## Phase 8b — Markdown Style Upgrade (2026-03-13)
 - **Hybrid D+B style**: Style D body (rounded table containers, red code spans, indigo blockquote accents, invisible HR spacers) with Style B headings (large clean 32/24/19px) for dark-mode compatibility
 - **Fixed: GFM tables now render**: Added `remark-gfm` plugin to ReactMarkdown (was installed but unused)
@@ -10,7 +19,7 @@
 ## Phase 8 — Project Overview & Documentation Tabs (2026-03-13)
 - **Project Overview tab** (new default landing page): Fetches branch metadata from Keboola API (`/v2/storage/branch/{BRANCH_ID}/metadata`), renders `KBC.projectDescription` as sanitized markdown
 - **Project Documentation tab**: Placeholder page with "Coming soon" empty state
-- **4-tab navigation**: Overview → Table Browser → ERD Diagram → Documentation
+- **4-tab navigation**: Overview → BDM Tables → BDM Diagram → Documentation
 - **New API endpoint**: `GET /api/project-overview` with mock mode support
 - **New server method**: `getBranchMetadata(branchId)` in keboola-client.js
 - **New env var**: `BRANCH_ID` (defaults to `default`, injected by Keboola platform)
