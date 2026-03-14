@@ -548,6 +548,28 @@
 
 ---
 
+## Phase 8b: Markdown Style D Upgrade
+**Status:** DONE
+**Date:** 2026-03-13
+
+**Problem:** ProjectOverviewPage had two issues: (1) GFM tables not rendering (`remark-gfm` installed but not passed to ReactMarkdown), (2) basic styling didn't match the app's card-based UI.
+
+**Research:** Created a live StyleDemoPage with 4 style options (GitHub README, Notion, Technical Report, Dashboard Cards). Evaluated each in-browser with sample markdown containing headers, tables, bullet lists, code spans, blockquotes, and horizontal rules.
+
+**Decision:** Hybrid D+B — Style D body with Style B headings. Style D card-header H2s used explicit oklch backgrounds that didn't adapt to dark mode; Style B's large clean headings (32/24/19px) use only CSS variables.
+
+**Implementation:**
+- Added `remark-gfm` to ReactMarkdown `remarkPlugins` — tables now render
+- Style B headings: 32px H1, 24px H2, 19px H3 — no borders/backgrounds, uses `var(--foreground)` only
+- Style D body: rounded table containers, purple-tinted code spans, indigo blockquote accents, invisible HR spacers
+- Added `thead`, `tbody`, `tr` component overrides for complete table control
+- Dark mode: headings use CSS variables; body elements use explicit oklch light/dark pairs
+
+**Files changed:** `src/pages/ProjectOverviewPage.tsx`
+**Research:** `resources/phase-8/STYLE_RESEARCH.md`
+
+---
+
 ## Summary
 
 All 12 foundation steps + 7 expansion phases complete. The BDM Data Dictionary & ERD Viewer includes:

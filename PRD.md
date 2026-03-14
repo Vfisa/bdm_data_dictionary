@@ -752,6 +752,7 @@ All features below were implemented and committed:
 - [x] **New API endpoint** — `GET /api/project-overview` returns raw branch metadata array; mock mode returns sample markdown
 - [x] **BRANCH_ID env var** — New environment variable (defaults to `"default"`), injected by Keboola platform at runtime
 - [x] **Markdown rendering** — Hand-rolled styled components (h1–h3, p, lists, blockquotes, tables, code blocks) using oklch custom properties — no `@tailwindcss/typography` dependency
+- [x] **Markdown style upgrade (D+B hybrid)** — Style D body (rounded table containers, purple code spans, indigo blockquote accents, invisible HR spacers) with Style B headings (large clean 32/24/19px, dark-mode compatible). Added `remark-gfm` for GFM table/strikethrough support. Style research in `resources/phase-8/STYLE_RESEARCH.md`
 
 ### Phase 9 — Query Service Profiling (planned)
 

@@ -34,7 +34,7 @@ BDM Data Dictionary & ERD Viewer — a React-based Keboola Data App for the Hori
 | Backend | Express.js | SPA serving + Keboola Storage API proxy |
 | Search | cmdk | Cmd+K command palette with fuzzy search |
 | Icons | lucide-react | Wrap in `<span>` for title/aria attributes |
-| Markdown | react-markdown + rehype-sanitize | Secure markdown rendering for project overview |
+| Markdown | react-markdown + remark-gfm + rehype-sanitize | GFM tables/strikethrough + secure rendering for project overview |
 | Deploy | Keboola JS Data App | nginx + supervisord + setup.sh |
 
 ## Architecture

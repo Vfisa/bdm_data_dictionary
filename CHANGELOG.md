@@ -1,5 +1,11 @@
 # Changelog
 
+## Phase 8b — Markdown Style Upgrade (2026-03-13)
+- **Hybrid D+B style**: Style D body (rounded table containers, purple code spans, indigo blockquote accents, invisible HR spacers) with Style B headings (large clean 32/24/19px) for dark-mode compatibility
+- **Fixed: GFM tables now render**: Added `remark-gfm` plugin to ReactMarkdown (was installed but unused)
+- **Added table sub-components**: `thead`, `tbody`, `tr` overrides for complete table styling control
+- **Style research**: Evaluated 4 styles (GitHub, Notion, Technical, Dashboard Cards) — documented in `resources/phase-8/STYLE_RESEARCH.md`
+
 ## Phase 8 — Project Overview & Documentation Tabs (2026-03-13)
 - **Project Overview tab** (new default landing page): Fetches branch metadata from Keboola API (`/v2/storage/branch/{BRANCH_ID}/metadata`), renders `KBC.projectDescription` as sanitized markdown
 - **Project Documentation tab**: Placeholder page with "Coming soon" empty state
