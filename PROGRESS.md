@@ -561,9 +561,9 @@
 **Implementation:**
 - Added `remark-gfm` to ReactMarkdown `remarkPlugins` — tables now render
 - Style B headings: 32px H1, 24px H2, 19px H3 — no borders/backgrounds, uses `var(--foreground)` only
-- Style D body: rounded table containers, purple-tinted code spans, indigo blockquote accents, invisible HR spacers
+- Style D body: rounded table containers, red-tinted code spans (oklch hue 15) with border, indigo blockquote accents, invisible HR spacers
 - Added `thead`, `tbody`, `tr` component overrides for complete table control
-- Dark mode: headings use CSS variables; body elements use explicit oklch light/dark pairs
+- Dark mode: headings use CSS variables; code spans use explicit light/dark oklch pairs; table headers and code backgrounds use CSS variables (`var(--muted)`, `var(--secondary)`)
 
 **Files changed:** `src/pages/ProjectOverviewPage.tsx`
 **Research:** `resources/phase-8/STYLE_RESEARCH.md`

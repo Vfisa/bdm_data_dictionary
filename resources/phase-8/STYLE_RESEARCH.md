@@ -60,7 +60,7 @@ A live demo page (`StyleDemoPage.tsx`) was created with a style switcher renderi
 - Style D card-header H2s used explicit oklch backgrounds that didn't adapt well to dark mode
 - Style B's large, clean headings (32/24/19px) use only CSS variables — fully dark-mode compatible
 - Table styling (rounded containers, clean rows) matches the app's table components
-- Code span tinting (purple) provides clear distinction without clashing with the neutral color scheme
+- Code span tinting (red, oklch hue 15) provides clear distinction in both light and dark modes
 - Blockquote treatment adds information hierarchy through color accents
 
 ## Final Element Specification (Hybrid D+B)
@@ -75,14 +75,14 @@ A live demo page (`StyleDemoPage.tsx`) was created with a style switcher renderi
 | `ol` | `list-decimal pl-5`, 1px spacing |
 | `li` | 14px, `leading-[1.7]` |
 | `blockquote` | `border-l-3 border-[oklch(0.65_0.15_250)]`, tinted bg `oklch(0.96_0.01_250)` / dark `oklch(0.2_0.01_250)`, `rounded-r-lg` |
-| `code` (inline) | Purple text `oklch(0.45_0.12_280)` / dark `oklch(0.75_0.1_280)`, `bg-[var(--muted)]`, `rounded px-1.5 py-0.5` |
+| `code` (inline) | Red text `oklch(0.45_0.18_15)` / dark `oklch(0.72_0.16_15)`, `bg-[var(--secondary)]`, `border border-[var(--border)]`, `rounded px-1.5 py-0.5` |
 | `code` (block) | Pass-through with className |
 | `pre` | `rounded-lg bg-[var(--muted)]`, border, p-4 |
 | `hr` | Invisible spacer `<div className="my-2" />` |
 | `strong` | `font-semibold` |
 | `a` | `text-[oklch(0.55_0.15_250)]`, `hover:underline` |
 | `table` | `rounded-lg border` container, no cell borders |
-| `thead` | `bg-[oklch(0.96_0_0)]` / dark `bg-[oklch(0.22_0_0)]` |
+| `thead` | `bg-[var(--muted)]` |
 | `tr` | `border-b`, `last:border-b-0` |
 | `th` | `px-4 py-2.5`, 12px semibold |
 | `td` | `px-4 py-2.5` |
@@ -92,3 +92,15 @@ A live demo page (`StyleDemoPage.tsx`) was created with a style switcher renderi
 - **Heading style change:** Style D's card-header H2s were replaced with Style B's clean large headings because the card backgrounds (explicit oklch values) didn't adapt well to dark mode. Style B headings use only `var(--foreground)` which toggles automatically.
 - **Dark mode:** Body elements use CSS custom properties or explicit light/dark oklch pairs. Headings use only CSS variables for full theme compatibility.
 - **GFM fix:** Adding `remarkPlugins={[remarkGfm]}` to ReactMarkdown enables table, strikethrough, autolink, and task list parsing.
+
+## Style Refinement Notes
+
+After initial implementation, code spans and table headers were iteratively refined for dark mode:
+
+1. **Code color progression:** neutral (`var(--foreground)`) → purple (hue 280) → orange (hue 30) → **red (hue 15)**
+   - Purple rejected: too close to the dark mode chip background color
+   - Orange tested: visible but very similar to red in practice
+   - Red selected: good contrast in both light and dark modes, distinct from blue links
+2. **Code border added:** `border border-[var(--border)]` gives code chips more visual weight beyond just color
+3. **Code background:** Changed from `bg-[var(--muted)]` to `bg-[var(--secondary)]` for better contrast with page background in dark mode
+4. **Table headers:** Changed from explicit oklch values (`0.96/0.22`) to `bg-[var(--muted)]` — the explicit dark value was nearly invisible against the page background

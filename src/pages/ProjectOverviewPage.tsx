@@ -84,7 +84,7 @@ export function ProjectOverviewPage() {
             blockquote: ({ children }) => <blockquote className="border-l-3 border-[oklch(0.65_0.15_250)] pl-4 text-[14px] text-[var(--muted-foreground)] my-4 bg-[oklch(0.96_0.01_250)] dark:bg-[oklch(0.2_0.01_250)] py-3 pr-4 rounded-r-lg">{children}</blockquote>,
             code: ({ children, className }) => {
               if (className) return <code className={`${className} font-mono text-[13px]`}>{children}</code>
-              return <code className="rounded bg-[var(--secondary)] px-1.5 py-0.5 font-mono text-[13px] text-[var(--foreground)]">{children}</code>
+              return <code className="rounded border border-[var(--border)] bg-[var(--secondary)] px-1.5 py-0.5 font-mono text-[13px] text-[oklch(0.45_0.18_15)] dark:text-[oklch(0.72_0.16_15)]">{children}</code>
             },
             pre: ({ children }) => <pre className="rounded-lg bg-[var(--muted)] p-4 overflow-x-auto mb-4 text-[13px] border border-[var(--border)]">{children}</pre>,
             hr: () => <div className="my-2" />,
