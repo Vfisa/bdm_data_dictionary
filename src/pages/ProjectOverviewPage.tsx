@@ -1,10 +1,12 @@
-import { Loader2, AlertCircle, FileText } from 'lucide-react'
+import { Loader2, AlertCircle, FileText, RefreshCw } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import rehypeSanitize from 'rehype-sanitize'
 import { useProjectOverview } from '@/hooks/useProjectOverview'
+import { Button } from '@/components/ui/button'
+import { timeAgo } from '@/lib/utils'
 
 export function ProjectOverviewPage() {
-  const { description, isLoading, error } = useProjectOverview()
+  const { description, lastRefresh, isLoading, isRefreshing, error, refresh } = useProjectOverview()
 
   if (isLoading) {
     return (
@@ -17,7 +19,7 @@ export function ProjectOverviewPage() {
     )
   }
 
-  if (error) {
+  if (error && !description) {
     return (
       <div className="flex h-full items-center justify-center" role="alert">
         <div className="flex flex-col items-center gap-3 max-w-md text-center px-4">
@@ -47,7 +49,25 @@ export function ProjectOverviewPage() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="mx-auto max-w-3xl px-6 py-8">
+      <div className="mx-auto max-w-5xl px-8 py-8">
+        {/* Toolbar with refresh */}
+        <div className="flex items-center justify-end gap-1 mb-6">
+          {lastRefresh && (
+            <span className="text-[11px] text-[var(--muted-foreground)]">
+              {timeAgo(lastRefresh)}
+            </span>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={refresh}
+            disabled={isRefreshing}
+            title="Refresh project description"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
+
         <ReactMarkdown
           rehypePlugins={[rehypeSanitize]}
           components={{
@@ -61,7 +81,6 @@ export function ProjectOverviewPage() {
             li: ({ children }) => <li className="text-sm text-[var(--foreground)]">{children}</li>,
             blockquote: ({ children }) => <blockquote className="border-l-2 border-[var(--border)] pl-4 text-sm text-[var(--muted-foreground)] italic my-3">{children}</blockquote>,
             code: ({ children, className }) => {
-              // Fenced code blocks get a className like "language-js"
               if (className) {
                 return <code className={`${className} font-mono text-xs`}>{children}</code>
               }

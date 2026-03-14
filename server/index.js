@@ -34,6 +34,7 @@ if (KBC_TOKEN && KBC_URL) {
     kbcUrl: KBC_URL,
     kbcToken: KBC_TOKEN,
     bucketId: BUCKET_ID,
+    branchId: BRANCH_ID,
     overridesPath: path.join(__dirname, 'overrides.json'),
   });
 }
@@ -90,7 +91,8 @@ app.get('/api/metadata', (_req, res) => {
 });
 
 // Project overview — branch metadata (project description, etc.)
-app.get('/api/project-overview', async (_req, res) => {
+// Served from cache (loaded at startup, refreshed with metadata)
+app.get('/api/project-overview', (_req, res) => {
   if (USE_MOCK) {
     return res.json({
       metadata: [
@@ -102,6 +104,7 @@ app.get('/api/project-overview', async (_req, res) => {
           timestamp: new Date().toISOString(),
         },
       ],
+      lastRefresh: new Date().toISOString(),
     });
   }
 
@@ -111,13 +114,14 @@ app.get('/api/project-overview', async (_req, res) => {
     });
   }
 
-  try {
-    const metadata = await cache.getClient().getBranchMetadata(BRANCH_ID);
-    res.json({ metadata });
-  } catch (err) {
-    console.error('GET /api/project-overview failed:', err.message);
-    res.status(500).json({ error: `Failed to fetch project overview: ${err.message}` });
+  const branchData = cache.getBranchMetadata();
+  if (!branchData) {
+    return res.status(503).json({
+      error: 'Project overview is still loading. Please retry shortly.',
+    });
   }
+
+  res.json(branchData);
 });
 
 // Single table detail with relationships

@@ -25,11 +25,13 @@ export class MetadataCache {
     this.kbcUrl = options.kbcUrl;
     this.bucketId = options.bucketId || 'out.c-bdm';
     this.bucketIds = options.bucketIds || [this.bucketId, `${this.bucketId}_aux`];
+    this.branchId = options.branchId || 'default';
     this.overridesPath = options.overridesPath || undefined;
     this.refreshInterval = options.refreshInterval ?? 15 * 60 * 1000; // 15 min
 
     // Cache state
     this._data = null;
+    this._branchMetadata = null;
     this._refreshTimer = null;
     this._isRefreshing = false;
     this._lastError = null;
@@ -121,6 +123,14 @@ export class MetadataCache {
 
     // Run date connection inference
     const { dateEdges } = inferDateConnections(tables);
+
+    // Fetch branch metadata (project description, etc.)
+    try {
+      this._branchMetadata = await this.client.getBranchMetadata(this.branchId);
+      console.log(`MetadataCache: Branch metadata loaded — ${this._branchMetadata.length} entries`);
+    } catch (err) {
+      console.warn('MetadataCache: Branch metadata fetch failed (non-fatal):', err.message);
+    }
 
     // Build lineage index from transformation configs
     let lineage = { producedBy: {}, usedBy: {} };
@@ -255,6 +265,18 @@ export class MetadataCache {
         table.tags = tags;
       }
     }
+  }
+
+  /**
+   * Get cached branch metadata for the project overview.
+   * Returns { metadata: [...], lastRefresh } or null if not loaded.
+   */
+  getBranchMetadata() {
+    if (!this._branchMetadata) return null;
+    return {
+      metadata: this._branchMetadata,
+      lastRefresh: this._data?.lastRefresh || null,
+    };
   }
 
   /**
