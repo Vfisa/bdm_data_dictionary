@@ -132,17 +132,18 @@ export class MetadataCache {
       console.warn('MetadataCache: Branch metadata fetch failed (non-fatal):', err.message);
     }
 
-    // Build lineage index from transformation configs
+    // Build lineage index from ALL component configs (extractors, transformations, writers, apps)
     let lineage = { producedBy: {}, usedBy: {} };
     try {
-      const [transformationConfigs, jobMap] = await Promise.all([
-        this.client.listTransformationConfigs(),
+      const [bucketTableMap, jobMap] = await Promise.all([
+        this.client.buildBucketTableMap(),
         this.client.listRecentJobs(),
       ]);
-      lineage = buildLineageIndex(transformationConfigs, jobMap, this.kbcUrl, this._projectId);
+      const componentConfigs = await this.client.listAllComponentConfigs(bucketTableMap);
+      lineage = buildLineageIndex(componentConfigs, jobMap, this.kbcUrl, this._projectId);
       const prodCount = Object.keys(lineage.producedBy).length;
       const usedCount = Object.keys(lineage.usedBy).length;
-      console.log(`MetadataCache: Lineage built — ${transformationConfigs.length} transformations, ${prodCount} produced, ${usedCount} used`);
+      console.log(`MetadataCache: Lineage built — ${componentConfigs.length} components, ${prodCount} produced, ${usedCount} used`);
     } catch (err) {
       console.warn('MetadataCache: Lineage build failed (non-fatal):', err.message);
     }

@@ -13,8 +13,8 @@ interface HeaderProps {
 
 const tabs: { id: Page; label: string }[] = [
   { id: 'overview', label: 'Overview' },
-  { id: 'tables', label: 'Table Browser' },
-  { id: 'erd', label: 'ERD Diagram' },
+  { id: 'tables', label: 'BDM Tables' },
+  { id: 'erd', label: 'BDM Diagram' },
   { id: 'docs', label: 'Documentation' },
 ]
 
