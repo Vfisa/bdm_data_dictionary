@@ -458,6 +458,146 @@ export function createClient(kbcUrl, kbcToken) {
   }
 
   /**
+   * List all buckets in the project.
+   * Used to build extractor→bucket→table mapping for lineage inference.
+   *
+   * @returns {Promise<Array>} Array of { id, name, tables: [] }
+   */
+  async function listBuckets() {
+    return request('buckets');
+  }
+
+  /**
+   * List tables in a specific bucket (lightweight — no column metadata).
+   *
+   * @param {string} bucketId
+   * @returns {Promise<Array>} Array of { id, name }
+   */
+  async function listBucketTableIds(bucketId) {
+    return request(`buckets/${encodeURIComponent(bucketId)}/tables`);
+  }
+
+  /**
+   * List ALL component configurations (extractors, transformations, writers, apps).
+   * For each config, extracts input/output table mappings using a waterfall:
+   *   1. Explicit storage.output/input.tables (transformations, some apps)
+   *   2. Explicit parameters.outputTable in rows (DB extractors)
+   *   3. Bucket naming convention in.c-{componentId}-{configId} (API extractors)
+   *
+   * @param {Map<string, string[]>} [bucketTableMap] - Map of bucketId → tableId[] for inference strategy 3
+   * @returns {Promise<Array>} Array of component config objects with inputTables/outputTables
+   */
+  async function listAllComponentConfigs(bucketTableMap) {
+    // Fetch ALL components (no type filter)
+    const components = await request('components');
+
+    const allConfigs = [];
+
+    for (const component of components) {
+      if (!component.id) continue;
+
+      try {
+        const configs = await request(
+          `components/${encodeURIComponent(component.id)}/configs`
+        );
+
+        for (const config of configs) {
+          const inputTables = [];
+          const outputTables = [];
+
+          // Strategy 1: Explicit storage.input/output.tables
+          const storage = config.configuration?.storage || {};
+          inputTables.push(
+            ...(storage.input?.tables || []).map(t => t.source).filter(Boolean)
+          );
+          outputTables.push(
+            ...(storage.output?.tables || []).map(t => t.destination).filter(Boolean)
+          );
+
+          // Check rows for storage mappings + Strategy 2 (parameters.outputTable)
+          const rows = config.rows || [];
+          for (const row of rows) {
+            const rowStorage = row.configuration?.storage || {};
+            inputTables.push(
+              ...(rowStorage.input?.tables || []).map(t => t.source).filter(Boolean)
+            );
+            outputTables.push(
+              ...(rowStorage.output?.tables || []).map(t => t.destination).filter(Boolean)
+            );
+
+            // Strategy 2: parameters.outputTable (DB extractors like Oracle, NetSuite)
+            const rowOutputTable = row.configuration?.parameters?.outputTable;
+            if (rowOutputTable) {
+              outputTables.push(rowOutputTable);
+            }
+          }
+
+          // Strategy 3: Bucket naming convention in.c-{componentId}-{configId}
+          // Only if we still have no output tables and a bucketTableMap is provided
+          if (outputTables.length === 0 && bucketTableMap) {
+            const conventionBucketId = `in.c-${component.id}-${config.id}`;
+            const bucketTables = bucketTableMap.get(conventionBucketId);
+            if (bucketTables) {
+              outputTables.push(...bucketTables);
+            }
+          }
+
+          allConfigs.push({
+            componentId: component.id,
+            componentName: component.name || component.id,
+            componentType: component.type || 'other',
+            configId: config.id,
+            configName: config.name || `Config ${config.id}`,
+            description: config.description || '',
+            lastChangeDate: config.changeDescription
+              ? config.currentVersion?.created || null
+              : config.created || null,
+            version: config.version || null,
+            inputTables: [...new Set(inputTables)],
+            outputTables: [...new Set(outputTables)],
+          });
+        }
+      } catch (err) {
+        console.warn(`Warning: Failed to fetch configs for ${component.id}: ${err.message}`);
+      }
+    }
+
+    return allConfigs;
+  }
+
+  /**
+   * Build a bucket→tableId[] map for extractor output inference.
+   * Only includes `in.*` buckets (where extractors write).
+   *
+   * @returns {Promise<Map<string, string[]>>}
+   */
+  async function buildBucketTableMap() {
+    const map = new Map();
+    try {
+      const buckets = await listBuckets();
+      // Only care about input-stage buckets (where extractors write)
+      const inputBuckets = buckets.filter(b => b.id.startsWith('in.'));
+
+      // Fetch tables for each input bucket in parallel
+      const results = await Promise.allSettled(
+        inputBuckets.map(async (bucket) => {
+          const tables = await listBucketTableIds(bucket.id);
+          return { bucketId: bucket.id, tableIds: tables.map(t => t.id) };
+        })
+      );
+
+      for (const result of results) {
+        if (result.status === 'fulfilled' && result.value.tableIds.length > 0) {
+          map.set(result.value.bucketId, result.value.tableIds);
+        }
+      }
+    } catch (err) {
+      console.warn(`Warning: Failed to build bucket table map: ${err.message}`);
+    }
+    return map;
+  }
+
+  /**
    * List recent jobs to find last run date/status per configuration.
    * Returns a map of configId → { lastRunDate, lastRunStatus }.
    *
@@ -520,6 +660,8 @@ export function createClient(kbcUrl, kbcToken) {
     getLatestProfile,
     getDataPreview,
     listTransformationConfigs,
+    listAllComponentConfigs,
+    buildBucketTableMap,
     listRecentJobs,
     verifyToken,
     getBranchMetadata,

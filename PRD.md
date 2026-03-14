@@ -754,7 +754,55 @@ All features below were implemented and committed:
 - [x] **Markdown rendering** — Hand-rolled styled components (h1–h3, p, lists, blockquotes, tables, code blocks) using oklch custom properties — no `@tailwindcss/typography` dependency
 - [x] **Markdown style upgrade (D+B hybrid)** — Style D body (rounded table containers, purple code spans, indigo blockquote accents, invisible HR spacers) with Style B headings (large clean 32/24/19px, dark-mode compatible). Added `remark-gfm` for GFM table/strikethrough support. Style research in `resources/phase-8/STYLE_RESEARCH.md`
 
-### Phase 9 — Query Service Profiling (planned)
+### Phase 9 — Full Component Lineage (in progress)
+
+Expand lineage tracking from transformations-only to **all component types**: extractors, writers, and applications. This gives a complete picture of data flow through the Keboola project.
+
+#### Component Categories & Badge Colors
+
+| Component Type | Short Code | Color | Lineage Direction |
+|----------------|-----------|-------|-------------------|
+| extractor | EXT | Green (`#22c55e`) | producedBy only |
+| transformation | SQL/PY/dbt/R | Blue/Amber/Red (existing) | both |
+| writer | WR | Red (`#ef4444`) | usedBy only |
+| application | APP | Yellow (`#eab308`) | both |
+
+#### Output Table Inference Waterfall
+
+Extractors and apps often don't declare explicit `storage.output.tables` mappings. Four strategies (tried in order):
+
+1. **Explicit `storage.output.tables[].destination`** — same as transformations
+2. **Explicit `storage.input.tables[].source`** — same as transformations
+3. **Explicit `parameters.outputTable`** in row configs — used by DB extractors (Oracle, NetSuite)
+4. **Bucket naming convention** — `in.c-{componentId}-{configId}` → all tables in that bucket belong to this extractor (Salesforce, Freshdesk pattern)
+
+Strategy 4 requires fetching bucket list + tables-per-bucket at startup.
+
+#### Keboola URL Construction
+
+- Transformations: `/admin/projects/{pid}/transformations-v2/{componentId}/{configId}`
+- All others: `/admin/projects/{pid}/components/{componentId}/{configId}`
+
+#### Implementation
+
+- [x] `keboola-client.js`: `listAllComponentConfigs()` — fetches all component types (no filter), runs inference waterfall
+- [x] `lineage-cache.js`: `deriveComponentType()` expanded for EXT/WR/APP; `buildKeboolaUrl()` aware of component category
+- [x] `metadata-cache.js`: calls new `listAllComponentConfigs()` instead of `listTransformationConfigs()`
+- [x] `LineageSection.tsx`: new badge colors (green EXT, red WR, yellow APP)
+- [x] `types.ts`: `componentCategory` field on `LineageEntry`
+- [x] `mock-data.js`: mock entries for EXT/APP types
+- [x] Empty-state text updated: "No components reference this table" (was "No transformations…")
+
+#### API Exploration Findings (2026-03-13)
+
+**Project components:** 4 extractors (Oracle, NetSuite, Salesforce, Freshdesk), 0 writers, 2 app components (Custom Python ×7 configs, Data Gateway ×1 config), plus transformations.
+
+**Extractor patterns discovered:**
+- Oracle + NetSuite: explicit `parameters.outputTable` per row (`"in.c-netsuite.Customer"`)
+- Salesforce + Freshdesk: auto-bucket `in.c-{componentId}-{configId}`, tables inside match row `parameters.object`
+- Custom Python apps labelled as "[EXTRACTOR]" in name — classified as APP regardless
+
+### Phase 10 — Query Service Profiling (planned)
 
 - [ ] **SQL-based exact profiling** — Use Keboola Query Service (`POST /api/v1/branches/{branchId}/workspaces/{workspaceId}/queries`) for full SQL-based profiling over all rows. Requires `KBC_BRANCHID` + `KBC_WORKSPACE_ID` env vars. Async job-based: submit → poll → get results. It has been confirmed Keboola auto-injects those variables: (WORKSPACE_ID, BRANCH_ID)
 

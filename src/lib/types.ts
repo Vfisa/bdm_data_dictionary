@@ -62,12 +62,16 @@ export interface InferenceStats {
   selfRefSkipped: number
 }
 
-/** Single transformation lineage entry */
+/** Component category for lineage entries */
+export type ComponentCategory = 'extractor' | 'transformation' | 'writer' | 'application'
+
+/** Single component lineage entry */
 export interface LineageEntry {
   configId: string
   configName: string
   componentId: string
-  componentType: string          // "SQL", "PY", "dbt", "R", etc.
+  componentType: string          // "SQL", "PY", "dbt", "R", "EXT", "WR", "APP"
+  componentCategory: ComponentCategory
   lastChangeDate: string | null
   lastRunDate: string | null
   lastRunStatus: 'success' | 'error' | 'warning' | null
