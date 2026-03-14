@@ -754,7 +754,7 @@ All features below were implemented and committed:
 - [x] **Markdown rendering** — Hand-rolled styled components (h1–h3, p, lists, blockquotes, tables, code blocks) using oklch custom properties — no `@tailwindcss/typography` dependency
 - [x] **Markdown style upgrade (D+B hybrid)** — Style D body (rounded table containers, purple code spans, indigo blockquote accents, invisible HR spacers) with Style B headings (large clean 32/24/19px, dark-mode compatible). Added `remark-gfm` for GFM table/strikethrough support. Style research in `resources/phase-8/STYLE_RESEARCH.md`
 
-### Phase 9 — Full Component Lineage (in progress)
+### Phase 9 — Full Component Lineage (DONE)
 
 Expand lineage tracking from transformations-only to **all component types**: extractors, writers, and applications. This gives a complete picture of data flow through the Keboola project.
 
@@ -851,7 +851,7 @@ Strategy 4 requires fetching bucket list + tables-per-bucket at startup.
 
 1. **Auth**: Default Keboola basic auth is currently used. OIDC integration deferred.
 2. ~~**Data profiling API limits**: Keboola data preview returns max 1,000 rows. Sufficient for sampling or need full-scan approach?~~ **Resolved:** Hybrid approach — native profiling API for exact stats (all rows) + data preview for $NOVALUE/samples (1000 rows). Query service for Phase 6.
-3. ~~**Lineage API scope**: Start with transformation-only lineage or include extractors/writers from the start?~~ **Resolved:** Transformation-only lineage in Phase 7. Scoped to input/output mappings from transformation configs. Extractors/writers deferred to backlog.
+3. ~~**Lineage API scope**: Start with transformation-only lineage or include extractors/writers from the start?~~ **Resolved:** Transformation-only lineage in Phase 7, expanded to all component types (extractors, writers, apps) in Phase 9.
 
 ## 14. Resolved Phase 3 Decisions
 
@@ -893,7 +893,7 @@ Strategy 4 requires fetching bucket list + tables-per-bucket at startup.
 
 | # | Question | Decision |
 |---|----------|----------|
-| 34 | Lineage scope | Transformation-only (input/output mappings). Extractors/writers deferred to backlog |
+| 34 | Lineage scope | Phase 7: transformation-only. Phase 9: expanded to all component types (extractors, writers, apps) with 3-strategy output inference |
 | 35 | Lineage section position | After Relationships, before Data Preview (Columns → Relationships → Lineage → Data Preview) |
 | 36 | Transformation click action | Open in Keboola UI (external link, new tab). URL constructed from KBC_URL + componentId + configId |
 | 37 | Show transformation type | Yes, as small badge: `[SQL]`, `[PY]`, `[dbt]`, `[R]` derived from componentId |
