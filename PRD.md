@@ -748,7 +748,7 @@ All features below were implemented and committed:
 
 - [x] **Project Overview tab** — New default landing page. Fetches branch metadata from Keboola API (`/v2/storage/branch/{BRANCH_ID}/metadata`), extracts `KBC.projectDescription` key, renders as sanitized markdown using `react-markdown` + `rehype-sanitize`
 - [x] **Project Documentation tab** — Placeholder page ("Coming soon") for future documentation features
-- [x] **4-tab navigation** — Expanded from 2 tabs to 4: Overview → Table Browser → ERD Diagram → Documentation
+- [x] **4-tab navigation** — Expanded from 2 tabs to 4: Overview → BDM Tables → BDM Diagram → Documentation
 - [x] **New API endpoint** — `GET /api/project-overview` returns raw branch metadata array; mock mode returns sample markdown
 - [x] **BRANCH_ID env var** — New environment variable (defaults to `"default"`), injected by Keboola platform at runtime
 - [x] **Markdown rendering** — Hand-rolled styled components (h1–h3, p, lists, blockquotes, tables, code blocks) using oklch custom properties — no `@tailwindcss/typography` dependency
