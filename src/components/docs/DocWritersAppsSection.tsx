@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronRight, ExternalLink, Upload, Globe, Server, AppWindow } from 'lucide-react'
 import { MarkdownContent } from '@/lib/markdown-components'
-import type { ComponentConfig, DataApp } from '@/lib/types'
+import type { ComponentConfig, ConnectionInfo, DataApp } from '@/lib/types'
 
 interface DocWritersAppsSectionProps {
   writers: ComponentConfig[]
@@ -114,7 +114,12 @@ function WriterCard({ config, allExpanded }: { config: ComponentConfig; allExpan
           {config.inputTables.length > 0 && (
             <div className="text-[var(--muted-foreground)]">
               <span className="font-medium">Input tables:</span>{' '}
-              {config.inputTables.map(t => t.split('.').pop()).join(', ')}
+              {config.inputTables.map((t, i) => (
+                <span key={t}>
+                  {i > 0 && ', '}
+                  <span className="font-mono text-blue-500">{t.split('.').pop()}</span>
+                </span>
+              ))}
             </div>
           )}
           {config.configRows && config.configRows.length > 0 && (
@@ -127,13 +132,7 @@ function WriterCard({ config, allExpanded }: { config: ComponentConfig; allExpan
               ))}
             </div>
           )}
-          {config.connectionInfo && (
-            <div className="text-[var(--muted-foreground)]">
-              <span className="font-medium">Connection:</span>{' '}
-              {[config.connectionInfo.host, config.connectionInfo.schema, config.connectionInfo.warehouse].filter(Boolean).join(' / ')}
-              {config.connectionInfo.driver && <span> ({config.connectionInfo.driver})</span>}
-            </div>
-          )}
+          {config.connectionInfo && <ConnectionTable info={config.connectionInfo} />}
         </div>
       )}
     </div>
@@ -168,17 +167,7 @@ function DataGatewayCard({ config, allExpanded }: { config: ComponentConfig; all
           )}
 
           {/* Connection info */}
-          {config.connectionInfo && (
-            <div className="text-[var(--muted-foreground)]">
-              <span className="font-medium">Connection:</span>{' '}
-              {[
-                config.connectionInfo.host,
-                config.connectionInfo.schema && `schema: ${config.connectionInfo.schema}`,
-                config.connectionInfo.warehouse && `warehouse: ${config.connectionInfo.warehouse}`,
-                config.connectionInfo.loginType && `auth: ${config.connectionInfo.loginType}`,
-              ].filter(Boolean).join(' | ')}
-            </div>
-          )}
+          {config.connectionInfo && <ConnectionTable info={config.connectionInfo} />}
 
           {/* Per-row table list */}
           {config.configRows && config.configRows.length > 0 && (
@@ -250,13 +239,23 @@ function CustomAppCard({ config, allExpanded }: { config: ComponentConfig; allEx
           {config.inputTables.length > 0 && (
             <div className="text-[var(--muted-foreground)]">
               <span className="font-medium">Input:</span>{' '}
-              {config.inputTables.map(t => t.split('.').pop()).join(', ')}
+              {config.inputTables.map((t, i) => (
+                <span key={t}>
+                  {i > 0 && ', '}
+                  <span className="font-mono text-blue-500">{t.split('.').pop()}</span>
+                </span>
+              ))}
             </div>
           )}
           {config.outputTables.length > 0 && (
             <div className="text-[var(--muted-foreground)]">
               <span className="font-medium">Output:</span>{' '}
-              {config.outputTables.map(t => t.split('.').pop()).join(', ')}
+              {config.outputTables.map((t, i) => (
+                <span key={t}>
+                  {i > 0 && ', '}
+                  <span className="font-mono text-blue-500">{t.split('.').pop()}</span>
+                </span>
+              ))}
             </div>
           )}
         </div>
@@ -319,6 +318,34 @@ function DataAppCard({ app, allExpanded }: { app: DataApp; allExpanded: boolean 
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+/** Small key/value table for connection details */
+function ConnectionTable({ info }: { info: ConnectionInfo }) {
+  const rows = [
+    { label: 'Host', value: info.host },
+    { label: 'Schema', value: info.schema },
+    { label: 'Warehouse', value: info.warehouse },
+    { label: 'Auth', value: info.loginType },
+    { label: 'Driver', value: info.driver },
+  ].filter(r => r.value)
+
+  if (rows.length === 0) return null
+
+  return (
+    <div className="overflow-x-auto rounded border border-[var(--border)]">
+      <table className="w-full text-xs">
+        <tbody>
+          {rows.map(({ label, value }) => (
+            <tr key={label} className="border-b border-[var(--border)] last:border-b-0">
+              <td className="px-2.5 py-1 font-medium text-[var(--muted-foreground)] whitespace-nowrap w-24">{label}</td>
+              <td className="px-2.5 py-1 font-mono text-[var(--foreground)]">{value}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }

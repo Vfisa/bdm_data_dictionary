@@ -77,7 +77,12 @@ function ExtractorGroupCard({ group, allExpanded }: { group: ExtractorGroup; all
               {config.outputTables.length > 0 && (
                 <div className="text-sm text-[var(--muted-foreground)]">
                   <span className="font-semibold text-[var(--foreground)]">Output tables:</span>{' '}
-                  {config.outputTables.map(t => t.split('.').pop()).join(', ')}
+                  {config.outputTables.map((t, i) => (
+                    <span key={t}>
+                      {i > 0 && ', '}
+                      <span className="font-mono text-blue-500">{t.split('.').pop()}</span>
+                    </span>
+                  ))}
                 </div>
               )}
             </div>

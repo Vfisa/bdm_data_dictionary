@@ -67,21 +67,30 @@ function BucketCard({ bucket, allExpanded }: { bucket: StorageBucket; allExpande
   return (
     <div className="rounded-lg border border-[var(--border)] bg-[var(--card)]" id={`doc-bucket-${bucket.id}`}>
       <button
-        className="flex w-full items-center gap-2 px-4 py-2.5 text-left hover:bg-[var(--accent)]/30 transition-colors"
+        className="flex w-full items-start gap-2 px-4 py-2.5 text-left hover:bg-[var(--accent)]/30 transition-colors"
         onClick={() => setOpen(prev => !prev)}
       >
-        {isOpen ? (
-          <ChevronDown className="h-4 w-4 shrink-0 text-[var(--muted-foreground)]" />
-        ) : (
-          <ChevronRight className="h-4 w-4 shrink-0 text-[var(--muted-foreground)]" />
-        )}
-        <span title="Bucket">
+        <div className="mt-0.5">
+          {isOpen ? (
+            <ChevronDown className="h-4 w-4 shrink-0 text-[var(--muted-foreground)]" />
+          ) : (
+            <ChevronRight className="h-4 w-4 shrink-0 text-[var(--muted-foreground)]" />
+          )}
+        </div>
+        <span title="Bucket" className="mt-0.5">
           <Database className="h-4 w-4 shrink-0 text-cyan-500" aria-hidden="true" />
         </span>
-        <span className="text-sm font-medium font-mono text-[var(--foreground)]">{bucket.id}</span>
-        <span className="text-xs text-[var(--muted-foreground)]">
-          ({bucket.tables.length} table{bucket.tables.length !== 1 ? 's' : ''})
-        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium font-mono text-[var(--foreground)]">{bucket.id}</span>
+            <span className="text-xs text-[var(--muted-foreground)]">
+              ({bucket.tables.length} table{bucket.tables.length !== 1 ? 's' : ''})
+            </span>
+          </div>
+          {bucket.description && (
+            <p className="text-xs text-[var(--muted-foreground)] mt-0.5 line-clamp-2">{bucket.description}</p>
+          )}
+        </div>
       </button>
 
       {isOpen && (
