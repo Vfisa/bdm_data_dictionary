@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import type { TablesByLayer, TransformationsByLayer, ExtractorGroup } from './useDocSections'
-import type { Flow } from '@/lib/types'
+import type { TransformationFolder, ExtractorGroup } from './useDocSections'
+import type { Flow, StorageBucket } from '@/lib/types'
 
 interface DocTableOfContentsProps {
-  tablesByLayer: TablesByLayer[]
-  transformationsByLayer: TransformationsByLayer[]
+  storageBuckets: StorageBucket[]
+  transformationFolders: TransformationFolder[]
   extractorGroups: ExtractorGroup[]
   flows: Flow[]
 }
@@ -19,12 +19,11 @@ const TOC_SECTIONS = [
 ]
 
 export function DocTableOfContents({
-  tablesByLayer,
-  transformationsByLayer,
+  storageBuckets,
+  transformationFolders,
 }: DocTableOfContentsProps) {
   const [activeId, setActiveId] = useState<string>('doc-sources')
 
-  // IntersectionObserver scroll-spy
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -39,8 +38,8 @@ export function DocTableOfContents({
 
     const ids = [
       ...TOC_SECTIONS.map(s => s.id),
-      ...tablesByLayer.map(l => `doc-model-${l.layer}`),
-      ...transformationsByLayer.map(l => `doc-transform-${l.layer}`),
+      ...storageBuckets.map(b => `doc-bucket-${b.id}`),
+      ...transformationFolders.map(f => `doc-transform-${f.folder}`),
     ]
 
     for (const id of ids) {
@@ -49,7 +48,7 @@ export function DocTableOfContents({
     }
 
     return () => observer.disconnect()
-  }, [tablesByLayer, transformationsByLayer])
+  }, [storageBuckets, transformationFolders])
 
   const scrollTo = (id: string) => {
     const el = document.getElementById(id)
@@ -64,7 +63,7 @@ export function DocTableOfContents({
     }`
 
   return (
-    <nav className="py-4 space-y-1" aria-label="Documentation sections">
+    <nav className="py-4 space-y-0.5" aria-label="Documentation sections">
       {TOC_SECTIONS.map((section) => (
         <div key={section.id}>
           <button
@@ -74,25 +73,25 @@ export function DocTableOfContents({
             {section.label}
           </button>
 
-          {/* Data Model sublayers */}
-          {section.id === 'doc-data-model' && tablesByLayer.map((l) => (
+          {/* Storage bucket sublists */}
+          {section.id === 'doc-storage' && storageBuckets.map((b) => (
             <button
-              key={l.layer}
-              className={`${linkClass(`doc-model-${l.layer}`)} pl-6`}
-              onClick={() => scrollTo(`doc-model-${l.layer}`)}
+              key={b.id}
+              className={`${linkClass(`doc-bucket-${b.id}`)} pl-6`}
+              onClick={() => scrollTo(`doc-bucket-${b.id}`)}
             >
-              {l.layer} ({l.tables.length})
+              {b.id} ({b.tables.length})
             </button>
           ))}
 
-          {/* Transformation sublayers */}
-          {section.id === 'doc-transformations' && transformationsByLayer.map((l) => (
+          {/* Transformation folder sublists */}
+          {section.id === 'doc-transformations' && transformationFolders.map((f) => (
             <button
-              key={l.layer}
-              className={`${linkClass(`doc-transform-${l.layer}`)} pl-6`}
-              onClick={() => scrollTo(`doc-transform-${l.layer}`)}
+              key={f.folder}
+              className={`${linkClass(`doc-transform-${f.folder}`)} pl-6`}
+              onClick={() => scrollTo(`doc-transform-${f.folder}`)}
             >
-              {l.layer} ({l.configs.length})
+              {f.folder} ({f.configs.length})
             </button>
           ))}
         </div>

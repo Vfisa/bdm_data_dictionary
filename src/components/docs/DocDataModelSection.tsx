@@ -1,65 +1,45 @@
-import { CATEGORY_CONFIG } from '@/lib/constants'
-import { DocTableCard } from './DocTableCard'
-import type { TablesByLayer } from './useDocSections'
-import type { Edge, LineageIndex } from '@/lib/types'
+import { useState, useEffect } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeSanitize from 'rehype-sanitize'
+import { Loader2 } from 'lucide-react'
 
-interface DocDataModelSectionProps {
-  tablesByLayer: TablesByLayer[]
-  edges: Edge[]
-  lineage: LineageIndex
-  allExpanded: boolean
-}
+export function DocDataModelSection() {
+  const [markdown, setMarkdown] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
 
-export function DocDataModelSection({
-  tablesByLayer,
-  edges,
-  lineage,
-  allExpanded,
-}: DocDataModelSectionProps) {
+  useEffect(() => {
+    fetch('/api/resource/data-model')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        setMarkdown(data?.content ?? null)
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [])
+
   return (
     <div>
-      <h2 className="text-xl font-bold text-[var(--foreground)] mb-4">
-        2. Data Model by Layer
+      <h2 className="text-xl font-bold text-[var(--foreground)] mb-1">
+        2. Data Model
       </h2>
+      <hr className="border-[var(--border)] mb-4" />
 
-      {tablesByLayer.length === 0 ? (
-        <p className="text-sm text-[var(--muted-foreground)] italic">No tables found.</p>
-      ) : (
-        <div className="space-y-6">
-          {tablesByLayer.map(({ layer, label, tables }) => (
-            <div key={layer} id={`doc-model-${layer}`}>
-              <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2 flex items-center gap-2">
-                <span
-                  className="inline-block w-3 h-3 rounded-sm"
-                  style={{ backgroundColor: CATEGORY_CONFIG[layer].color }}
-                />
-                {label}
-                <span className="text-sm font-normal text-[var(--muted-foreground)]">
-                  ({tables.length} table{tables.length !== 1 ? 's' : ''})
-                </span>
-              </h3>
-              <div className="space-y-1.5">
-                {tables.map((table) => {
-                  const outgoing = edges.filter(e => e.source === table.name)
-                  const incoming = edges.filter(e => e.target === table.name)
-                  const producedBy = lineage.producedBy[table.id] || []
-                  const usedBy = lineage.usedBy[table.id] || []
-                  return (
-                    <DocTableCard
-                      key={table.id}
-                      table={table}
-                      outgoing={outgoing}
-                      incoming={incoming}
-                      producedBy={producedBy}
-                      usedBy={usedBy}
-                      allExpanded={allExpanded}
-                    />
-                  )
-                })}
-              </div>
-            </div>
-          ))}
+      {loading ? (
+        <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Loading data model description...
         </div>
+      ) : markdown ? (
+        <div className="prose prose-sm dark:prose-invert max-w-none text-[var(--foreground)]">
+          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
+            {markdown}
+          </ReactMarkdown>
+        </div>
+      ) : (
+        <p className="text-sm text-[var(--muted-foreground)] italic">
+          No data model description found. Add content to <code className="text-xs">resources/data-model.md</code> to populate this section.
+        </p>
       )}
     </div>
   )

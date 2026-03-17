@@ -30,13 +30,11 @@ export function ProjectDocumentationPage({
   }, [])
 
   const handlePrint = useCallback(() => {
-    // Expand all before printing, then print
     setAllExpanded(true)
     setTimeout(() => window.print(), 200)
   }, [])
 
   const handleExportMarkdown = useCallback(() => {
-    // Placeholder — will be implemented in Step 11
     import('@/components/docs/doc-export').then(mod => {
       mod.exportMarkdown(metadata, sections)
     })
@@ -58,8 +56,8 @@ export function ProjectDocumentationPage({
         {/* Sidebar TOC */}
         <aside className="hidden w-60 shrink-0 overflow-y-auto border-r border-[var(--border)] bg-[var(--card)] lg:block print:hidden">
           <DocTableOfContents
-            tablesByLayer={sections.tablesByLayer}
-            transformationsByLayer={sections.transformationsByLayer}
+            storageBuckets={sections.storageBuckets}
+            transformationFolders={sections.transformationFolders}
             extractorGroups={sections.extractorGroups}
             flows={sections.flows}
           />
@@ -76,18 +74,13 @@ export function ProjectDocumentationPage({
             </section>
 
             <section id="doc-data-model">
-              <DocDataModelSection
-                tablesByLayer={sections.tablesByLayer}
-                edges={metadata.edges}
-                lineage={metadata.lineage}
-                allExpanded={allExpanded}
-              />
+              <DocDataModelSection />
             </section>
 
             <section id="doc-storage">
               <DocStorageSection
-                buckets={sections.buckets}
-                tables={metadata.tables}
+                storageBuckets={sections.storageBuckets}
+                allExpanded={allExpanded}
               />
             </section>
 
@@ -100,7 +93,7 @@ export function ProjectDocumentationPage({
 
             <section id="doc-transformations">
               <DocTransformSection
-                transformationsByLayer={sections.transformationsByLayer}
+                transformationFolders={sections.transformationFolders}
                 allExpanded={allExpanded}
               />
             </section>

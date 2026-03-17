@@ -29,29 +29,28 @@ export function exportMarkdown(_metadata: MetadataResponse, sections: DocSection
     lines.push('')
   }
 
-  // Section 2: Data Model
-  lines.push('## 2. Data Model by Layer')
+  // Section 2: Data Model (placeholder — content is in resources/data-model.md)
+  lines.push('## 2. Data Model')
   lines.push('')
-  for (const { label, tables } of sections.tablesByLayer) {
-    lines.push(`### ${label}`)
-    for (const table of tables) {
-      lines.push(`- **${table.name}** — ${table.columnCount} columns, ${table.rowsCount} rows`)
-      if (table.description) lines.push(`  - ${table.description}`)
-      if (table.primaryKey.length > 0) lines.push(`  - PK: ${table.primaryKey.join(', ')}`)
-      if (table.keboolaUrl) lines.push(`  - [Open in Keboola](${table.keboolaUrl})`)
-    }
-    lines.push('')
-  }
+  lines.push('*See resources/data-model.md for full data model description.*')
+  lines.push('')
 
-  // Section 3: Storage
+  // Section 3: Storage & Buckets
   lines.push('## 3. Storage & Buckets')
   lines.push('')
-  lines.push('| Bucket | Stage | Tables | Size |')
-  lines.push('|--------|-------|--------|------|')
-  for (const bucket of sections.buckets) {
-    lines.push(`| ${bucket.id} | ${bucket.stage} | ${bucket.tableCount} | ${formatBytesSimple(bucket.totalSize)} |`)
+  for (const bucket of sections.storageBuckets) {
+    lines.push(`### ${bucket.id}`)
+    if (bucket.description) lines.push(bucket.description)
+    lines.push('')
+    if (bucket.tables.length > 0) {
+      lines.push(`| Table | Description | Columns |`)
+      lines.push(`|-------|-------------|---------|`)
+      for (const t of bucket.tables) {
+        lines.push(`| ${t.name} | ${t.description || '—'} | ${t.columnCount} |`)
+      }
+      lines.push('')
+    }
   }
-  lines.push('')
 
   // Section 4: Orchestration
   lines.push('## 4. Orchestration')
@@ -73,8 +72,8 @@ export function exportMarkdown(_metadata: MetadataResponse, sections: DocSection
   // Section 5: Transformations
   lines.push('## 5. Transformation Documentation')
   lines.push('')
-  for (const { label, configs } of sections.transformationsByLayer) {
-    lines.push(`### ${label}`)
+  for (const { folder, configs } of sections.transformationFolders) {
+    lines.push(`### ${folder}`)
     for (const config of configs) {
       lines.push(`#### ${config.configName}`)
       if (config.description) lines.push(config.description)
@@ -139,11 +138,4 @@ export function exportMarkdown(_metadata: MetadataResponse, sections: DocSection
   a.click()
   document.body.removeChild(a)
   URL.revokeObjectURL(url)
-}
-
-function formatBytesSimple(bytes: number): string {
-  if (bytes >= 1_073_741_824) return `${(bytes / 1_073_741_824).toFixed(1)} GB`
-  if (bytes >= 1_048_576) return `${(bytes / 1_048_576).toFixed(1)} MB`
-  if (bytes >= 1_024) return `${(bytes / 1_024).toFixed(1)} KB`
-  return `${bytes} B`
 }

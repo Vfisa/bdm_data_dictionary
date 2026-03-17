@@ -10,13 +10,14 @@ interface DocSourcesSectionProps {
 export function DocSourcesSection({ extractorGroups, allExpanded }: DocSourcesSectionProps) {
   return (
     <div>
-      <h2 className="text-xl font-bold text-[var(--foreground)] mb-4">
+      <h2 className="text-xl font-bold text-[var(--foreground)] mb-1">
         1. Data Sources & Integrations
       </h2>
+      <hr className="border-[var(--border)] mb-4" />
       {extractorGroups.length === 0 ? (
         <p className="text-sm text-[var(--muted-foreground)] italic">No extractor configurations found.</p>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {extractorGroups.map((group) => (
             <ExtractorGroupCard key={group.componentId} group={group} allExpanded={allExpanded} />
           ))}
@@ -33,7 +34,7 @@ function ExtractorGroupCard({ group, allExpanded }: { group: ExtractorGroup; all
   return (
     <div className="rounded-lg border border-[var(--border)] bg-[var(--card)]">
       <button
-        className="flex w-full items-center gap-2 px-4 py-3 text-left hover:bg-[var(--accent)]/30 transition-colors"
+        className="flex w-full items-center gap-2 px-4 py-2.5 text-left hover:bg-[var(--accent)]/30 transition-colors"
         onClick={() => setOpen(prev => !prev)}
       >
         {isOpen ? (
@@ -42,19 +43,19 @@ function ExtractorGroupCard({ group, allExpanded }: { group: ExtractorGroup; all
           <ChevronRight className="h-4 w-4 shrink-0 text-[var(--muted-foreground)]" />
         )}
         <span title="Data source">
-          <Database className="h-4 w-4 shrink-0 text-blue-500" aria-hidden="true" />
+          <Database className="h-4 w-4 shrink-0 text-green-500" aria-hidden="true" />
         </span>
-        <span className="font-medium text-sm text-[var(--foreground)]">{group.componentName}</span>
+        <span className="font-semibold text-sm text-[var(--foreground)]">{group.componentName}</span>
         <span className="text-xs text-[var(--muted-foreground)]">
           ({group.configs.length} config{group.configs.length !== 1 ? 's' : ''})
         </span>
       </button>
       {isOpen && (
-        <div className="border-t border-[var(--border)] px-4 py-3 space-y-3">
+        <div className="border-t border-[var(--border)] px-4 py-3 space-y-4">
           {group.configs.map((config) => (
-            <div key={config.configId} className="space-y-1">
+            <div key={config.configId} className="space-y-1.5">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-[var(--foreground)]">{config.configName}</span>
+                <h4 className="text-sm font-semibold text-[var(--foreground)]">{config.configName}</h4>
                 {config.keboolaUrl && (
                   <a
                     href={config.keboolaUrl}
@@ -68,11 +69,11 @@ function ExtractorGroupCard({ group, allExpanded }: { group: ExtractorGroup; all
                 )}
               </div>
               {config.description && (
-                <p className="text-xs text-[var(--muted-foreground)]">{config.description}</p>
+                <p className="text-sm text-[var(--muted-foreground)] leading-relaxed">{config.description}</p>
               )}
               {config.outputTables.length > 0 && (
-                <div className="text-xs text-[var(--muted-foreground)]">
-                  <span className="font-medium">Output tables:</span>{' '}
+                <div className="text-sm text-[var(--muted-foreground)]">
+                  <span className="font-semibold text-[var(--foreground)]">Output tables:</span>{' '}
                   {config.outputTables.map(t => t.split('.').pop()).join(', ')}
                 </div>
               )}

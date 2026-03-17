@@ -10,9 +10,10 @@ interface DocOrchestrationSectionProps {
 export function DocOrchestrationSection({ flows, allExpanded }: DocOrchestrationSectionProps) {
   return (
     <div>
-      <h2 className="text-xl font-bold text-[var(--foreground)] mb-4">
+      <h2 className="text-xl font-bold text-[var(--foreground)] mb-1">
         4. Orchestration
       </h2>
+      <hr className="border-[var(--border)] mb-4" />
 
       {flows.length === 0 ? (
         <p className="text-sm text-[var(--muted-foreground)] italic">No flow configurations found.</p>

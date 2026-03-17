@@ -736,5 +736,7 @@ export function createClient(kbcUrl, kbcToken) {
     getBranchMetadata,
     listFlows,
     listDataApps,
+    listBuckets,
+    listBucketTableIds,
   };
 }

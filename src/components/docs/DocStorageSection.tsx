@@ -1,74 +1,119 @@
-import { HardDrive } from 'lucide-react'
-import { formatBytes, formatNumber } from '@/lib/utils'
-import type { BucketInfo } from './useDocSections'
-import type { TableSummary } from '@/lib/types'
+import { useState } from 'react'
+import { ChevronDown, ChevronRight, Database, Table2 } from 'lucide-react'
+import type { StorageBucket } from '@/lib/types'
 
 interface DocStorageSectionProps {
-  buckets: BucketInfo[]
-  tables: TableSummary[]
+  storageBuckets: StorageBucket[]
+  allExpanded: boolean
 }
 
-export function DocStorageSection({ buckets, tables }: DocStorageSectionProps) {
-  const totalSize = tables.reduce((sum, t) => sum + t.dataSizeBytes, 0)
-  const totalRows = tables.reduce((sum, t) => sum + t.rowsCount, 0)
-  const largestTables = [...tables]
-    .sort((a, b) => b.dataSizeBytes - a.dataSizeBytes)
-    .slice(0, 5)
+export function DocStorageSection({ storageBuckets, allExpanded }: DocStorageSectionProps) {
+  // Group by stage: input first, then output
+  const inputBuckets = storageBuckets.filter(b => b.stage === 'in')
+  const outputBuckets = storageBuckets.filter(b => b.stage === 'out')
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-[var(--foreground)] mb-4">
+      <h2 className="text-xl font-bold text-[var(--foreground)] mb-1">
         3. Storage & Buckets
       </h2>
+      <hr className="border-[var(--border)] mb-4" />
 
-      {/* Summary */}
-      <div className="flex items-center gap-6 mb-4 text-sm text-[var(--muted-foreground)]">
-        <span title="Storage">
-          <HardDrive className="h-4 w-4 inline mr-1" aria-hidden="true" />
-        </span>
-        <span><strong>{tables.length}</strong> tables</span>
-        <span><strong>{formatBytes(totalSize)}</strong> total</span>
-        <span><strong>{formatNumber(totalRows)}</strong> rows</span>
-      </div>
-
-      {/* Bucket table */}
-      <div className="overflow-x-auto rounded-lg border border-[var(--border)]">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-[var(--accent)]/50 text-left text-xs text-[var(--muted-foreground)]">
-              <th className="px-3 py-2 font-medium">Bucket</th>
-              <th className="px-3 py-2 font-medium">Stage</th>
-              <th className="px-3 py-2 font-medium text-right">Tables</th>
-              <th className="px-3 py-2 font-medium text-right">Size</th>
-            </tr>
-          </thead>
-          <tbody>
-            {buckets.map((bucket) => (
-              <tr key={bucket.id} className="border-t border-[var(--border)]">
-                <td className="px-3 py-2 text-[var(--foreground)] font-mono text-xs">{bucket.id}</td>
-                <td className="px-3 py-2 text-[var(--muted-foreground)]">{bucket.stage}</td>
-                <td className="px-3 py-2 text-right text-[var(--foreground)]">{bucket.tableCount}</td>
-                <td className="px-3 py-2 text-right text-[var(--muted-foreground)]">{formatBytes(bucket.totalSize)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Largest tables */}
-      {largestTables.length > 0 && (
-        <div className="mt-4">
-          <h3 className="text-sm font-semibold text-[var(--foreground)] mb-2">Largest Tables</h3>
-          <div className="space-y-1">
-            {largestTables.map((t, i) => (
-              <div key={t.id} className="flex items-center gap-2 text-xs text-[var(--muted-foreground)]">
-                <span className="w-5 text-right font-medium">{i + 1}.</span>
-                <span className="text-[var(--foreground)] font-mono">{t.name}</span>
-                <span className="ml-auto">{formatBytes(t.dataSizeBytes)}</span>
-                <span>({formatNumber(t.rowsCount)} rows)</span>
+      {storageBuckets.length === 0 ? (
+        <p className="text-sm text-[var(--muted-foreground)] italic">No storage buckets found.</p>
+      ) : (
+        <div className="space-y-6">
+          {inputBuckets.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2">
+                Input Stage
+                <span className="ml-2 text-sm font-normal text-[var(--muted-foreground)]">
+                  ({inputBuckets.length} bucket{inputBuckets.length !== 1 ? 's' : ''})
+                </span>
+              </h3>
+              <div className="space-y-2">
+                {inputBuckets.map(bucket => (
+                  <BucketCard key={bucket.id} bucket={bucket} allExpanded={allExpanded} />
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
+
+          {outputBuckets.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2">
+                Output Stage
+                <span className="ml-2 text-sm font-normal text-[var(--muted-foreground)]">
+                  ({outputBuckets.length} bucket{outputBuckets.length !== 1 ? 's' : ''})
+                </span>
+              </h3>
+              <div className="space-y-2">
+                {outputBuckets.map(bucket => (
+                  <BucketCard key={bucket.id} bucket={bucket} allExpanded={allExpanded} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function BucketCard({ bucket, allExpanded }: { bucket: StorageBucket; allExpanded: boolean }) {
+  const [open, setOpen] = useState(false)
+  const isOpen = allExpanded || open
+
+  return (
+    <div className="rounded-lg border border-[var(--border)] bg-[var(--card)]" id={`doc-bucket-${bucket.id}`}>
+      <button
+        className="flex w-full items-center gap-2 px-4 py-2.5 text-left hover:bg-[var(--accent)]/30 transition-colors"
+        onClick={() => setOpen(prev => !prev)}
+      >
+        {isOpen ? (
+          <ChevronDown className="h-4 w-4 shrink-0 text-[var(--muted-foreground)]" />
+        ) : (
+          <ChevronRight className="h-4 w-4 shrink-0 text-[var(--muted-foreground)]" />
+        )}
+        <span title="Bucket">
+          <Database className="h-4 w-4 shrink-0 text-cyan-500" aria-hidden="true" />
+        </span>
+        <span className="text-sm font-medium font-mono text-[var(--foreground)]">{bucket.id}</span>
+        <span className="text-xs text-[var(--muted-foreground)]">
+          ({bucket.tables.length} table{bucket.tables.length !== 1 ? 's' : ''})
+        </span>
+      </button>
+
+      {isOpen && (
+        <div className="border-t border-[var(--border)] px-4 py-3 space-y-2">
+          {bucket.description && (
+            <p className="text-sm text-[var(--muted-foreground)] leading-relaxed">{bucket.description}</p>
+          )}
+
+          {bucket.tables.length > 0 ? (
+            <div className="space-y-1">
+              {bucket.tables.map(table => (
+                <div key={table.id} className="flex items-start gap-2 py-1 text-sm">
+                  <span title="Table">
+                    <Table2 className="h-3.5 w-3.5 mt-0.5 shrink-0 text-[var(--muted-foreground)]" aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0">
+                    <span className="font-mono text-xs text-[var(--foreground)]">{table.name}</span>
+                    {table.columnCount > 0 && (
+                      <span className="ml-2 text-xs text-[var(--muted-foreground)]">
+                        {table.columnCount} columns
+                      </span>
+                    )}
+                    {table.description && (
+                      <p className="text-xs text-[var(--muted-foreground)] mt-0.5">{table.description}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-[var(--muted-foreground)] italic">No tables</p>
+          )}
         </div>
       )}
     </div>

@@ -1,18 +1,6 @@
 import { useMemo } from 'react'
-import type { MetadataResponse, ComponentConfig, TableSummary, Category } from '@/lib/types'
-
-/** Data layer ordering for documentation sections */
-const LAYER_ORDER: Category[] = ['AUX', 'REF', 'DIM', 'FCT', 'FCTH', 'MAP', 'OTHER']
-
-const LAYER_LABELS: Record<Category, string> = {
-  AUX: 'Auxiliary (AUX)',
-  REF: 'Reference (REF)',
-  DIM: 'Dimension (DIM)',
-  FCT: 'Fact (FCT)',
-  FCTH: 'Fact Historical (FCTH)',
-  MAP: 'Mapping (MAP)',
-  OTHER: 'Other',
-}
+import { TRANSFORM_FOLDER_ORDER } from '@/lib/constants'
+import type { MetadataResponse, ComponentConfig, StorageBucket } from '@/lib/types'
 
 export interface ExtractorGroup {
   componentId: string
@@ -20,24 +8,24 @@ export interface ExtractorGroup {
   configs: ComponentConfig[]
 }
 
-export interface TablesByLayer {
-  layer: Category
-  label: string
-  tables: TableSummary[]
-}
-
-export interface TransformationsByLayer {
-  layer: Category
-  label: string
+export interface TransformationFolder {
+  folder: string
   configs: ComponentConfig[]
 }
 
-export interface BucketInfo {
-  id: string
-  displayName: string
-  stage: string
-  tableCount: number
-  totalSize: number
+/**
+ * Parse transformation folder from config name.
+ * E.g. "BDM - L1 - Order" → { folder: "BDM", sortKey: "L1" }
+ * E.g. "UC - Client Mapping" → { folder: "UC", sortKey: "" }
+ */
+function parseTransformFolder(name: string): { folder: string; sortKey: string } {
+  const parts = name.split(' - ').map(s => s.trim())
+  if (parts.length < 2) return { folder: 'Other', sortKey: '' }
+  const folder = (parts[0] ?? '').toUpperCase()
+  const knownFolders = TRANSFORM_FOLDER_ORDER as readonly string[]
+  if (!knownFolders.includes(folder)) return { folder: 'Other', sortKey: '' }
+  const sortKey: string = parts.length >= 3 ? (parts[1] ?? '') : ''
+  return { folder, sortKey }
 }
 
 export function useDocSections(metadata: MetadataResponse | null) {
@@ -61,79 +49,55 @@ export function useDocSections(metadata: MetadataResponse | null) {
     return Array.from(groups.values()).sort((a, b) => a.componentName.localeCompare(b.componentName))
   }, [metadata?.componentConfigs])
 
-  // Tables grouped by data layer
-  const tablesByLayer = useMemo<TablesByLayer[]>(() => {
-    if (!metadata?.tables) return []
-    const result: TablesByLayer[] = []
-    for (const layer of LAYER_ORDER) {
-      const tables = metadata.tables
-        .filter(t => t.category === layer)
-        .sort((a, b) => a.name.localeCompare(b.name))
-      if (tables.length > 0) {
-        result.push({ layer, label: LAYER_LABELS[layer], tables })
-      }
-    }
-    return result
-  }, [metadata?.tables])
+  // All storage buckets (from full project listing)
+  const storageBuckets = useMemo<StorageBucket[]>(() => {
+    return metadata?.allBuckets ?? []
+  }, [metadata?.allBuckets])
 
-  // Bucket summary
-  const buckets = useMemo<BucketInfo[]>(() => {
-    if (!metadata?.tables) return []
-    const bucketMap = new Map<string, BucketInfo>()
-    for (const t of metadata.tables) {
-      const existing = bucketMap.get(t.bucket)
-      if (existing) {
-        existing.tableCount++
-        existing.totalSize += t.dataSizeBytes
-      } else {
-        const parts = t.bucket.split('.')
-        const stage = parts[0] === 'in' ? 'Input' : 'Output'
-        bucketMap.set(t.bucket, {
-          id: t.bucket,
-          displayName: parts.slice(1).join('.').replace(/^c-/, ''),
-          stage,
-          tableCount: 1,
-          totalSize: t.dataSizeBytes,
-        })
-      }
-    }
-    return Array.from(bucketMap.values()).sort((a, b) => a.id.localeCompare(b.id))
-  }, [metadata?.tables])
-
-  // Transformations grouped by output layer
-  const transformationsByLayer = useMemo<TransformationsByLayer[]>(() => {
+  // Transformations grouped by folder prefix
+  const transformationFolders = useMemo<TransformationFolder[]>(() => {
     if (!metadata?.componentConfigs) return []
     const transforms = metadata.componentConfigs.filter(c => c.componentType === 'transformation')
-    const layerMap = new Map<Category, ComponentConfig[]>()
+    const folderMap = new Map<string, ComponentConfig[]>()
 
     for (const config of transforms) {
-      // Determine the output layer from output table names
-      let layer: Category = 'OTHER'
-      for (const outTable of config.outputTables) {
-        const tableName = outTable.split('.').pop() || ''
-        if (tableName.startsWith('FCTH_')) { layer = 'FCTH'; break }
-        if (tableName.startsWith('FCT_')) { layer = 'FCT'; break }
-        if (tableName.startsWith('REF_')) { layer = 'REF'; break }
-        if (tableName.startsWith('DIM_')) { layer = 'DIM'; break }
-        if (tableName.startsWith('MAP_')) { layer = 'MAP'; break }
-        if (tableName.startsWith('AUX_')) { layer = 'AUX'; break }
-      }
-      const existing = layerMap.get(layer)
+      const { folder } = parseTransformFolder(config.configName)
+      const existing = folderMap.get(folder)
       if (existing) {
         existing.push(config)
       } else {
-        layerMap.set(layer, [config])
+        folderMap.set(folder, [config])
       }
     }
 
-    const result: TransformationsByLayer[] = []
-    for (const layer of LAYER_ORDER) {
-      const configs = layerMap.get(layer)
+    // Sort configs within each folder by sortKey then name
+    for (const configs of folderMap.values()) {
+      configs.sort((a, b) => {
+        const pa = parseTransformFolder(a.configName)
+        const pb = parseTransformFolder(b.configName)
+        const keyCmp = pa.sortKey.localeCompare(pb.sortKey)
+        if (keyCmp !== 0) return keyCmp
+        return a.configName.localeCompare(b.configName)
+      })
+    }
+
+    // Sort folders by defined order, then "Other" last
+    const knownOrder = TRANSFORM_FOLDER_ORDER as readonly string[]
+    const result: TransformationFolder[] = []
+    for (const folder of knownOrder) {
+      const configs = folderMap.get(folder)
       if (configs && configs.length > 0) {
-        configs.sort((a, b) => a.configName.localeCompare(b.configName))
-        result.push({ layer, label: LAYER_LABELS[layer], configs })
+        result.push({ folder, configs })
+        folderMap.delete(folder)
       }
     }
+    const remaining = Array.from(folderMap.entries())
+      .filter(([, configs]) => configs.length > 0)
+      .sort(([a], [b]) => a.localeCompare(b))
+    for (const [folder, configs] of remaining) {
+      result.push({ folder, configs })
+    }
+
     return result
   }, [metadata?.componentConfigs])
 
@@ -145,7 +109,7 @@ export function useDocSections(metadata: MetadataResponse | null) {
       .sort((a, b) => a.configName.localeCompare(b.configName))
   }, [metadata?.componentConfigs])
 
-  // Data Gateway configs (keboola.app-data-gateway)
+  // Data Gateway configs
   const dataGatewayConfigs = useMemo(() => {
     if (!metadata?.componentConfigs) return []
     return metadata.componentConfigs
@@ -153,7 +117,7 @@ export function useDocSections(metadata: MetadataResponse | null) {
       .sort((a, b) => a.configName.localeCompare(b.configName))
   }, [metadata?.componentConfigs])
 
-  // Custom applications (excluding data gateway and data apps)
+  // Custom applications (excluding data gateway)
   const customApps = useMemo(() => {
     if (!metadata?.componentConfigs) return []
     return metadata.componentConfigs
@@ -164,21 +128,13 @@ export function useDocSections(metadata: MetadataResponse | null) {
       .sort((a, b) => a.configName.localeCompare(b.configName))
   }, [metadata?.componentConfigs])
 
-  // Flows
-  const flows = useMemo(() => {
-    return metadata?.flows ?? []
-  }, [metadata?.flows])
-
-  // Data Apps
-  const dataApps = useMemo(() => {
-    return metadata?.dataApps ?? []
-  }, [metadata?.dataApps])
+  const flows = useMemo(() => metadata?.flows ?? [], [metadata?.flows])
+  const dataApps = useMemo(() => metadata?.dataApps ?? [], [metadata?.dataApps])
 
   return {
     extractorGroups,
-    tablesByLayer,
-    buckets,
-    transformationsByLayer,
+    storageBuckets,
+    transformationFolders,
     writers,
     dataGatewayConfigs,
     customApps,

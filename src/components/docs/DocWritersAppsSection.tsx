@@ -21,9 +21,10 @@ export function DocWritersAppsSection({
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-[var(--foreground)] mb-4">
+      <h2 className="text-xl font-bold text-[var(--foreground)] mb-1">
         6. Data Writers, Custom Applications & Data Apps
       </h2>
+      <hr className="border-[var(--border)] mb-4" />
 
       {!hasContent ? (
         <p className="text-sm text-[var(--muted-foreground)] italic">No writer, application, or data app configurations found.</p>

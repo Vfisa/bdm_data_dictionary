@@ -190,6 +190,41 @@ export class MetadataCache {
       console.warn('MetadataCache: Data apps fetch failed (non-fatal):', err.message);
     }
 
+    // Fetch ALL buckets for storage documentation
+    let allBuckets = [];
+    try {
+      const rawBuckets = await this.client.listBuckets();
+      allBuckets = rawBuckets.map(b => ({
+        id: b.id,
+        name: b.name || b.id,
+        stage: b.stage,
+        description: b.description || '',
+        tables: (b.tables || []).map(t => ({
+          id: t.id,
+          name: t.name,
+          description: '',
+        })),
+      }));
+
+      // For buckets with tables, fetch table descriptions
+      for (const bucket of allBuckets) {
+        try {
+          const bucketTables = await this.client.listBucketTableIds(bucket.id);
+          bucket.tables = bucketTables.map(t => ({
+            id: t.id,
+            name: t.name || t.id.split('.').pop(),
+            description: t.description || '',
+            columnCount: t.columns ? t.columns.length : 0,
+          }));
+        } catch {
+          // Non-fatal — keep empty table list
+        }
+      }
+      console.log(`MetadataCache: Buckets loaded — ${allBuckets.length} buckets`);
+    } catch (err) {
+      console.warn('MetadataCache: Bucket list failed (non-fatal):', err.message);
+    }
+
     // Atomic swap — old data is replaced all at once
     this._data = {
       tables,
@@ -201,6 +236,7 @@ export class MetadataCache {
       componentConfigs,
       flows,
       dataApps,
+      allBuckets,
       lastRefresh: new Date().toISOString(),
       tableCount: tables.length,
       edgeCount: edges.length,
@@ -245,6 +281,7 @@ export class MetadataCache {
       componentConfigs: this._data.componentConfigs || [],
       flows: this._data.flows || [],
       dataApps: this._data.dataApps || [],
+      allBuckets: this._data.allBuckets || [],
     };
   }
 

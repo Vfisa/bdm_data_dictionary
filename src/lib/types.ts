@@ -168,6 +168,23 @@ export interface DataApp {
   keboolaUrl: string
 }
 
+/** Bucket table entry for storage documentation */
+export interface StorageBucketTable {
+  id: string
+  name: string
+  description: string
+  columnCount: number
+}
+
+/** Storage bucket for documentation */
+export interface StorageBucket {
+  id: string
+  name: string
+  stage: string
+  description: string
+  tables: StorageBucketTable[]
+}
+
 /** Full metadata response from /api/metadata */
 export interface MetadataResponse {
   tables: TableSummary[]
@@ -180,6 +197,7 @@ export interface MetadataResponse {
   componentConfigs: ComponentConfig[]
   flows: Flow[]
   dataApps: DataApp[]
+  allBuckets: StorageBucket[]
 }
 
 /** Description update payload for PUT /api/descriptions */

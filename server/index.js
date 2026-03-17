@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { MetadataCache } from './metadata-cache.js';
 import { createProfilingCache } from './profiling-cache.js';
@@ -50,6 +51,18 @@ if (cache) {
 app.use(express.json());
 
 // --- API routes ---
+
+// Resource files (markdown docs) — served from resources/ directory
+app.get('/api/resource/:name', (req, res) => {
+  const name = req.params.name.replace(/[^a-zA-Z0-9_-]/g, '');
+  const filePath = path.join(__dirname, '..', 'resources', `${name}.md`);
+  try {
+    const content = fs.readFileSync(filePath, 'utf-8');
+    res.json({ content });
+  } catch {
+    res.status(404).json({ error: `Resource ${name} not found` });
+  }
+});
 
 // Health check — always works, even without credentials
 app.get('/api/health', (_req, res) => {
