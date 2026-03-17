@@ -1,7 +1,19 @@
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import rehypeSanitize from 'rehype-sanitize'
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize'
 import type { Components } from 'react-markdown'
+
+/** Extend default schema: allow images with relative src paths (for /data/in/files/) */
+const { src: _srcProtocols, ...restProtocols } = defaultSchema.protocols || {}
+const sanitizeSchema = {
+  ...defaultSchema,
+  attributes: {
+    ...defaultSchema.attributes,
+    img: ['src', 'alt', 'title', 'width', 'height'],
+  },
+  // Remove 'src' from protocols so relative paths like /data/in/files/ are allowed
+  protocols: restProtocols,
+}
 
 /** Shared styled components for ReactMarkdown — no @tailwindcss/typography needed */
 export const markdownComponents: Components = {
@@ -27,6 +39,7 @@ export const markdownComponents: Components = {
   tr: ({ children }) => <tr className="border-b border-[var(--border)] last:border-b-0">{children}</tr>,
   th: ({ children }) => <th className="px-4 py-2.5 text-left font-semibold text-[var(--foreground)] text-[12px]">{children}</th>,
   td: ({ children }) => <td className="px-4 py-2.5 text-[var(--foreground)]">{children}</td>,
+  img: ({ src, alt }) => <img src={src} alt={alt || ''} className="max-w-full h-auto rounded-lg border border-[var(--border)] my-4" />,
 }
 
 /** Convenience wrapper: renders markdown string with shared styles, GFM, and sanitization */
@@ -34,7 +47,7 @@ export function MarkdownContent({ content }: { content: string }) {
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
-      rehypePlugins={[rehypeSanitize]}
+      rehypePlugins={[[rehypeSanitize, sanitizeSchema]]}
       components={markdownComponents}
     >
       {content}

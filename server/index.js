@@ -52,12 +52,21 @@ app.use(express.json());
 
 // --- API routes ---
 
+// Serve Keboola input files (images, etc.) from data/in/files/
+const filesPath = path.join(__dirname, '..', 'data', 'in', 'files');
+app.use('/data/in/files', express.static(filesPath));
+
 // Resource files (markdown docs) — served from resources/ directory
+// Supports {{ENV_VAR}} template replacement from process.env
 app.get('/api/resource/:name', (req, res) => {
   const name = req.params.name.replace(/[^a-zA-Z0-9_-]/g, '');
   const filePath = path.join(__dirname, '..', 'resources', `${name}.md`);
   try {
-    const content = fs.readFileSync(filePath, 'utf-8');
+    let content = fs.readFileSync(filePath, 'utf-8');
+    // Replace {{VAR_NAME}} with process.env.VAR_NAME (leave untouched if not set)
+    content = content.replace(/\{\{([A-Z_][A-Z0-9_]*)\}\}/g, (_match, varName) => {
+      return process.env[varName] ?? `{{${varName}}}`;
+    });
     res.json({ content });
   } catch {
     res.status(404).json({ error: `Resource ${name} not found` });

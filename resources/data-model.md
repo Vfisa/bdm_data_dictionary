@@ -1,16 +1,16 @@
-# Data Model Overview
+Business Data Model (BDM) is a method of describing a business in the language of data   
+ - Independent on the underlying technology (Data storage)
+ - Defines and describes “objects”, “properties” and “values” that are key to the business operation,
 
-> This file is rendered in the **Documentation > Data Model** section.
-> Edit this markdown to describe your business data model.
+Provides:  
+ - Extendable data model that supports all current and future data initiatives
+ - Unified terminology and business understanding through data across departments
 
-## Architecture
+The implementation has taken two layered approach: High level, business-driven **Business Data Model**  that helped to define business relationships and stood up as a based model for **Data Warehouse Model**, materialized mostly within the BDM bucket through series of transformation steps.
 
-*Describe the overall data architecture, layers, and design principles here.*
+### Business Data Model
+![BDM](/data/in/files/{{BDM_FILE_ID}}_documentation_bdm.png)
 
-## Entity Relationships
+### Data Warehouse Model
+![DWH](/data/in/files/{{DWH_FILE_ID}}_documentation_dwh.png)
 
-*Describe key entity relationships, business rules, and data flows here.*
-
-## Data Layers
-
-*Describe each data layer (AUX, REF, DIM, FCT, FCTH, MAP) and its purpose here.*
