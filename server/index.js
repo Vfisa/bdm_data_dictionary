@@ -73,6 +73,54 @@ app.get('/api/resource/:name', (req, res) => {
   }
 });
 
+// Debug: list injected files and template env vars (dev/staging only)
+app.get('/api/debug/files', (_req, res) => {
+  const result = {
+    envVars: {
+      BDM_FILE_ID: process.env.BDM_FILE_ID || '(not set)',
+      DWH_FILE_ID: process.env.DWH_FILE_ID || '(not set)',
+    },
+    searchPaths: {},
+  };
+
+  // Scan candidate directories where Keboola might inject files
+  const candidates = [
+    '/data',
+    '/data/in',
+    '/data/in/files',
+    '/app/data',
+    '/app/data/in',
+    '/app/data/in/files',
+    path.join(__dirname, '..', 'data'),
+    path.join(__dirname, '..', 'data', 'in'),
+    path.join(__dirname, '..', 'data', 'in', 'files'),
+  ];
+
+  // Deduplicate resolved paths
+  const seen = new Set();
+  for (const dir of candidates) {
+    const resolved = path.resolve(dir);
+    if (seen.has(resolved)) continue;
+    seen.add(resolved);
+    try {
+      const entries = fs.readdirSync(resolved, { withFileTypes: true });
+      result.searchPaths[resolved] = entries.map(e => ({
+        name: e.name,
+        type: e.isDirectory() ? 'dir' : 'file',
+        ...(e.isFile() ? { size: fs.statSync(path.join(resolved, e.name)).size } : {}),
+      }));
+    } catch (err) {
+      result.searchPaths[resolved] = `ERROR: ${err.message}`;
+    }
+  }
+
+  // Also show what the static middleware is configured to serve
+  result.staticFilesPath = filesPath;
+  result.staticFilesExists = fs.existsSync(filesPath);
+
+  res.json(result);
+});
+
 // Health check — always works, even without credentials
 app.get('/api/health', (_req, res) => {
   const cacheStatus = cache ? cache.getStatus() : { initialized: false };
