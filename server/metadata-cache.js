@@ -194,33 +194,42 @@ export class MetadataCache {
     let allBuckets = [];
     try {
       const rawBuckets = await this.client.listBuckets();
-      allBuckets = rawBuckets.map(b => ({
-        id: b.id,
-        name: b.name || b.id,
-        stage: b.stage,
-        description: b.description || '',
-        tables: (b.tables || []).map(t => ({
-          id: t.id,
-          name: t.name,
-          description: '',
-        })),
-      }));
+      console.log(`MetadataCache: Found ${rawBuckets.length} raw buckets`);
 
-      // For buckets with tables, fetch table descriptions
-      for (const bucket of allBuckets) {
-        try {
-          const bucketTables = await this.client.listBucketTableIds(bucket.id);
-          bucket.tables = bucketTables.map(t => ({
-            id: t.id,
-            name: t.name || t.id.split('.').pop(),
-            description: t.description || '',
-            columnCount: t.columns ? t.columns.length : 0,
-          }));
-        } catch {
-          // Non-fatal — keep empty table list
-        }
-      }
-      console.log(`MetadataCache: Buckets loaded — ${allBuckets.length} buckets`);
+      // Fetch table lists for all buckets in parallel
+      const bucketResults = await Promise.allSettled(
+        rawBuckets.map(async (b) => {
+          let tables = [];
+          try {
+            const bucketTables = await this.client.listBucketTableIds(b.id);
+            tables = bucketTables.map(t => ({
+              id: t.id,
+              name: t.name || t.id.split('.').pop(),
+              description: t.description || '',
+              columnCount: t.columns ? t.columns.length : 0,
+            }));
+          } catch {
+            // Non-fatal — empty table list for this bucket
+          }
+          // Derive stage from bucket ID prefix (in.c-xxx → "in", out.c-xxx → "out")
+          const stage = b.stage || (b.id.startsWith('out.') ? 'out' : 'in');
+          return {
+            id: b.id,
+            name: b.name || b.displayName || b.id,
+            stage,
+            description: b.description || '',
+            tables,
+          };
+        })
+      );
+
+      allBuckets = bucketResults
+        .filter(r => r.status === 'fulfilled')
+        .map(r => r.value)
+        .sort((a, b) => a.id.localeCompare(b.id));
+
+      const totalTables = allBuckets.reduce((sum, b) => sum + b.tables.length, 0);
+      console.log(`MetadataCache: Buckets loaded — ${allBuckets.length} buckets, ${totalTables} tables total`);
     } catch (err) {
       console.warn('MetadataCache: Bucket list failed (non-fatal):', err.message);
     }
