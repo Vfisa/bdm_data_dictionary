@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronRight, ExternalLink, Database } from 'lucide-react'
+import { MarkdownContent } from '@/lib/markdown-components'
 import type { ExtractorGroup } from './useDocSections'
 
 interface DocSourcesSectionProps {
@@ -28,7 +29,7 @@ export function DocSourcesSection({ extractorGroups, allExpanded }: DocSourcesSe
 }
 
 function ExtractorGroupCard({ group, allExpanded }: { group: ExtractorGroup; allExpanded: boolean }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(true)
   const isOpen = allExpanded || open
 
   return (
@@ -69,7 +70,9 @@ function ExtractorGroupCard({ group, allExpanded }: { group: ExtractorGroup; all
                 )}
               </div>
               {config.description && (
-                <p className="text-sm text-[var(--muted-foreground)] leading-relaxed">{config.description}</p>
+                <div className="text-sm text-[var(--muted-foreground)] leading-relaxed">
+                  <MarkdownContent content={config.description} />
+                </div>
               )}
               {config.outputTables.length > 0 && (
                 <div className="text-sm text-[var(--muted-foreground)]">

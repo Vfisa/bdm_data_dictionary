@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react'
 import { ChevronDown, ChevronRight, ExternalLink, GitBranch } from 'lucide-react'
+import { COMPONENT_TYPE_COLORS, DEFAULT_TYPE_COLOR, deriveTypeLabel } from '@/lib/constants'
+import { MarkdownContent } from '@/lib/markdown-components'
 import type { Flow, FlowTask } from '@/lib/types'
 
 interface DocOrchestrationSectionProps {
@@ -84,7 +86,9 @@ function FlowCard({ flow, allExpanded }: { flow: Flow; allExpanded: boolean }) {
       {isOpen && (
         <div className="border-t border-[var(--border)] px-4 py-3 space-y-3">
           {flow.description && (
-            <p className="text-xs text-[var(--muted-foreground)]">{flow.description}</p>
+            <div className="text-xs text-[var(--muted-foreground)]">
+              <MarkdownContent content={flow.description} />
+            </div>
           )}
 
           {/* Phases with their tasks */}
@@ -105,16 +109,23 @@ function FlowCard({ flow, allExpanded }: { flow: Flow; allExpanded: boolean }) {
                 </div>
                 {phaseTasks.length > 0 ? (
                   <div className="pl-4 space-y-0.5">
-                    {phaseTasks.map((task) => (
-                      <div key={task.id} className="flex items-center gap-2 text-xs text-[var(--muted-foreground)]">
-                        <span className={`rounded px-1 py-0.5 text-[10px] font-medium ${
-                          task.enabled ? 'bg-[var(--accent)] text-[var(--accent-foreground)]' : 'bg-[var(--muted)] text-[var(--muted-foreground)] line-through'
-                        }`}>
-                          {task.componentId.split('.').pop() || 'task'}
-                        </span>
-                        <span className={task.enabled ? '' : 'line-through opacity-60'}>{task.name || task.configId}</span>
-                      </div>
-                    ))}
+                    {phaseTasks.map((task) => {
+                      const typeLabel = deriveTypeLabel(task.componentId)
+                      const colors = COMPONENT_TYPE_COLORS[typeLabel] || DEFAULT_TYPE_COLOR
+                      return (
+                        <div key={task.id} className="flex items-center gap-2 text-xs text-[var(--muted-foreground)]">
+                          <span
+                            className={`rounded px-1 py-0.5 text-[10px] font-bold ${
+                              task.enabled ? '' : 'line-through opacity-60'
+                            }`}
+                            style={{ backgroundColor: colors.bg, color: colors.text }}
+                          >
+                            {typeLabel}
+                          </span>
+                          <span className={task.enabled ? '' : 'line-through opacity-60'}>{task.name || task.configId}</span>
+                        </div>
+                      )
+                    })}
                   </div>
                 ) : (
                   <p className="pl-4 text-xs text-[var(--muted-foreground)] italic">No tasks in this phase</p>

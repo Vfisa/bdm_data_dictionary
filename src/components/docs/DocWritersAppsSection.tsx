@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronRight, ExternalLink, Upload, Globe, Server, AppWindow } from 'lucide-react'
+import { MarkdownContent } from '@/lib/markdown-components'
 import type { ComponentConfig, DataApp } from '@/lib/types'
 
 interface DocWritersAppsSectionProps {
@@ -84,7 +85,7 @@ export function DocWritersAppsSection({
 }
 
 function WriterCard({ config, allExpanded }: { config: ComponentConfig; allExpanded: boolean }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(true)
   const isOpen = allExpanded || open
 
   return (
@@ -105,7 +106,11 @@ function WriterCard({ config, allExpanded }: { config: ComponentConfig; allExpan
       </button>
       {isOpen && (
         <div className="border-t border-[var(--border)] px-4 py-2 space-y-1.5 text-xs">
-          {config.description && <p className="text-[var(--muted-foreground)]">{config.description}</p>}
+          {config.description && (
+            <div className="text-[var(--muted-foreground)]">
+              <MarkdownContent content={config.description} />
+            </div>
+          )}
           {config.inputTables.length > 0 && (
             <div className="text-[var(--muted-foreground)]">
               <span className="font-medium">Input tables:</span>{' '}
@@ -136,7 +141,7 @@ function WriterCard({ config, allExpanded }: { config: ComponentConfig; allExpan
 }
 
 function DataGatewayCard({ config, allExpanded }: { config: ComponentConfig; allExpanded: boolean }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(true)
   const isOpen = allExpanded || open
 
   return (
@@ -156,7 +161,11 @@ function DataGatewayCard({ config, allExpanded }: { config: ComponentConfig; all
       </button>
       {isOpen && (
         <div className="border-t border-[var(--border)] px-4 py-2 space-y-1.5 text-xs">
-          {config.description && <p className="text-[var(--muted-foreground)]">{config.description}</p>}
+          {config.description && (
+            <div className="text-[var(--muted-foreground)]">
+              <MarkdownContent content={config.description} />
+            </div>
+          )}
 
           {/* Connection info */}
           {config.connectionInfo && (
@@ -191,12 +200,12 @@ function DataGatewayCard({ config, allExpanded }: { config: ComponentConfig; all
                         <td className="pr-3 py-0.5 font-mono text-[var(--muted-foreground)]">
                           {row.inputTables.length > 0
                             ? row.inputTables.map(t => t.split('.').pop()).join(', ')
-                            : row.tableId?.split('.').pop() || '—'}
+                            : row.tableId?.split('.').pop() || '\u2014'}
                         </td>
                         <td className="pr-3 py-0.5">
                           {row.incremental === true && <span className="text-blue-500">Incremental</span>}
                           {row.incremental === false && <span className="text-green-500">Clone</span>}
-                          {row.incremental === null && <span className="text-[var(--muted-foreground)]">—</span>}
+                          {row.incremental === null && <span className="text-[var(--muted-foreground)]">{'\u2014'}</span>}
                         </td>
                       </tr>
                     ))}
@@ -212,7 +221,7 @@ function DataGatewayCard({ config, allExpanded }: { config: ComponentConfig; all
 }
 
 function CustomAppCard({ config, allExpanded }: { config: ComponentConfig; allExpanded: boolean }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(true)
   const isOpen = allExpanded || open
 
   return (
@@ -233,7 +242,11 @@ function CustomAppCard({ config, allExpanded }: { config: ComponentConfig; allEx
       </button>
       {isOpen && (
         <div className="border-t border-[var(--border)] px-4 py-2 space-y-1.5 text-xs">
-          {config.description && <p className="text-[var(--muted-foreground)]">{config.description}</p>}
+          {config.description && (
+            <div className="text-[var(--muted-foreground)]">
+              <MarkdownContent content={config.description} />
+            </div>
+          )}
           {config.inputTables.length > 0 && (
             <div className="text-[var(--muted-foreground)]">
               <span className="font-medium">Input:</span>{' '}
@@ -253,7 +266,7 @@ function CustomAppCard({ config, allExpanded }: { config: ComponentConfig; allEx
 }
 
 function DataAppCard({ app, allExpanded }: { app: DataApp; allExpanded: boolean }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(true)
   const isOpen = allExpanded || open
 
   return (
@@ -274,7 +287,11 @@ function DataAppCard({ app, allExpanded }: { app: DataApp; allExpanded: boolean 
       </button>
       {isOpen && (
         <div className="border-t border-[var(--border)] px-4 py-2 space-y-1.5 text-xs">
-          {app.description && <p className="text-[var(--muted-foreground)]">{app.description}</p>}
+          {app.description && (
+            <div className="text-[var(--muted-foreground)]">
+              <MarkdownContent content={app.description} />
+            </div>
+          )}
           <div className="space-y-0.5 text-[var(--muted-foreground)]">
             {app.gitRepository && (
               <div>

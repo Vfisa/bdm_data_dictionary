@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import rehypeSanitize from 'rehype-sanitize'
 import { Loader2 } from 'lucide-react'
+import { MarkdownContent } from '@/lib/markdown-components'
 
 export function DocDataModelSection() {
   const [markdown, setMarkdown] = useState<string | null>(null)
@@ -31,11 +29,7 @@ export function DocDataModelSection() {
           Loading data model description...
         </div>
       ) : markdown ? (
-        <div className="prose prose-sm dark:prose-invert max-w-none text-[var(--foreground)]">
-          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
-            {markdown}
-          </ReactMarkdown>
-        </div>
+        <MarkdownContent content={markdown} />
       ) : (
         <p className="text-sm text-[var(--muted-foreground)] italic">
           No data model description found. Add content to <code className="text-xs">resources/data-model.md</code> to populate this section.
