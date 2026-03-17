@@ -26,6 +26,7 @@ export interface TableSummary {
   category: Category
   lastImportDate: string | null
   tags: string[]
+  keboolaUrl: string
 }
 
 /** Table detail with relationships (from /api/table/:id) */
@@ -84,6 +85,89 @@ export interface LineageIndex {
   usedBy: Record<string, LineageEntry[]>
 }
 
+/** Row-level config detail for writers/applications */
+export interface ConfigRow {
+  name: string
+  description: string
+  inputTables: string[]
+  incremental: boolean | null
+  tableId: string | null
+  dbName: string | null
+}
+
+/** Connection info for DB writers / data gateway */
+export interface ConnectionInfo {
+  host: string | null
+  schema: string | null
+  warehouse: string | null
+  loginType: string | null
+  driver: string | null
+}
+
+/** Component configuration from Keboola */
+export interface ComponentConfig {
+  configId: string
+  configName: string
+  componentId: string
+  componentName: string
+  componentType: string
+  description: string
+  inputTables: string[]
+  outputTables: string[]
+  lastChangeDate: string | null
+  version: number
+  keboolaUrl: string
+  configRows?: ConfigRow[]
+  connectionInfo?: ConnectionInfo
+}
+
+/** Flow task (a config reference within a flow) */
+export interface FlowTask {
+  id: string
+  name: string
+  phaseId: string
+  enabled: boolean
+  componentId: string
+  configId: string
+}
+
+/** Flow phase */
+export interface FlowPhase {
+  id: string
+  name: string
+  description: string
+  dependsOn: string[]
+  hasConditions: boolean
+}
+
+/** Orchestration flow from Keboola */
+export interface Flow {
+  id: string
+  name: string
+  description: string
+  componentId: string
+  isDisabled: boolean
+  phases: FlowPhase[]
+  tasks: FlowTask[]
+  phaseCount: number
+  taskCount: number
+  keboolaUrl: string
+}
+
+/** Data App configuration from Keboola */
+export interface DataApp {
+  id: string
+  name: string
+  description: string
+  type: string
+  gitRepository: string | null
+  gitBranch: string | null
+  authType: string | null
+  deploymentUrl: string | null
+  autoSuspendAfterSeconds: number | null
+  keboolaUrl: string
+}
+
 /** Full metadata response from /api/metadata */
 export interface MetadataResponse {
   tables: TableSummary[]
@@ -93,6 +177,9 @@ export interface MetadataResponse {
   lastRefresh: string
   stats: InferenceStats
   lineage: LineageIndex
+  componentConfigs: ComponentConfig[]
+  flows: Flow[]
+  dataApps: DataApp[]
 }
 
 /** Description update payload for PUT /api/descriptions */

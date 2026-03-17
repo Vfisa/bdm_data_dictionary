@@ -8,7 +8,7 @@
 
 import { createClient } from './keboola-client.js';
 import { inferRelationships, inferDateConnections, getCategory } from './inference.js';
-import { buildLineageIndex } from './lineage-cache.js';
+import { buildLineageIndex, buildKeboolaUrl } from './lineage-cache.js';
 
 export class MetadataCache {
   /**
@@ -134,18 +134,60 @@ export class MetadataCache {
 
     // Build lineage index from ALL component configs (extractors, transformations, writers, apps)
     let lineage = { producedBy: {}, usedBy: {} };
+    let componentConfigs = [];
     try {
       const [bucketTableMap, jobMap] = await Promise.all([
         this.client.buildBucketTableMap(),
         this.client.listRecentJobs(),
       ]);
-      const componentConfigs = await this.client.listAllComponentConfigs(bucketTableMap);
+      componentConfigs = await this.client.listAllComponentConfigs(bucketTableMap);
       lineage = buildLineageIndex(componentConfigs, jobMap, this.kbcUrl, this._projectId);
       const prodCount = Object.keys(lineage.producedBy).length;
       const usedCount = Object.keys(lineage.usedBy).length;
       console.log(`MetadataCache: Lineage built — ${componentConfigs.length} components, ${prodCount} produced, ${usedCount} used`);
     } catch (err) {
       console.warn('MetadataCache: Lineage build failed (non-fatal):', err.message);
+    }
+
+    // Add keboolaUrl to each component config for frontend links
+    for (const config of componentConfigs) {
+      config.keboolaUrl = buildKeboolaUrl(
+        this.kbcUrl, config.componentId, config.configId,
+        this._projectId, config.componentType
+      );
+    }
+
+    // Fetch flows (orchestration data)
+    let flows = [];
+    try {
+      flows = await this.client.listFlows();
+      console.log(`MetadataCache: Flows loaded — ${flows.length} flows`);
+    } catch (err) {
+      console.warn('MetadataCache: Flows fetch failed (non-fatal):', err.message);
+    }
+
+    // Add keboolaUrl to each flow
+    for (const flow of flows) {
+      flow.keboolaUrl = buildKeboolaUrl(
+        this.kbcUrl, flow.componentId, flow.id,
+        this._projectId, 'other'
+      );
+    }
+
+    // Fetch data apps
+    let dataApps = [];
+    try {
+      dataApps = await this.client.listDataApps();
+      // Add keboolaUrl for each data app
+      for (const app of dataApps) {
+        app.keboolaUrl = buildKeboolaUrl(
+          this.kbcUrl, 'keboola.data-apps', app.id,
+          this._projectId, 'other'
+        );
+      }
+      console.log(`MetadataCache: Data apps loaded — ${dataApps.length} apps`);
+    } catch (err) {
+      console.warn('MetadataCache: Data apps fetch failed (non-fatal):', err.message);
     }
 
     // Atomic swap — old data is replaced all at once
@@ -156,6 +198,9 @@ export class MetadataCache {
       categories,
       stats,
       lineage,
+      componentConfigs,
+      flows,
+      dataApps,
       lastRefresh: new Date().toISOString(),
       tableCount: tables.length,
       edgeCount: edges.length,
@@ -169,6 +214,9 @@ export class MetadataCache {
    */
   getMetadata() {
     if (!this._data) return null;
+
+    const kbcUrl = this.kbcUrl ? this.kbcUrl.replace(/\/+$/, '') : '';
+    const pid = this._projectId || '_';
 
     return {
       tables: this._data.tables.map((t) => ({
@@ -184,6 +232,9 @@ export class MetadataCache {
         category: this._data.categories[t.name] || 'OTHER',
         lastImportDate: t.lastImportDate,
         tags: t.tags || [],
+        keboolaUrl: kbcUrl
+          ? `${kbcUrl}/admin/projects/${pid}/storage/buckets/${encodeURIComponent(t.bucket)}/tables/${encodeURIComponent(t.id)}`
+          : '',
       })),
       edges: this._data.edges,
       dateEdges: this._data.dateEdges || [],
@@ -191,6 +242,9 @@ export class MetadataCache {
       lastRefresh: this._data.lastRefresh,
       stats: this._data.stats,
       lineage: this._data.lineage || { producedBy: {}, usedBy: {} },
+      componentConfigs: this._data.componentConfigs || [],
+      flows: this._data.flows || [],
+      dataApps: this._data.dataApps || [],
     };
   }
 
