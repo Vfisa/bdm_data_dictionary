@@ -900,3 +900,18 @@ Strategy 4 requires fetching bucket list + tables-per-bucket at startup.
 | 38 | Empty lineage state | Show section header with muted message: "No transformations reference this table" |
 | 39 | Lineage data source | Parse all transformation configs' input/output storage mappings at startup. Cached with metadata, same refresh lifecycle |
 | 40 | Refresh button placement | Added to Table Browser toolbar (was ERD-only). Both tabs share the same refresh action |
+
+## 18. Resolved Phase 10a Decisions
+
+| # | Question | Decision |
+|---|----------|----------|
+| 41 | Documentation content source | Auto-generated from Keboola metadata (component configs, flows, buckets, tables). No manual curation needed except Data Model markdown |
+| 42 | Section structure | 6 sections: Data Sources, Data Model, Storage & Buckets, Orchestration, Transformations, Writers/Apps/Data Apps |
+| 43 | Markdown rendering strategy | Shared `MarkdownContent` component (extracted from ProjectOverviewPage) — custom ReactMarkdown components, no @tailwindcss/typography plugin |
+| 44 | Transformation grouping | By folder prefix from naming convention (` - ` delimiter). First segment = folder, second = sort key. Known folders: BDM, AUX, BI, TEST, UC. Unmatched = "Other" |
+| 45 | Transformation card layout | 3-column grid (input tables | transformation box | output tables) — always visible, not collapsible. Table names as clickable chips linking to storage bucket anchors |
+| 46 | Badge colors | Shared `COMPONENT_TYPE_COLORS` constant: SQL=blue, PY=yellow, dbt=red, R=purple, EXT=green, WR=red, APP=yellow. Used in lineage, docs, orchestration |
+| 47 | Card default state | Data Sources, Writers, Apps cards expanded by default. Storage buckets collapsed by default |
+| 48 | Data Model section | Renders markdown from `resources/data-model.md` via `/api/resource/:name` endpoint. Placeholder message when empty |
+| 49 | Storage section scope | ALL project buckets (not just BDM) — grouped by Input/Output stage, collapsible per bucket with table list |
+| 50 | Sidebar TOC | IntersectionObserver scroll-spy with transformation folder sub-items |

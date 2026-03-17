@@ -1,5 +1,20 @@
 # Changelog
 
+## Phase 10a — Automatic Project Documentation (2026-03-16)
+- **Full Documentation tab**: Auto-generated project documentation from Keboola metadata — 6 sections: Data Sources, Data Model, Storage & Buckets, Orchestration, Transformations, Writers/Apps/Data Apps
+- **Shared `MarkdownContent` component**: Extracted from ProjectOverviewPage into `src/lib/markdown-components.tsx` — used across all docs sections and overview for consistent markdown rendering (headings, tables, code, blockquotes, lists)
+- **Data Sources section**: Extractor configs grouped by component, expanded by default, markdown descriptions, output table lists
+- **Data Model section**: Renders `resources/data-model.md` via `/api/resource/:name` endpoint; placeholder message when empty
+- **Storage & Buckets section**: ALL project buckets (not just BDM) — collapsible per bucket, grouped by Input/Output stage, table lists with column counts
+- **Orchestration section**: Flow cards with phase/task breakdown; task badges use shared `COMPONENT_TYPE_COLORS` (SQL=blue, PY=yellow, etc.)
+- **Transformation section**: Grouped by folder prefix from naming convention (BDM sorted by layers, AUX, BI, TEST, UC, Other); 3-column I/O mapping grid (input tables → transformation box → output tables) with clickable table chips linking to storage bucket anchors
+- **Writers/Apps section**: All card types expanded by default; Data Gateway with connection info and table list; Data Apps with repo/auth/deployment details
+- **Consistent badge colors**: `COMPONENT_TYPE_COLORS` shared across LineageSection and all docs sections
+- **Sidebar TOC**: IntersectionObserver scroll-spy with transformation folder sub-items
+- **Toolbar**: Expand All, Print, Markdown export, Refresh
+- **New server endpoint**: `GET /api/resource/:name` serving markdown files from `resources/` directory
+- **All-buckets API**: `listBuckets()` + `listBucketTableIds()` exposed in metadata cache for full project coverage
+
 ## Phase 9 — Full Component Lineage (2026-03-13)
 - **All component types in lineage**: Extractors (EXT, green), writers (WR, red), applications (APP, yellow) now tracked alongside transformations (SQL, PY, dbt, R)
 - **3-strategy output inference**: (1) Explicit `storage.input/output.tables` mappings, (2) row `parameters.outputTable` (Oracle, NetSuite extractors), (3) bucket naming convention `in.c-{componentId}-{configId}`

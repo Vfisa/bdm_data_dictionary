@@ -570,9 +570,50 @@
 
 ---
 
+## Phase 10a: Automatic Project Documentation
+**Status:** DONE
+**Date:** 2026-03-16
+
+**New files:**
+- `src/lib/markdown-components.tsx` — shared `MarkdownContent` component + `markdownComponents` for ReactMarkdown (extracted from ProjectOverviewPage)
+- `src/components/docs/useDocSections.ts` — data aggregation hook: parses transformations into folders, groups extractors by component, fetches all buckets
+- `src/components/docs/DocSourcesSection.tsx` — extractor groups, expanded by default, markdown descriptions
+- `src/components/docs/DocDataModelSection.tsx` — renders `resources/data-model.md` via `/api/resource/:name`
+- `src/components/docs/DocStorageSection.tsx` — all project buckets grouped by stage, collapsible with table lists
+- `src/components/docs/DocOrchestrationSection.tsx` — flow cards with phase/task breakdown, colored type badges
+- `src/components/docs/DocTransformSection.tsx` — folder-grouped transformation listing
+- `src/components/docs/DocTransformCard.tsx` — 3-column I/O mapping grid (input → transform → output)
+- `src/components/docs/DocWritersAppsSection.tsx` — writers, data gateway, custom apps, data apps (all expanded)
+- `src/components/docs/DocTableOfContents.tsx` — sidebar TOC with IntersectionObserver scroll-spy
+- `src/components/docs/DocToolbar.tsx` — Expand All, Print, Markdown export, Refresh
+- `src/components/docs/doc-export.ts` — markdown export for all sections
+- `resources/data-model.md` — empty placeholder for user-provided data model description
+
+**Modified files:**
+- `server/index.js` — added `/api/resource/:name` endpoint
+- `server/keboola-client.js` — exposed `listBuckets()` and `listBucketTableIds()` in return object
+- `server/metadata-cache.js` — added all-buckets loading + `allBuckets` in metadata response
+- `server/mock-data.js` — added 5 mock buckets with tables
+- `src/lib/constants.ts` — added `COMPONENT_TYPE_COLORS`, `DEFAULT_TYPE_COLOR`, `deriveTypeLabel()`, `TRANSFORM_FOLDER_ORDER`
+- `src/lib/types.ts` — added `StorageBucket`, `StorageBucketTable`, `allBuckets` to `MetadataResponse`, updated `Flow`/`DataApp` types
+- `src/pages/ProjectOverviewPage.tsx` — refactored to use shared `MarkdownContent`
+- `src/pages/ProjectDocumentationPage.tsx` — full rewrite from placeholder to active documentation page
+- `src/components/table-detail/LineageSection.tsx` — uses shared `COMPONENT_TYPE_COLORS`
+
+**Key design decisions:**
+- Transformation folder grouping: parse config name by ` - ` delimiter, first part = folder, second = sort key
+- Folder order: BDM, AUX, BI, TEST, UC — anything else falls to "Other"
+- Cards for Sources/Writers/Apps expanded by default for immediate visibility
+- Transformation cards always visible (not collapsible) with 3-column I/O grid layout
+- All description fields render as markdown via shared `MarkdownContent` component
+
+**Test:** `npx tsc -b` passes. All 6 documentation sections render correctly. Markdown styling works (headings, tables, code, blockquotes). Badge colors consistent with lineage tab.
+
+---
+
 ## Summary
 
-All 12 foundation steps + 7 expansion phases complete. The BDM Data Dictionary & ERD Viewer includes:
+All 12 foundation steps + 8 expansion phases complete. The BDM Data Dictionary & ERD Viewer includes:
 
 - **58 tables** from `out.c-bdm` + `out.c-bdm_aux` with live Keboola metadata
 - **84 inferred FK relationships** via dynamic inference engine
