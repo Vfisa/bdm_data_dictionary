@@ -180,6 +180,7 @@ export interface StorageBucketTable {
 export interface StorageBucket {
   id: string
   name: string
+  displayName: string
   stage: string
   description: string
   tables: StorageBucketTable[]

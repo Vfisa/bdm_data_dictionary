@@ -564,6 +564,7 @@ export function generateMockMetadata() {
     {
       id: 'in.c-oracle_navigator',
       name: 'c-oracle_navigator',
+      displayName: 'oracle_navigator',
       stage: 'in',
       description: 'Raw data from Oracle Navigator ERP system',
       tables: [
@@ -575,6 +576,7 @@ export function generateMockMetadata() {
     {
       id: 'in.c-netsuite',
       name: 'c-netsuite',
+      displayName: 'netsuite',
       stage: 'in',
       description: 'NetSuite accounting data',
       tables: [
@@ -585,6 +587,7 @@ export function generateMockMetadata() {
     {
       id: 'out.c-bdm',
       name: 'c-bdm',
+      displayName: 'bdm',
       stage: 'out',
       description: 'Business Data Model — production output',
       tables: tables.filter(t => t.bucket === 'out.c-bdm').map(t => ({
@@ -597,6 +600,7 @@ export function generateMockMetadata() {
     {
       id: 'out.c-bdm_aux',
       name: 'c-bdm_aux',
+      displayName: 'bdm_aux',
       stage: 'out',
       description: 'BDM auxiliary/staging tables',
       tables: tables.filter(t => t.bucket === 'out.c-bdm_aux').map(t => ({
@@ -609,6 +613,7 @@ export function generateMockMetadata() {
     {
       id: 'out.c-bi_reporting',
       name: 'c-bi_reporting',
+      displayName: 'bi_reporting',
       stage: 'out',
       description: 'Pre-aggregated tables for BI dashboards',
       tables: [

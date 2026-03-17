@@ -87,18 +87,14 @@ function BucketCard({ bucket, allExpanded }: { bucket: StorageBucket; allExpande
               ({bucket.tables.length} table{bucket.tables.length !== 1 ? 's' : ''})
             </span>
           </div>
-          {bucket.description && (
-            <p className="text-xs text-[var(--muted-foreground)] mt-0.5 line-clamp-2">{bucket.description}</p>
+          {bucket.description && bucket.description.length > 0 && (
+            <p className="text-xs text-[var(--foreground)]/60 mt-0.5 line-clamp-2">{bucket.description}</p>
           )}
         </div>
       </button>
 
       {isOpen && (
         <div className="border-t border-[var(--border)] px-4 py-3 space-y-2">
-          {bucket.description && (
-            <p className="text-sm text-[var(--muted-foreground)] leading-relaxed">{bucket.description}</p>
-          )}
-
           {bucket.tables.length > 0 ? (
             <div className="space-y-1">
               {bucket.tables.map(table => (

@@ -216,6 +216,7 @@ export class MetadataCache {
           return {
             id: b.id,
             name: b.name || b.displayName || b.id,
+            displayName: b.displayName || b.name || b.id,
             stage,
             description: b.description || '',
             tables,
