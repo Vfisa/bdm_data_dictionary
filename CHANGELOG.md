@@ -12,7 +12,10 @@
 - **Consistent badge colors**: `COMPONENT_TYPE_COLORS` shared across LineageSection and all docs sections
 - **Sidebar TOC**: IntersectionObserver scroll-spy with transformation folder sub-items
 - **Toolbar**: Expand All, Print, Markdown export, Refresh
-- **New server endpoint**: `GET /api/resource/:name` serving markdown files from `resources/` directory
+- **New server endpoint**: `GET /api/resource/:name` serving markdown files from `resources/` directory with `{{ENV_VAR}}` template replacement
+- **Static file serving**: `/data/in/files/*` serves Keboola-injected files (images); auto-detects absolute `/data/in/files` (production) vs relative `./data/in/files` (local dev)
+- **Image support in markdown**: `rehype-sanitize` schema extended to allow relative `src` paths; styled `img` component in MarkdownContent
+- **Debug endpoint**: `GET /api/debug/files` lists injected files across candidate paths + env var values (BDM_FILE_ID, DWH_FILE_ID)
 - **All-buckets API**: `listBuckets()` + `listBucketTableIds()` exposed in metadata cache for full project coverage
 
 ## Phase 9 — Full Component Lineage (2026-03-13)

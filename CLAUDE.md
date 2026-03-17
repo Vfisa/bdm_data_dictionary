@@ -49,7 +49,9 @@ Browser → nginx (:8888) → Express (:3000)
                               ├── PUT  /api/tags             ← edit tags → Keboola metadata
                               ├── GET  /api/profile/:id      ← on-demand column profiling
                               ├── GET  /api/preview/:id      ← data preview (CSV parsed)
-                              ├── GET  /api/resource/:name   ← markdown files from resources/
+                              ├── GET  /api/resource/:name   ← markdown files from resources/ ({{ENV_VAR}} template replacement)
+                              ├── GET  /api/debug/files      ← list injected files + env vars (dev/staging)
+                              ├── /data/in/files/*            ← static serving of Keboola input files (images)
                               ├── POST /api/refresh          ← trigger cache refresh
                               └── GET  /api/health
 ```

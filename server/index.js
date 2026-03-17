@@ -53,7 +53,10 @@ app.use(express.json());
 // --- API routes ---
 
 // Serve Keboola input files (images, etc.) from data/in/files/
-const filesPath = path.join(__dirname, '..', 'data', 'in', 'files');
+// Keboola mounts at /data/in/files (absolute), local dev uses ./data/in/files (relative)
+const absoluteFilesPath = '/data/in/files';
+const relativeFilesPath = path.join(__dirname, '..', 'data', 'in', 'files');
+const filesPath = fs.existsSync(absoluteFilesPath) ? absoluteFilesPath : relativeFilesPath;
 app.use('/data/in/files', express.static(filesPath));
 
 // Resource files (markdown docs) — served from resources/ directory
@@ -115,8 +118,13 @@ app.get('/api/debug/files', (_req, res) => {
   }
 
   // Also show what the static middleware is configured to serve
-  result.staticFilesPath = filesPath;
-  result.staticFilesExists = fs.existsSync(filesPath);
+  result.staticFiles = {
+    servingFrom: filesPath,
+    exists: fs.existsSync(filesPath),
+    absolutePathChecked: absoluteFilesPath,
+    relativePathChecked: relativeFilesPath,
+    usedAbsolute: filesPath === absoluteFilesPath,
+  };
 
   res.json(result);
 });
