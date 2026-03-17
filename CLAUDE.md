@@ -19,7 +19,7 @@ BDM Data Dictionary & ERD Viewer — a React-based Keboola Data App for the Hori
 
 - **PRD**: `PRD.md` — living document, keep updated with all decisions
 - **Progress**: `PROGRESS.md` — step-by-step dev log
-- **Lessons**: `LESSONS.md` — root-cause error analysis (28 entries)
+- **Lessons**: `LESSONS.md` — root-cause error analysis (32 entries)
 - **Changelog**: `CHANGELOG.md` — what shipped per phase
 
 ## Tech Stack

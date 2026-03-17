@@ -609,11 +609,28 @@
 
 **Test:** `npx tsc -b` passes. All 6 documentation sections render correctly. Markdown styling works (headings, tables, code, blockquotes). Badge colors consistent with lineage tab.
 
+**Post-implementation polish (2026-03-17):**
+
+1. **Static file serving fix** (`fbb3e06`):
+   - Keboola mounts input files at absolute `/data/in/files/`, but `path.join(__dirname, '..', 'data')` resolves to `/app/data/` in container
+   - Added auto-detection: `fs.existsSync('/data/in/files') ? absolutePath : relativePath`
+   - Added `/api/debug/files` endpoint listing injected files + env var values for diagnosing deployment issues
+
+2. **Connection info table + blue table names + bucket descriptions** (`8dbaabe`):
+   - Writer/DataGateway connection details formatted as key/value `ConnectionTable` component (host, schema, warehouse, auth, driver)
+   - Input/output table names across all component configs displayed in blue monospace font (`text-blue-500 font-mono`)
+   - Storage bucket descriptions visible in collapsed card header with `line-clamp-2`
+
+3. **Bucket description visibility fix** (`a4c5c2f`):
+   - Added `displayName` field to `StorageBucket` type and mock data
+   - Improved description text visibility with `text-[var(--foreground)]/60` color
+   - Confirmed API pipeline is correct: `bucket.description` flows from Keboola API → metadata cache → frontend component
+
 ---
 
 ## Summary
 
-All 12 foundation steps + 8 expansion phases complete. The BDM Data Dictionary & ERD Viewer includes:
+All 12 foundation steps + 9 expansion phases complete (through Phase 10a). The BDM Data Dictionary & ERD Viewer includes:
 
 - **58 tables** from `out.c-bdm` + `out.c-bdm_aux` with live Keboola metadata
 - **84 inferred FK relationships** via dynamic inference engine
@@ -628,4 +645,5 @@ All 12 foundation steps + 8 expansion phases complete. The BDM Data Dictionary &
 - **Dark/light theme** with system preference default
 - **Mock data mode** for credential-free local development
 - **Enterprise-grade UI** with shadcn/ui design tokens
+- **Auto-generated project documentation** — 6 sections (Data Sources, Data Model, Storage & Buckets, Orchestration, Transformations, Writers/Apps/Data Apps) with sidebar TOC, scroll-spy, print/markdown export
 - **Keboola deployment-ready** with nginx proxy, supervisord, and setup.sh

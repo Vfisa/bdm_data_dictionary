@@ -915,3 +915,9 @@ Strategy 4 requires fetching bucket list + tables-per-bucket at startup.
 | 48 | Data Model section | Renders markdown from `resources/data-model.md` via `/api/resource/:name` endpoint. Placeholder message when empty |
 | 49 | Storage section scope | ALL project buckets (not just BDM) — grouped by Input/Output stage, collapsible per bucket with table list |
 | 50 | Sidebar TOC | IntersectionObserver scroll-spy with transformation folder sub-items |
+| 51 | Writer connection details | Key/value table format (host, schema, warehouse, auth, driver) instead of inline text |
+| 52 | Table name styling | Input/output table names in blue monospace font across all component config sections |
+| 53 | Bucket descriptions | Shown in collapsed card header with `line-clamp-2`; `displayName` field added to StorageBucket type |
+| 54 | Static file serving | Auto-detect absolute `/data/in/files` (production) vs relative `./data/in/files` (local dev) using `fs.existsSync()` |
+| 55 | Template replacement | `{{ENV_VAR}}` syntax in markdown resources replaced server-side via regex against `process.env` |
+| 56 | Image sanitization | `rehype-sanitize` schema customized to allow relative `src` paths for self-hosted images |

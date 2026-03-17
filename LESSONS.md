@@ -423,6 +423,59 @@ this._pendingRequests.set(tableId, promise);
 
 ---
 
+## 30. Keboola Static File Paths Differ Between Dev and Production (Phase 10a)
+
+**Problem:** Images referenced in markdown (`/data/in/files/976714618_documentation_bdm.png`) didn't render in the deployed Keboola Data App, despite the files existing.
+
+**Root cause:** The Express static middleware used `path.join(__dirname, '..', 'data', 'in', 'files')` which resolves to `/app/data/in/files/` inside the Docker container. But Keboola mounts input files at the absolute path `/data/in/files/` (root filesystem, not app-relative).
+
+**Fix:** Auto-detect which path exists at startup:
+```javascript
+const absoluteFilesPath = '/data/in/files';
+const relativeFilesPath = path.join(__dirname, '..', 'data', 'in', 'files');
+const filesPath = fs.existsSync(absoluteFilesPath) ? absoluteFilesPath : relativeFilesPath;
+app.use('/data/in/files', express.static(filesPath));
+```
+
+**Lesson:** Keboola Data Apps run in Docker containers where the app is at `/app/` but injected files are at `/data/in/files/` (root). Never assume file paths are relative to the app directory in containerized environments. Use `fs.existsSync()` to auto-detect the correct path for both local dev and production.
+
+---
+
+## 31. rehype-sanitize Blocks Relative Image Paths by Default (Phase 10a)
+
+**Problem:** Markdown images with relative `src` paths (e.g., `/data/in/files/image.png`) were stripped by `rehype-sanitize`. Only `http://` and `https://` protocols were allowed.
+
+**Root cause:** The default `rehype-sanitize` schema (based on GitHub's sanitization) restricts `img[src]` to `http` and `https` protocols. Relative paths have no protocol and get blocked.
+
+**Fix:** Remove `src` from the protocol restrictions while keeping other sanitization intact:
+```javascript
+const { src: _srcProtocols, ...restProtocols } = defaultSchema.protocols || {};
+const sanitizeSchema = {
+  ...defaultSchema,
+  attributes: { ...defaultSchema.attributes, img: ['src', 'alt', 'title', 'width', 'height'] },
+  protocols: restProtocols,
+};
+```
+
+**Lesson:** When using `rehype-sanitize` with self-hosted images (not external URLs), you must customize the schema to allow relative paths. The default schema is designed for user-generated content on public platforms — too restrictive for internal tools serving their own static files.
+
+---
+
+## 32. Template Variable Replacement in Markdown Resources (Phase 10a)
+
+**Problem:** Data model markdown contained image references like `![BDM](/data/in/files/{{BDM_FILE_ID}}_documentation_bdm.png)` where `BDM_FILE_ID` is a Keboola environment variable injected at runtime.
+
+**Solution:** Server-side regex replacement in the `/api/resource/:name` endpoint:
+```javascript
+content = content.replace(/\{\{([A-Z_][A-Z0-9_]*)\}\}/g, (_match, varName) => {
+  return process.env[varName] ?? `{{${varName}}}`;
+});
+```
+
+**Lesson:** When serving markdown templates that reference environment-specific values (file IDs, URLs, tokens), perform template replacement server-side before sending to the client. Use a simple `{{VAR_NAME}}` convention with graceful fallback (keep the placeholder if the env var is undefined). This keeps the markdown portable between environments.
+
+---
+
 ## General Principles Discovered
 
 1. **Build early, build often** — Run `npm run build` after every file creation, not just at step completion. Catches errors when context is fresh.
