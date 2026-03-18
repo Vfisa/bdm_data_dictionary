@@ -91,7 +91,7 @@ function WriterCard({ config, allExpanded }: { config: ComponentConfig; allExpan
   return (
     <div className="rounded-lg border border-[var(--border)] bg-[var(--card)]">
       <button
-        className="flex w-full items-center gap-2 px-4 py-2 text-left hover:bg-[var(--accent)]/30 transition-colors"
+        className="flex w-full items-center gap-2 px-4 py-2.5 text-left hover:bg-[var(--accent)]/30 transition-colors"
         onClick={() => setOpen(prev => !prev)}
       >
         {isOpen ? <ChevronDown className="h-4 w-4 shrink-0 text-[var(--muted-foreground)]" /> : <ChevronRight className="h-4 w-4 shrink-0 text-[var(--muted-foreground)]" />}
@@ -146,7 +146,7 @@ function DataGatewayCard({ config, allExpanded }: { config: ComponentConfig; all
   return (
     <div className="rounded-lg border border-[var(--border)] bg-[var(--card)]">
       <button
-        className="flex w-full items-center gap-2 px-4 py-2 text-left hover:bg-[var(--accent)]/30 transition-colors"
+        className="flex w-full items-center gap-2 px-4 py-2.5 text-left hover:bg-[var(--accent)]/30 transition-colors"
         onClick={() => setOpen(prev => !prev)}
       >
         {isOpen ? <ChevronDown className="h-4 w-4 shrink-0 text-[var(--muted-foreground)]" /> : <ChevronRight className="h-4 w-4 shrink-0 text-[var(--muted-foreground)]" />}
@@ -216,7 +216,7 @@ function CustomAppCard({ config, allExpanded }: { config: ComponentConfig; allEx
   return (
     <div className="rounded-lg border border-[var(--border)] bg-[var(--card)]">
       <button
-        className="flex w-full items-center gap-2 px-4 py-2 text-left hover:bg-[var(--accent)]/30 transition-colors"
+        className="flex w-full items-center gap-2 px-4 py-2.5 text-left hover:bg-[var(--accent)]/30 transition-colors"
         onClick={() => setOpen(prev => !prev)}
       >
         {isOpen ? <ChevronDown className="h-4 w-4 shrink-0 text-[var(--muted-foreground)]" /> : <ChevronRight className="h-4 w-4 shrink-0 text-[var(--muted-foreground)]" />}
@@ -271,7 +271,7 @@ function DataAppCard({ app, allExpanded }: { app: DataApp; allExpanded: boolean 
   return (
     <div className="rounded-lg border border-[var(--border)] bg-[var(--card)]">
       <button
-        className="flex w-full items-center gap-2 px-4 py-2 text-left hover:bg-[var(--accent)]/30 transition-colors"
+        className="flex w-full items-center gap-2 px-4 py-2.5 text-left hover:bg-[var(--accent)]/30 transition-colors"
         onClick={() => setOpen(prev => !prev)}
       >
         {isOpen ? <ChevronDown className="h-4 w-4 shrink-0 text-[var(--muted-foreground)]" /> : <ChevronRight className="h-4 w-4 shrink-0 text-[var(--muted-foreground)]" />}

@@ -79,7 +79,7 @@ export function DocTransformCard({ config, allExpanded, tableUrlMap }: DocTransf
       {/* Header: chevron + type badge + name + table counts + external link */}
       <button
         type="button"
-        className="flex w-full items-center justify-between px-4 py-3 gap-3 text-left hover:bg-[var(--accent)]/30 transition-colors rounded-t-lg"
+        className="flex w-full items-center justify-between px-4 py-2.5 gap-3 text-left hover:bg-[var(--accent)]/30 transition-colors rounded-t-lg"
         onClick={() => setExpanded(prev => !prev)}
       >
         <div className="flex items-center gap-2 min-w-0">
@@ -95,7 +95,7 @@ export function DocTransformCard({ config, allExpanded, tableUrlMap }: DocTransf
           >
             {typeLabel}
           </span>
-          <span className="font-semibold text-[var(--foreground)] truncate">
+          <span className="text-sm font-medium text-[var(--foreground)] truncate">
             {config.configName}
           </span>
           {!expanded && (hasInputs || hasOutputs) && (
