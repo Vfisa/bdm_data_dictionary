@@ -60,6 +60,10 @@ export function ProjectDocumentationPage({
             transformationFolders={sections.transformationFolders}
             extractorGroups={sections.extractorGroups}
             flows={sections.flows}
+            writers={sections.writers}
+            dataGatewayConfigs={sections.dataGatewayConfigs}
+            customApps={sections.customApps}
+            dataApps={sections.dataApps}
           />
         </aside>
 

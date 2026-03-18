@@ -52,7 +52,7 @@ function FlowCard({ flow, allExpanded }: { flow: Flow; allExpanded: boolean }) {
   const taskCount = flow.tasks?.length ?? flow.taskCount ?? 0
 
   return (
-    <div className="rounded-lg border border-[var(--border)] bg-[var(--card)]">
+    <div className="rounded-lg border border-[var(--border)] bg-[var(--card)]" id={`doc-flow-${flow.id}`}>
       <button
         className="flex w-full items-center gap-2 px-4 py-3 text-left hover:bg-[var(--accent)]/30 transition-colors"
         onClick={() => setOpen(prev => !prev)}

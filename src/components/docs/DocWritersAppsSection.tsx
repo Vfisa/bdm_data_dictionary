@@ -33,7 +33,7 @@ export function DocWritersAppsSection({
         <div className="space-y-6">
           {/* 6a. Data Writers */}
           {writers.length > 0 && (
-            <div>
+            <div id="doc-writers">
               <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2">6a. Data Writers</h3>
               <div className="space-y-2">
                 {writers.map(w => (
@@ -45,7 +45,7 @@ export function DocWritersAppsSection({
 
           {/* 6b. Data Gateway */}
           {dataGatewayConfigs.length > 0 && (
-            <div>
+            <div id="doc-data-gateway">
               <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2">6b. Data Gateway</h3>
               <div className="space-y-2">
                 {dataGatewayConfigs.map(config => (
@@ -57,7 +57,7 @@ export function DocWritersAppsSection({
 
           {/* 6c. Custom Applications */}
           {customApps.length > 0 && (
-            <div>
+            <div id="doc-custom-apps">
               <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2">6c. Custom Applications</h3>
               <div className="space-y-2">
                 {customApps.map(app => (
@@ -69,7 +69,7 @@ export function DocWritersAppsSection({
 
           {/* 6d. Data Apps */}
           {dataApps.length > 0 && (
-            <div>
+            <div id="doc-data-apps">
               <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2">6d. Data Apps</h3>
               <div className="space-y-2">
                 {dataApps.map(app => (

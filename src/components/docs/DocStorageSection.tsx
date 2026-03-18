@@ -24,7 +24,7 @@ export function DocStorageSection({ storageBuckets, allExpanded }: DocStorageSec
       ) : (
         <div className="space-y-6">
           {inputBuckets.length > 0 && (
-            <div>
+            <div id="doc-storage-in">
               <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2">
                 Input Stage
                 <span className="ml-2 text-sm font-normal text-[var(--muted-foreground)]">
@@ -40,7 +40,7 @@ export function DocStorageSection({ storageBuckets, allExpanded }: DocStorageSec
           )}
 
           {outputBuckets.length > 0 && (
-            <div>
+            <div id="doc-storage-out">
               <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2">
                 Output Stage
                 <span className="ml-2 text-sm font-normal text-[var(--muted-foreground)]">
