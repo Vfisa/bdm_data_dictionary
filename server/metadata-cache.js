@@ -195,10 +195,32 @@ export class MetadataCache {
     try {
       const rawBuckets = await this.client.listBuckets();
       console.log(`MetadataCache: Found ${rawBuckets.length} raw buckets`);
+      // Debug: log first bucket's raw fields to verify description availability
+      if (rawBuckets.length > 0) {
+        const sample = rawBuckets[0];
+        console.log(`MetadataCache: Sample bucket keys: ${Object.keys(sample).join(', ')}`);
+        console.log(`MetadataCache: Sample bucket — id=${sample.id}, description=${JSON.stringify(sample.description)}, displayName=${JSON.stringify(sample.displayName)}`);
+      }
 
-      // Fetch table lists for all buckets in parallel
+      // Check if list endpoint returned descriptions
+      const listHasDescriptions = rawBuckets.some(b => b.description);
+      if (!listHasDescriptions) {
+        console.log('MetadataCache: List endpoint missing descriptions — fetching individual bucket details');
+      }
+
+      // Fetch table lists (and optionally bucket details) for all buckets in parallel
       const bucketResults = await Promise.allSettled(
         rawBuckets.map(async (b) => {
+          // If list didn't include descriptions, fetch individual bucket detail
+          let bucketDetail = b;
+          if (!listHasDescriptions) {
+            try {
+              bucketDetail = await this.client.getBucket(b.id);
+            } catch {
+              // Non-fatal — use list data as fallback
+            }
+          }
+
           let tables = [];
           try {
             const bucketTables = await this.client.listBucketTableIds(b.id);
@@ -212,13 +234,13 @@ export class MetadataCache {
             // Non-fatal — empty table list for this bucket
           }
           // Derive stage from bucket ID prefix (in.c-xxx → "in", out.c-xxx → "out")
-          const stage = b.stage || (b.id.startsWith('out.') ? 'out' : 'in');
+          const stage = bucketDetail.stage || (b.id.startsWith('out.') ? 'out' : 'in');
           return {
             id: b.id,
-            name: b.name || b.displayName || b.id,
-            displayName: b.displayName || b.name || b.id,
+            name: bucketDetail.name || bucketDetail.displayName || b.id,
+            displayName: bucketDetail.displayName || bucketDetail.name || b.id,
             stage,
-            description: b.description || '',
+            description: bucketDetail.description || '',
             tables,
           };
         })

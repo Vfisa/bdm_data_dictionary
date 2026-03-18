@@ -404,7 +404,16 @@ export function createClient(kbcUrl, kbcToken) {
    * @returns {Promise<Array>} Array of { id, name, tables: [] }
    */
   async function listBuckets() {
-    return request('buckets');
+    return request('buckets?include=description,displayName');
+  }
+
+  /**
+   * Get a single bucket detail (includes description reliably).
+   * @param {string} bucketId
+   * @returns {Promise<object>}
+   */
+  async function getBucket(bucketId) {
+    return request(`buckets/${encodeURIComponent(bucketId)}`);
   }
 
   /**
@@ -738,5 +747,6 @@ export function createClient(kbcUrl, kbcToken) {
     listDataApps,
     listBuckets,
     listBucketTableIds,
+    getBucket,
   };
 }
