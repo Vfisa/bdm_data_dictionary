@@ -476,6 +476,35 @@ content = content.replace(/\{\{([A-Z_][A-Z0-9_]*)\}\}/g, (_match, varName) => {
 
 ---
 
+## 33. Keboola Bucket Description: List vs Detail Endpoint (Phase 10a-debug)
+
+**Problem:** Bucket descriptions displayed correctly in local dev but were missing on the deployed Keboola Data App. The `DocStorageSection` showed bucket names and table counts but no description text.
+
+**Root cause:** The Keboola `GET /v2/storage/buckets` (list) endpoint does NOT return the `metadata` array — only the individual `GET /v2/storage/buckets/{id}` (detail) endpoint does. Bucket descriptions are stored as `KBC.description` inside the `metadata` array, not in a top-level `description` field (which is always empty). The `?include=description,displayName` query parameter adds `displayName` but does NOT add the metadata array.
+
+**Solution:** Three-layer fallback in `metadata-cache.js`:
+1. Check `bucket.description` field (always empty in practice)
+2. Check `bucket.metadata[]` array for `KBC.description` key
+3. If neither has descriptions, fetch individual bucket details via `GET /buckets/{id}`
+
+**Debugging approach:** Added `/api/debug/buckets` endpoint that performs a 3-way comparison (list endpoint → detail endpoint → cached data) with auto-diagnosis. This immediately revealed the data gap.
+
+**Lesson:** Keboola Storage API list endpoints are lightweight and omit nested objects like `metadata[]`. Always verify what fields the list endpoint actually returns versus the detail endpoint. When metadata is needed for list views, implement a fallback that fetches individual details. Also: diagnostic endpoints that compare raw API responses against cached data are invaluable for deployed debugging — they eliminate guesswork about where in the pipeline data is lost.
+
+---
+
+## 34. Express 4 Async Route Handler Error Swallowing (Phase 10a-debug)
+
+**Problem:** The `/api/debug/buckets` async handler returned the SPA HTML fallback instead of JSON, even though the route was defined before the catch-all `app.all('*')`.
+
+**Root cause:** Express 4.x does not catch rejected promises from async route handlers. If an async handler throws (or an awaited promise rejects) without a try/catch, Express passes control to the next middleware — which is the SPA catch-all that serves `index.html`.
+
+**Solution:** Wrap the entire async handler body in `try { ... } catch (err) { res.status(500).json({ error: err.message }); }`.
+
+**Lesson:** In Express 4, every `async` route handler MUST have a top-level try/catch. Express 5 handles this natively, but Express 4 silently drops async errors, causing confusing "wrong response" behavior instead of obvious error messages.
+
+---
+
 ## General Principles Discovered
 
 1. **Build early, build often** — Run `npm run build` after every file creation, not just at step completion. Catches errors when context is fresh.

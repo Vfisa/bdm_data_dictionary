@@ -50,6 +50,8 @@ Browser → nginx (:8888) → Express (:3000)
                               ├── GET  /api/profile/:id      ← on-demand column profiling
                               ├── GET  /api/preview/:id      ← data preview (CSV parsed)
                               ├── GET  /api/resource/:name   ← markdown files from resources/ ({{ENV_VAR}} template replacement)
+                              ├── GET  /api/debug/env        ← masked env var dump (tokens redacted)
+                              ├── GET  /api/debug/buckets    ← 3-way bucket description diagnostic
                               ├── GET  /api/debug/files      ← list injected files + env vars (dev/staging)
                               ├── /data/in/files/*            ← static serving of Keboola input files (images)
                               ├── POST /api/refresh          ← trigger cache refresh
@@ -147,3 +149,5 @@ Browser → nginx (:8888) → Express (:3000)
 - Profile endpoint returns `{}` (not 404) when no profile exists
 - Token `#` prefix stripped automatically by server
 - Tags stored as JSON array in metadata key `bdm.tags` (provider: `user`)
+- Bucket list endpoint (`GET /buckets`) does NOT return `metadata[]` array — must fetch individual `GET /buckets/{id}` for `KBC.description`
+- Bucket `description` field is always empty — real descriptions are in `metadata[].key === 'KBC.description'`

@@ -1,5 +1,12 @@
 # Changelog
 
+## Phase 10a-debug — Bucket Description Fix & Debug Endpoints (2026-03-17)
+- **Fixed bucket descriptions on deployed app**: Deployed app was running pre-fallback code; latest code with 3-layer description extraction (field → metadata array → individual bucket detail fetch) resolves the issue
+- **`GET /api/debug/env`**: Masked environment variable dump — sensitive values (tokens, secrets, keys) show only prefix, all others shown in full
+- **`GET /api/debug/buckets`**: 3-way diagnostic comparing raw list endpoint, individual detail endpoint, and cached data with auto-generated diagnosis conclusion
+- **Express 4 async fix**: All async debug handlers wrapped in top-level try/catch to prevent silent fallthrough to SPA catch-all
+- **Root cause documented**: Keboola `GET /buckets` list endpoint omits `metadata[]` array; descriptions live in `KBC.description` metadata key, only available from `GET /buckets/{id}` detail endpoint
+
 ## Phase 10a — Automatic Project Documentation (2026-03-16)
 - **Full Documentation tab**: Auto-generated project documentation from Keboola metadata — 6 sections: Data Sources, Data Model, Storage & Buckets, Orchestration, Transformations, Writers/Apps/Data Apps
 - **Shared `MarkdownContent` component**: Extracted from ProjectOverviewPage into `src/lib/markdown-components.tsx` — used across all docs sections and overview for consistent markdown rendering (headings, tables, code, blockquotes, lists)

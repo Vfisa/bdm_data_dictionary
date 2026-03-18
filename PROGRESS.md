@@ -651,50 +651,52 @@ All 12 foundation steps + 9 expansion phases complete (through Phase 10a). The B
 ---
 
 ## Phase 10a-debug: Bucket Descriptions Not Showing on Deployed App
-**Status:** IN PROGRESS
+**Status:** DONE
 **Date:** 2026-03-17
 
 ### Problem
-Bucket descriptions display correctly in local dev (with `.env` token) but are **missing on the deployed Keboola Data App**. The deployed app shows bucket names and table counts but no description text in the Storage & Buckets section of Project Documentation.
+Bucket descriptions displayed correctly in local dev (with `.env` token) but were **missing on the deployed Keboola Data App**. The deployed app showed bucket names and table counts but no description text in the Storage & Buckets section of Project Documentation.
 
-### Hypothesis
-The Keboola `GET /v2/storage/buckets` (list) endpoint may not return the `description` field (or `metadata` array) with the deployed token. The code has a fallback that fetches individual bucket details (`GET /v2/storage/buckets/{id}`) when descriptions are missing from the list, but this fallback may not be triggering correctly — or the detail endpoint may also lack descriptions for that token.
+### Root Cause
+The Keboola `GET /v2/storage/buckets` (list) endpoint does NOT return the `metadata` array. Bucket descriptions are stored as `KBC.description` inside the metadata array — not in the top-level `description` field (which is always empty). The `?include=description,displayName` param only adds `displayName`.
 
-### Diagnostic Endpoints Added
-Three debug endpoints deployed to gather data:
+The code already had a 3-layer fallback in `metadata-cache.js`:
+1. Check `bucket.description` field (always empty)
+2. Check `bucket.metadata[]` array for `KBC.description` key
+3. If neither has descriptions, fetch individual bucket details via `GET /buckets/{id}` (which DOES return metadata)
+
+The deployed app was running older code **before the fallback was implemented** (pre-commit `a4c5c2f`). Once the latest code was deployed, descriptions appeared immediately.
+
+### Diagnostic Endpoints Added (kept for future use)
 
 1. **`GET /api/debug/env`** — All environment variables with sensitive values masked
-   - Verify: correct `KBC_TOKEN` prefix (project ID), `KBC_URL`, `BUCKET_ID`, `BRANCH_ID`
+   - Token masking: `4444-9726227-**************` (keeps project + token ID prefix)
+   - Pattern: any env var matching `token|secret|password|key|credential|auth`
 
-2. **`GET /api/debug/buckets`** — Compares three data sources:
+2. **`GET /api/debug/buckets`** — 3-way comparison diagnostic:
    - **List endpoint**: Raw `GET /v2/storage/buckets?include=description,displayName` response
-     - Shows: `description`, `displayName`, `metadata[]` array, `KBC.description` from metadata
    - **Detail endpoint**: Raw `GET /v2/storage/buckets/{id}` for first 3 buckets
-     - Shows: same fields, to compare if detail has data that list doesn't
    - **Cached data**: What `allBuckets` in the metadata cache currently holds
-   - **Diagnosis**: Automatic conclusion (list vs detail vs cache comparison)
+   - **Diagnosis**: Automatic conclusion with description counts per layer
 
 3. **`GET /api/debug/files`** — (existing) Injected files and static serving paths
 
-### Investigation Plan
+### Findings from Diagnostic Endpoint
 ```
-Step 1: Deploy current code → hit /api/debug/env on deployed app
-        → Verify correct token, URL, env vars
+List endpoint:  description=(empty), metadata=(no array), kbcDescription=(none)
+Detail endpoint: description=(empty), metadata=[KBC.description], kbcDescription=✅
+Cache:          13/14 buckets with descriptions ✅
 
-Step 2: Hit /api/debug/buckets on deployed app
-        → Read the "diagnosis" field at bottom of JSON
-        → Compare list vs detail vs cached description counts
-
-Step 3: Diagnose based on findings:
-  ├─ If list=0, detail>0, cached=0 → Fallback not triggering (code bug)
-  ├─ If list=0, detail=0            → API returns no descriptions for this token
-  │   → Check: are descriptions set in Keboola UI? Token permissions?
-  ├─ If list>0, cached>0            → Descriptions in cache but frontend not rendering
-  │   → Check: DocStorageSection component rendering logic
-  └─ If cached>0 but UI empty       → CSS/styling issue hiding the text
-
-Step 4: Fix root cause + verify + commit
+Diagnosis: List endpoint missing descriptions, detail has them.
+           Fallback logic fires correctly and populates cache.
 ```
+
+### Key Lessons
+- Keboola list endpoints omit `metadata[]` — always verify list vs detail response shapes
+- Express 4 async handlers MUST have top-level try/catch (async errors silently fall through to SPA catch-all)
+- Diagnostic endpoints that compare raw API → cache → frontend are invaluable for deployed debugging
 
 ### Files Changed
-- `server/index.js` — added `GET /api/debug/env` (masked env dump) and `GET /api/debug/buckets` (3-way comparison diagnostic)
+- `server/index.js` — added `GET /api/debug/env`, `GET /api/debug/buckets` (with Express 4 async try/catch)
+- `server/metadata-cache.js` — added sample bucket logging during cache build
+- `LESSONS.md` — entries #33 (bucket description API gap) and #34 (Express 4 async error swallowing)
