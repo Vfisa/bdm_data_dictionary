@@ -404,7 +404,16 @@ export function createClient(kbcUrl, kbcToken) {
    * @returns {Promise<Array>} Array of { id, name, tables: [] }
    */
   async function listBuckets() {
-    return request('buckets');
+    return request('buckets?include=description,displayName');
+  }
+
+  /**
+   * Get a single bucket detail (includes description reliably).
+   * @param {string} bucketId
+   * @returns {Promise<object>}
+   */
+  async function getBucket(bucketId) {
+    return request(`buckets/${encodeURIComponent(bucketId)}`);
   }
 
   /**
@@ -482,6 +491,39 @@ export function createClient(kbcUrl, kbcToken) {
             }
           }
 
+          // For writer/application components, capture row-level detail
+          const isWriterOrApp = component.type === 'writer' || component.type === 'application';
+          let configRows = undefined;
+          let connectionInfo = undefined;
+
+          if (isWriterOrApp && rows.length > 0) {
+            configRows = rows.map((row) => {
+              const rowStorage = row.configuration?.storage || {};
+              const rowParams = row.configuration?.parameters || {};
+              const rowInputTables = (rowStorage.input?.tables || []).map(t => t.source).filter(Boolean);
+              return {
+                name: row.name || row.id || '',
+                description: row.description || '',
+                inputTables: rowInputTables,
+                incremental: rowParams.incremental ?? null,
+                tableId: rowParams.tableId || null,
+                dbName: rowParams.dbName || null,
+              };
+            });
+
+            // Extract connection info from root parameters (DB writers, data gateway)
+            const db = config.configuration?.parameters?.db;
+            if (db) {
+              connectionInfo = {
+                host: db.host || null,
+                schema: db.schema || null,
+                warehouse: db.warehouse || null,
+                loginType: db.loginType || null,
+                driver: db.driver || null,
+              };
+            }
+          }
+
           allConfigs.push({
             componentId: component.id,
             componentName: component.name || component.id,
@@ -495,6 +537,8 @@ export function createClient(kbcUrl, kbcToken) {
             version: config.version || null,
             inputTables: [...new Set(inputTables)],
             outputTables: [...new Set(outputTables)],
+            ...(configRows ? { rows: configRows } : {}),
+            ...(connectionInfo ? { connectionInfo } : {}),
           });
         }
       } catch (err) {
@@ -589,6 +633,101 @@ export function createClient(kbcUrl, kbcToken) {
     return request(`branch/${encodeURIComponent(branchId)}/metadata`);
   }
 
+  /**
+   * List all flow/orchestration configurations with their phases and tasks.
+   * Fetches both new-style flows (keboola.flow) and legacy orchestrations (keboola.orchestrator).
+   *
+   * @returns {Promise<Array>} Array of flow objects with phases and tasks
+   */
+  async function listFlows() {
+    const flowComponents = ['keboola.flow', 'keboola.orchestrator'];
+    const allFlows = [];
+
+    for (const componentId of flowComponents) {
+      try {
+        const configs = await request(
+          `components/${encodeURIComponent(componentId)}/configs`
+        );
+
+        for (const config of configs) {
+          const configuration = config.configuration || {};
+          const phases = configuration.phases || [];
+          const tasks = configuration.tasks || [];
+
+          allFlows.push({
+            id: config.id,
+            name: config.name || `Flow ${config.id}`,
+            description: config.description || '',
+            componentId,
+            isDisabled: config.isDisabled || false,
+            phases: phases.map((p) => ({
+              id: String(p.id),
+              name: p.name || '',
+              description: p.description || '',
+              dependsOn: p.dependsOn || (p.next ? p.next.map(n => n.goto) : []),
+              hasConditions: Array.isArray(p.next) && p.next.some(n => n.condition),
+            })),
+            tasks: tasks.map((t) => ({
+              id: String(t.id),
+              name: t.name || '',
+              phaseId: String(t.phase),
+              enabled: t.enabled !== false,
+              componentId: t.task?.componentId || '',
+              configId: t.task?.configId || '',
+            })),
+            phaseCount: phases.length,
+            taskCount: tasks.length,
+          });
+        }
+      } catch (err) {
+        // Component may not exist in this project
+        console.warn(`Warning: Failed to fetch flows for ${componentId}: ${err.message}`);
+      }
+    }
+
+    return allFlows;
+  }
+
+  /**
+   * List all data app configurations with their deployment details.
+   * Data apps are stored as configs under the keboola.data-apps component.
+   *
+   * @returns {Promise<Array>} Array of data app objects
+   */
+  async function listDataApps() {
+    try {
+      const configs = await request(
+        `components/${encodeURIComponent('keboola.data-apps')}/configs`
+      );
+
+      return configs.map((config) => {
+        const params = config.configuration?.parameters || {};
+        const auth = config.configuration?.authorization?.app_proxy || {};
+        const dataApp = params.dataApp || {};
+        const git = dataApp.git || {};
+        const authProviders = auth.auth_providers || [];
+
+        return {
+          id: config.id,
+          name: config.name || `Data App ${config.id}`,
+          description: config.description || '',
+          type: dataApp.type || null,
+          gitRepository: git.repository || null,
+          gitBranch: git.branch || null,
+          authType: authProviders.length > 0
+            ? authProviders.map(p => p.type).join(', ')
+            : null,
+          deploymentUrl: null, // Not available from storage API
+          autoSuspendAfterSeconds: params.autoSuspendAfterSeconds || null,
+          appId: params.id || null,
+        };
+      });
+    } catch (err) {
+      console.warn(`Warning: Failed to fetch data apps: ${err.message}`);
+      return [];
+    }
+  }
+
   return {
     listBucketTables,
     getTable,
@@ -604,5 +743,10 @@ export function createClient(kbcUrl, kbcToken) {
     listRecentJobs,
     verifyToken,
     getBranchMetadata,
+    listFlows,
+    listDataApps,
+    listBuckets,
+    listBucketTableIds,
+    getBucket,
   };
 }

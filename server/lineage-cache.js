@@ -66,7 +66,7 @@ function deriveComponentCategory(componentType) {
  * @param {string} [componentType] - Keboola component type
  * @returns {string}
  */
-function buildKeboolaUrl(kbcUrl, componentId, configId, projectId, componentType) {
+export function buildKeboolaUrl(kbcUrl, componentId, configId, projectId, componentType) {
   if (!kbcUrl) return '';
   const base = kbcUrl.replace(/\/+$/, '');
   const pid = projectId || '_';

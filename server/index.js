@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { MetadataCache } from './metadata-cache.js';
 import { createProfilingCache } from './profiling-cache.js';
@@ -50,6 +51,227 @@ if (cache) {
 app.use(express.json());
 
 // --- API routes ---
+
+// Serve Keboola input files (images, etc.) from data/in/files/
+// Keboola mounts at /data/in/files (absolute), local dev uses ./data/in/files (relative)
+const absoluteFilesPath = '/data/in/files';
+const relativeFilesPath = path.join(__dirname, '..', 'data', 'in', 'files');
+const filesPath = fs.existsSync(absoluteFilesPath) ? absoluteFilesPath : relativeFilesPath;
+app.use('/data/in/files', express.static(filesPath));
+
+// Resource files (markdown docs) — served from resources/ directory
+// Supports {{ENV_VAR}} template replacement from process.env
+app.get('/api/resource/:name', (req, res) => {
+  const name = req.params.name.replace(/[^a-zA-Z0-9_-]/g, '');
+  const filePath = path.join(__dirname, '..', 'resources', `${name}.md`);
+  try {
+    let content = fs.readFileSync(filePath, 'utf-8');
+    // Replace {{VAR_NAME}} with process.env.VAR_NAME (leave untouched if not set)
+    content = content.replace(/\{\{([A-Z_][A-Z0-9_]*)\}\}/g, (_match, varName) => {
+      return process.env[varName] ?? `{{${varName}}}`;
+    });
+    res.json({ content });
+  } catch {
+    res.status(404).json({ error: `Resource ${name} not found` });
+  }
+});
+
+// Debug: list injected files and template env vars (dev/staging only)
+/**
+ * Mask a value that looks like a secret: show the first segment before
+ * the second hyphen (e.g. "4444-9726227") then mask the rest.
+ * For non-hyphenated values, show first 4 chars then mask.
+ */
+function maskSecret(val) {
+  if (!val) return '(not set)';
+  // Pattern: "NNNN-NNNNNNN-actualSecret" → keep "NNNN-NNNNNNN-**************"
+  const parts = val.split('-');
+  if (parts.length >= 3) {
+    return parts.slice(0, 2).join('-') + '-' + '*'.repeat(Math.min(parts.slice(2).join('-').length, 20));
+  }
+  // Short or no-hyphen value: show first 4 chars
+  if (val.length <= 6) return '*'.repeat(val.length);
+  return val.slice(0, 4) + '*'.repeat(Math.min(val.length - 4, 20));
+}
+
+const SENSITIVE_PATTERNS = /token|secret|password|key|credential|auth/i;
+
+app.get('/api/debug/env', (_req, res) => {
+  const env = {};
+  for (const [k, v] of Object.entries(process.env)) {
+    if (SENSITIVE_PATTERNS.test(k)) {
+      env[k] = maskSecret(v);
+    } else {
+      env[k] = v;
+    }
+  }
+  res.json({ env });
+});
+
+app.get('/api/debug/buckets', async (_req, res) => {
+  try {
+    if (USE_MOCK) {
+      return res.json({ mode: 'mock', message: 'No live API in mock mode' });
+    }
+    if (!cache) {
+      return res.json({ error: 'Cache not initialized — no KBC_TOKEN/KBC_URL' });
+    }
+
+    const client = cache.getClient();
+    const results = {};
+
+    // 1. Raw listBuckets() response (what the list endpoint returns)
+    try {
+      const rawList = await client.listBuckets();
+      results.listEndpoint = {
+        url: 'GET /v2/storage/buckets?include=description,displayName',
+        totalBuckets: rawList.length,
+        sampleKeys: rawList.length > 0 ? Object.keys(rawList[0]) : [],
+        buckets: rawList.map(b => ({
+          id: b.id,
+          name: b.name,
+          displayName: b.displayName || '(missing)',
+          description: b.description || '(empty)',
+          descriptionLength: (b.description || '').length,
+          hasMetadataArray: Array.isArray(b.metadata),
+          metadataCount: Array.isArray(b.metadata) ? b.metadata.length : 0,
+          metadataKeys: Array.isArray(b.metadata) ? b.metadata.map(m => m.key) : [],
+          kbcDescription: Array.isArray(b.metadata)
+            ? (b.metadata.find(m => m.key === 'KBC.description')?.value || '(not in metadata)')
+            : '(no metadata array)',
+        })),
+      };
+    } catch (err) {
+      results.listEndpoint = { error: err.message };
+    }
+
+    // 2. Individual bucket detail (GET /v2/storage/buckets/{id}) for first 3 buckets
+    try {
+      const rawList = await client.listBuckets();
+      const sampleIds = rawList.slice(0, 3).map(b => b.id);
+      const details = [];
+      for (const id of sampleIds) {
+        try {
+          const detail = await client.getBucket(id);
+          details.push({
+            id: detail.id,
+            name: detail.name,
+            displayName: detail.displayName || '(missing)',
+            description: detail.description || '(empty)',
+            descriptionLength: (detail.description || '').length,
+            hasMetadataArray: Array.isArray(detail.metadata),
+            metadataCount: Array.isArray(detail.metadata) ? detail.metadata.length : 0,
+            kbcDescription: Array.isArray(detail.metadata)
+              ? (detail.metadata.find(m => m.key === 'KBC.description')?.value || '(not in metadata)')
+              : '(no metadata array)',
+          });
+        } catch (err) {
+          details.push({ id, error: err.message });
+        }
+      }
+      results.detailEndpoint = {
+        url: 'GET /v2/storage/buckets/{id}',
+        sampled: sampleIds,
+        buckets: details,
+      };
+    } catch (err) {
+      results.detailEndpoint = { error: err.message };
+    }
+
+    // 3. What the metadata cache currently has for allBuckets
+    const metadata = cache.getMetadata();
+    if (metadata && metadata.allBuckets) {
+      results.cachedBuckets = {
+        totalBuckets: metadata.allBuckets.length,
+        buckets: metadata.allBuckets.map(b => ({
+          id: b.id,
+          name: b.name,
+          displayName: b.displayName || '(missing)',
+          description: (b.description || '(empty)').slice(0, 100),
+          descriptionLength: (b.description || '').length,
+          tableCount: b.tables?.length || 0,
+        })),
+      };
+    } else {
+      results.cachedBuckets = { error: 'Cache not loaded or allBuckets missing' };
+    }
+
+    // 4. Summary diagnosis
+    const listDescs = results.listEndpoint?.buckets?.filter(b => b.descriptionLength > 0).length || 0;
+    const detailDescs = results.detailEndpoint?.buckets?.filter(b => b.descriptionLength > 0).length || 0;
+    const cachedDescs = results.cachedBuckets?.buckets?.filter(b => b.descriptionLength > 0).length || 0;
+
+    results.diagnosis = {
+      listEndpointHasDescriptions: listDescs > 0,
+      detailEndpointHasDescriptions: detailDescs > 0,
+      cacheHasDescriptions: cachedDescs > 0,
+      bucketsWithDescriptions: { list: listDescs, detail: detailDescs, cached: cachedDescs },
+      conclusion: listDescs > 0 && cachedDescs > 0
+        ? 'Descriptions flow correctly — check frontend rendering'
+        : listDescs === 0 && detailDescs > 0
+          ? 'List endpoint missing descriptions, detail has them — fallback logic should fire'
+          : listDescs === 0 && detailDescs === 0
+            ? 'No descriptions in API at all — check if descriptions are set in Keboola'
+            : `Unexpected: list=${listDescs}, detail=${detailDescs}, cached=${cachedDescs}`,
+    };
+
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: `Debug buckets failed: ${err.message}`, stack: err.stack });
+  }
+});
+
+app.get('/api/debug/files', (_req, res) => {
+  const result = {
+    envVars: {
+      BDM_FILE_ID: process.env.BDM_FILE_ID || '(not set)',
+      DWH_FILE_ID: process.env.DWH_FILE_ID || '(not set)',
+    },
+    searchPaths: {},
+  };
+
+  // Scan candidate directories where Keboola might inject files
+  const candidates = [
+    '/data',
+    '/data/in',
+    '/data/in/files',
+    '/app/data',
+    '/app/data/in',
+    '/app/data/in/files',
+    path.join(__dirname, '..', 'data'),
+    path.join(__dirname, '..', 'data', 'in'),
+    path.join(__dirname, '..', 'data', 'in', 'files'),
+  ];
+
+  // Deduplicate resolved paths
+  const seen = new Set();
+  for (const dir of candidates) {
+    const resolved = path.resolve(dir);
+    if (seen.has(resolved)) continue;
+    seen.add(resolved);
+    try {
+      const entries = fs.readdirSync(resolved, { withFileTypes: true });
+      result.searchPaths[resolved] = entries.map(e => ({
+        name: e.name,
+        type: e.isDirectory() ? 'dir' : 'file',
+        ...(e.isFile() ? { size: fs.statSync(path.join(resolved, e.name)).size } : {}),
+      }));
+    } catch (err) {
+      result.searchPaths[resolved] = `ERROR: ${err.message}`;
+    }
+  }
+
+  // Also show what the static middleware is configured to serve
+  result.staticFiles = {
+    servingFrom: filesPath,
+    exists: fs.existsSync(filesPath),
+    absolutePathChecked: absoluteFilesPath,
+    relativePathChecked: relativeFilesPath,
+    usedAbsolute: filesPath === absoluteFilesPath,
+  };
+
+  res.json(result);
+});
 
 // Health check — always works, even without credentials
 app.get('/api/health', (_req, res) => {

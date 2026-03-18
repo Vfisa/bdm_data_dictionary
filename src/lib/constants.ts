@@ -122,6 +122,38 @@ export const TAG_CONFIG: Record<PredefinedTag, { color: string; bg: string; labe
   'sensitive': { color: '#ec4899', bg: '#ec489918', label: 'Sensitive' },
 }
 
+/** Component type badge colors — shared across all tabs (lineage, docs, etc.) */
+export const COMPONENT_TYPE_COLORS: Record<string, { bg: string; text: string }> = {
+  SQL: { bg: 'rgba(59, 130, 246, 0.12)', text: '#3b82f6' },   // blue
+  PY:  { bg: 'rgba(245, 158, 11, 0.12)', text: '#f59e0b' },   // amber
+  dbt: { bg: 'rgba(239, 68, 68, 0.12)',  text: '#ef4444' },    // red
+  R:   { bg: 'rgba(168, 85, 247, 0.12)', text: '#a855f7' },    // purple
+  JL:  { bg: 'rgba(34, 197, 94, 0.12)',  text: '#22c55e' },    // green
+  OR:  { bg: 'rgba(107, 114, 128, 0.12)', text: '#6b7280' },   // gray
+  EXT: { bg: 'rgba(34, 197, 94, 0.12)',  text: '#22c55e' },    // green — data sources
+  WR:  { bg: 'rgba(239, 68, 68, 0.12)',  text: '#ef4444' },    // red — data destinations
+  APP: { bg: 'rgba(234, 179, 8, 0.12)',  text: '#ca8a04' },    // yellow — applications
+}
+export const DEFAULT_TYPE_COLOR = { bg: 'rgba(107, 114, 128, 0.12)', text: '#6b7280' }
+
+/** Derive short type label from componentId */
+export function deriveTypeLabel(componentId: string): string {
+  const id = componentId.toLowerCase()
+  if (id.includes('snowflake')) return 'SQL'
+  if (id.includes('synapse')) return 'SQL'
+  if (id.includes('bigquery')) return 'SQL'
+  if (id.includes('redshift')) return 'SQL'
+  if (id.includes('python')) return 'PY'
+  if (id.includes('julia')) return 'JL'
+  if (id.includes('r-transformation') || id.includes('.r-')) return 'R'
+  if (id.includes('dbt')) return 'dbt'
+  if (id.includes('openrefine')) return 'OR'
+  return 'SQL'
+}
+
+/** Transformation folder sort order */
+export const TRANSFORM_FOLDER_ORDER = ['BDM', 'AUX', 'BI', 'TEST', 'UC'] as const
+
 /** Category sort priority for Table Browser default sort */
 export const CATEGORY_SORT_PRIORITY: Record<Category, number> = {
   FCT: 0,

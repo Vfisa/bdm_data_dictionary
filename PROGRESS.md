@@ -570,9 +570,67 @@
 
 ---
 
+## Phase 10a: Automatic Project Documentation
+**Status:** DONE
+**Date:** 2026-03-16
+
+**New files:**
+- `src/lib/markdown-components.tsx` — shared `MarkdownContent` component + `markdownComponents` for ReactMarkdown (extracted from ProjectOverviewPage)
+- `src/components/docs/useDocSections.ts` — data aggregation hook: parses transformations into folders, groups extractors by component, fetches all buckets
+- `src/components/docs/DocSourcesSection.tsx` — extractor groups, expanded by default, markdown descriptions
+- `src/components/docs/DocDataModelSection.tsx` — renders `resources/data-model.md` via `/api/resource/:name`
+- `src/components/docs/DocStorageSection.tsx` — all project buckets grouped by stage, collapsible with table lists
+- `src/components/docs/DocOrchestrationSection.tsx` — flow cards with phase/task breakdown, colored type badges
+- `src/components/docs/DocTransformSection.tsx` — folder-grouped transformation listing
+- `src/components/docs/DocTransformCard.tsx` — 3-column I/O mapping grid (input → transform → output)
+- `src/components/docs/DocWritersAppsSection.tsx` — writers, data gateway, custom apps, data apps (all expanded)
+- `src/components/docs/DocTableOfContents.tsx` — sidebar TOC with IntersectionObserver scroll-spy
+- `src/components/docs/DocToolbar.tsx` — Expand All, Print, Markdown export, Refresh
+- `src/components/docs/doc-export.ts` — markdown export for all sections
+- `resources/data-model.md` — empty placeholder for user-provided data model description
+
+**Modified files:**
+- `server/index.js` — added `/api/resource/:name` endpoint
+- `server/keboola-client.js` — exposed `listBuckets()` and `listBucketTableIds()` in return object
+- `server/metadata-cache.js` — added all-buckets loading + `allBuckets` in metadata response
+- `server/mock-data.js` — added 5 mock buckets with tables
+- `src/lib/constants.ts` — added `COMPONENT_TYPE_COLORS`, `DEFAULT_TYPE_COLOR`, `deriveTypeLabel()`, `TRANSFORM_FOLDER_ORDER`
+- `src/lib/types.ts` — added `StorageBucket`, `StorageBucketTable`, `allBuckets` to `MetadataResponse`, updated `Flow`/`DataApp` types
+- `src/pages/ProjectOverviewPage.tsx` — refactored to use shared `MarkdownContent`
+- `src/pages/ProjectDocumentationPage.tsx` — full rewrite from placeholder to active documentation page
+- `src/components/table-detail/LineageSection.tsx` — uses shared `COMPONENT_TYPE_COLORS`
+
+**Key design decisions:**
+- Transformation folder grouping: parse config name by ` - ` delimiter, first part = folder, second = sort key
+- Folder order: BDM, AUX, BI, TEST, UC — anything else falls to "Other"
+- Cards for Sources/Writers/Apps expanded by default for immediate visibility
+- Transformation cards always visible (not collapsible) with 3-column I/O grid layout
+- All description fields render as markdown via shared `MarkdownContent` component
+
+**Test:** `npx tsc -b` passes. All 6 documentation sections render correctly. Markdown styling works (headings, tables, code, blockquotes). Badge colors consistent with lineage tab.
+
+**Post-implementation polish (2026-03-17):**
+
+1. **Static file serving fix** (`fbb3e06`):
+   - Keboola mounts input files at absolute `/data/in/files/`, but `path.join(__dirname, '..', 'data')` resolves to `/app/data/` in container
+   - Added auto-detection: `fs.existsSync('/data/in/files') ? absolutePath : relativePath`
+   - Added `/api/debug/files` endpoint listing injected files + env var values for diagnosing deployment issues
+
+2. **Connection info table + blue table names + bucket descriptions** (`8dbaabe`):
+   - Writer/DataGateway connection details formatted as key/value `ConnectionTable` component (host, schema, warehouse, auth, driver)
+   - Input/output table names across all component configs displayed in blue monospace font (`text-blue-500 font-mono`)
+   - Storage bucket descriptions visible in collapsed card header with `line-clamp-2`
+
+3. **Bucket description visibility fix** (`a4c5c2f`):
+   - Added `displayName` field to `StorageBucket` type and mock data
+   - Improved description text visibility with `text-[var(--foreground)]/60` color
+   - Confirmed API pipeline is correct: `bucket.description` flows from Keboola API → metadata cache → frontend component
+
+---
+
 ## Summary
 
-All 12 foundation steps + 7 expansion phases complete. The BDM Data Dictionary & ERD Viewer includes:
+All 12 foundation steps + 9 expansion phases complete (through Phase 10a). The BDM Data Dictionary & ERD Viewer includes:
 
 - **58 tables** from `out.c-bdm` + `out.c-bdm_aux` with live Keboola metadata
 - **84 inferred FK relationships** via dynamic inference engine
@@ -587,4 +645,58 @@ All 12 foundation steps + 7 expansion phases complete. The BDM Data Dictionary &
 - **Dark/light theme** with system preference default
 - **Mock data mode** for credential-free local development
 - **Enterprise-grade UI** with shadcn/ui design tokens
+- **Auto-generated project documentation** — 6 sections (Data Sources, Data Model, Storage & Buckets, Orchestration, Transformations, Writers/Apps/Data Apps) with sidebar TOC, scroll-spy, print/markdown export
 - **Keboola deployment-ready** with nginx proxy, supervisord, and setup.sh
+
+---
+
+## Phase 10a-debug: Bucket Descriptions Not Showing on Deployed App
+**Status:** DONE
+**Date:** 2026-03-17
+
+### Problem
+Bucket descriptions displayed correctly in local dev (with `.env` token) but were **missing on the deployed Keboola Data App**. The deployed app showed bucket names and table counts but no description text in the Storage & Buckets section of Project Documentation.
+
+### Root Cause
+The Keboola `GET /v2/storage/buckets` (list) endpoint does NOT return the `metadata` array. Bucket descriptions are stored as `KBC.description` inside the metadata array — not in the top-level `description` field (which is always empty). The `?include=description,displayName` param only adds `displayName`.
+
+The code already had a 3-layer fallback in `metadata-cache.js`:
+1. Check `bucket.description` field (always empty)
+2. Check `bucket.metadata[]` array for `KBC.description` key
+3. If neither has descriptions, fetch individual bucket details via `GET /buckets/{id}` (which DOES return metadata)
+
+The deployed app was running older code **before the fallback was implemented** (pre-commit `a4c5c2f`). Once the latest code was deployed, descriptions appeared immediately.
+
+### Diagnostic Endpoints Added (kept for future use)
+
+1. **`GET /api/debug/env`** — All environment variables with sensitive values masked
+   - Token masking: `4444-9726227-**************` (keeps project + token ID prefix)
+   - Pattern: any env var matching `token|secret|password|key|credential|auth`
+
+2. **`GET /api/debug/buckets`** — 3-way comparison diagnostic:
+   - **List endpoint**: Raw `GET /v2/storage/buckets?include=description,displayName` response
+   - **Detail endpoint**: Raw `GET /v2/storage/buckets/{id}` for first 3 buckets
+   - **Cached data**: What `allBuckets` in the metadata cache currently holds
+   - **Diagnosis**: Automatic conclusion with description counts per layer
+
+3. **`GET /api/debug/files`** — (existing) Injected files and static serving paths
+
+### Findings from Diagnostic Endpoint
+```
+List endpoint:  description=(empty), metadata=(no array), kbcDescription=(none)
+Detail endpoint: description=(empty), metadata=[KBC.description], kbcDescription=✅
+Cache:          13/14 buckets with descriptions ✅
+
+Diagnosis: List endpoint missing descriptions, detail has them.
+           Fallback logic fires correctly and populates cache.
+```
+
+### Key Lessons
+- Keboola list endpoints omit `metadata[]` — always verify list vs detail response shapes
+- Express 4 async handlers MUST have top-level try/catch (async errors silently fall through to SPA catch-all)
+- Diagnostic endpoints that compare raw API → cache → frontend are invaluable for deployed debugging
+
+### Files Changed
+- `server/index.js` — added `GET /api/debug/env`, `GET /api/debug/buckets` (with Express 4 async try/catch)
+- `server/metadata-cache.js` — added sample bucket logging during cache build
+- `LESSONS.md` — entries #33 (bucket description API gap) and #34 (Express 4 async error swallowing)

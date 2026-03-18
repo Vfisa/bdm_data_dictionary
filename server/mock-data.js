@@ -224,6 +224,8 @@ export function generateMockMetadata() {
   const categories = {};
   for (const t of tables) {
     categories[t.name] = t.category;
+    // Add mock Keboola URL for each table
+    t.keboolaUrl = `#mock/storage/tables/${t.id}`;
   }
 
   // Mock lineage data — all component types producing and using tables
@@ -384,12 +386,253 @@ export function generateMockMetadata() {
     },
   };
 
+  // Mock component configs for documentation page
+  const componentConfigs = [
+    {
+      componentId: 'keboola.ex-db-oracle',
+      componentName: 'Oracle Database',
+      componentType: 'extractor',
+      configId: '202',
+      configName: '[PROD] Oracledb Navigator',
+      description: 'Production extraction from Oracle Navigator ERP system. Extracts 38 tables including orders, dispatches, invoices, and reference data.',
+      lastChangeDate: new Date(Date.now() - 1 * 86400000).toISOString(),
+      version: 12,
+      inputTables: [],
+      outputTables: ['out.c-bdm.REF_PRODUCT', 'out.c-bdm.REF_CLIENT'],
+      keboolaUrl: '#mock/components/keboola.ex-db-oracle/202',
+    },
+    {
+      componentId: 'kds-team.ex-salesforce-v2',
+      componentName: 'Salesforce',
+      componentType: 'extractor',
+      configId: '201',
+      configName: 'Salesforce CRM',
+      description: 'Extracts CRM data including accounts, contacts, opportunities, and leads.',
+      lastChangeDate: new Date(Date.now() - 3 * 86400000).toISOString(),
+      version: 5,
+      inputTables: [],
+      outputTables: ['out.c-bdm.REF_CLIENT'],
+      keboolaUrl: '#mock/components/kds-team.ex-salesforce-v2/201',
+    },
+    {
+      componentId: 'keboola.snowflake-transformation',
+      componentName: 'Snowflake SQL',
+      componentType: 'transformation',
+      configId: '101',
+      configName: 'BDM - L1 - Order',
+      description: 'Builds the FCT_ORDER fact table from STG_ORDER with status enrichment, date calculations, and FK resolution to REF_CLIENT, REF_CARRIER, and REF_OFFICE.',
+      lastChangeDate: new Date(Date.now() - 2 * 86400000).toISOString(),
+      version: 8,
+      inputTables: ['out.c-bdm.REF_CLIENT', 'out.c-bdm.REF_PRODUCT'],
+      outputTables: ['out.c-bdm.FCT_ORDER', 'out.c-bdm.MAP_ORDER_PRODUCT'],
+      keboolaUrl: '#mock/transformations/keboola.snowflake-transformation/101',
+    },
+    {
+      componentId: 'keboola.snowflake-transformation',
+      componentName: 'Snowflake SQL',
+      componentType: 'transformation',
+      configId: '102',
+      configName: 'BDM - L2 - Payment',
+      description: 'Builds the FCT_PAYMENT fact table from raw payment data with currency conversion and invoice linkage.',
+      lastChangeDate: new Date(Date.now() - 5 * 86400000).toISOString(),
+      version: 4,
+      inputTables: ['out.c-bdm.FCT_ORDER'],
+      outputTables: ['out.c-bdm.FCT_PAYMENT'],
+      keboolaUrl: '#mock/transformations/keboola.snowflake-transformation/102',
+    },
+    {
+      componentId: 'keboola.snowflake-transformation',
+      componentName: 'Snowflake SQL',
+      componentType: 'transformation',
+      configId: '103',
+      configName: 'AUX - Currency Rates',
+      description: 'Loads and maintains currency exchange rate lookup tables from ECB daily feed.',
+      lastChangeDate: new Date(Date.now() - 3 * 86400000).toISOString(),
+      version: 2,
+      inputTables: ['in.c-oracle_navigator.EXCHANGE_RATES'],
+      outputTables: ['out.c-bdm_aux.AUX_CURRENCY_RATES'],
+      keboolaUrl: '#mock/transformations/keboola.snowflake-transformation/103',
+    },
+    {
+      componentId: 'keboola.python-transformation-v2',
+      componentName: 'Python',
+      componentType: 'transformation',
+      configId: '104',
+      configName: 'UC - Client Mapping',
+      description: 'Python transformation that maps client identifiers across source systems using fuzzy matching.',
+      lastChangeDate: new Date(Date.now() - 1 * 86400000).toISOString(),
+      version: 6,
+      inputTables: ['out.c-bdm.REF_CLIENT', 'in.c-netsuite.CUSTOMERS'],
+      outputTables: ['out.c-bdm.MAP_CLIENT_XREF'],
+      keboolaUrl: '#mock/transformations/keboola.python-transformation-v2/104',
+    },
+    {
+      componentId: 'keboola.snowflake-transformation',
+      componentName: 'Snowflake SQL',
+      componentType: 'transformation',
+      configId: '105',
+      configName: 'BI - Dashboard Aggregates',
+      description: 'Pre-aggregates order and payment data for BI dashboard consumption.',
+      lastChangeDate: new Date(Date.now() - 4 * 86400000).toISOString(),
+      version: 3,
+      inputTables: ['out.c-bdm.FCT_ORDER', 'out.c-bdm.FCT_PAYMENT'],
+      outputTables: ['out.c-bi_reporting.RPT_DAILY_ORDERS'],
+      keboolaUrl: '#mock/transformations/keboola.snowflake-transformation/105',
+    },
+    {
+      componentId: 'keboola.app-data-gateway',
+      componentName: 'Keboola Data Gateway',
+      componentType: 'application',
+      configId: '401',
+      configName: 'BI Data Gateway',
+      description: '## Metabase reporting data delivery\n\nPushes BDM tables to external Snowflake for BI consumption. Uses clone mode for all tables.',
+      lastChangeDate: new Date(Date.now() - 1 * 86400000).toISOString(),
+      version: 3,
+      inputTables: ['out.c-bdm.FCT_ORDER', 'out.c-bdm.REF_CLIENT', 'out.c-bdm.REF_PRODUCT'],
+      outputTables: [],
+      rows: [
+        { name: 'FCT_ORDER', description: '', inputTables: ['out.c-bdm.FCT_ORDER'], incremental: false, tableId: 'out.c-bdm.FCT_ORDER', dbName: 'FCT_ORDER' },
+        { name: 'REF_CLIENT', description: '', inputTables: ['out.c-bdm.REF_CLIENT'], incremental: false, tableId: 'out.c-bdm.REF_CLIENT', dbName: 'REF_CLIENT' },
+        { name: 'REF_PRODUCT', description: '', inputTables: ['out.c-bdm.REF_PRODUCT'], incremental: false, tableId: 'out.c-bdm.REF_PRODUCT', dbName: 'REF_PRODUCT' },
+      ],
+      connectionInfo: {
+        host: 'example.eu-west-2.aws.snowflakecomputing.com',
+        schema: 'READER_SCHEMA',
+        warehouse: 'READER_WH',
+        loginType: 'snowflake-service-keypair',
+        driver: 'snowflake',
+      },
+      keboolaUrl: '#mock/components/keboola.app-data-gateway/401',
+    },
+    {
+      componentId: 'kds-team.app-custom-python',
+      componentName: 'Custom Python',
+      componentType: 'application',
+      configId: '301',
+      configName: 'Data Quality Monitor',
+      description: 'Custom Python application that monitors data quality metrics across BDM tables.',
+      lastChangeDate: new Date(Date.now() - 1 * 86400000).toISOString(),
+      version: 2,
+      inputTables: ['out.c-bdm.FCT_PAYMENT'],
+      outputTables: [],
+      keboolaUrl: '#mock/components/kds-team.app-custom-python/301',
+    },
+  ];
+
+  // Mock flows for orchestration section
+  const flows = [
+    {
+      id: 'flow-1',
+      name: 'BDM - Daily Flow',
+      description: 'Main daily pipeline: extractors → staging → reference → facts',
+      componentId: 'keboola.flow',
+      isDisabled: false,
+      phases: [
+        { id: 'phase-1', name: 'L0 - AUX & STG', description: '', dependsOn: [], hasConditions: false },
+        { id: 'phase-2', name: 'L1 - REF & MAP', description: '', dependsOn: ['phase-1'], hasConditions: false },
+        { id: 'phase-3', name: 'L1 - FCT', description: '', dependsOn: ['phase-2'], hasConditions: false },
+      ],
+      tasks: [
+        { id: 't1', name: '[UAT] FCT_ORDER', phaseId: 'phase-3', enabled: true, componentId: 'keboola.snowflake-transformation', configId: '101' },
+        { id: 't2', name: '[UAT] FCT_PAYMENT', phaseId: 'phase-3', enabled: true, componentId: 'keboola.snowflake-transformation', configId: '102' },
+      ],
+      phaseCount: 3,
+      taskCount: 2,
+      keboolaUrl: '#mock/flows/flow-1',
+    },
+  ];
+
+  // Mock data apps
+  const dataApps = [
+    {
+      id: 'app-1',
+      name: 'Data Catalog',
+      description: 'A data application for BDM exploration and documentation.',
+      type: 'python-js',
+      gitRepository: 'https://github.com/example/bdm_data_dictionary',
+      gitBranch: 'main',
+      authType: 'password',
+      deploymentUrl: 'https://data-catalog-mock.hub.keboola.com',
+      autoSuspendAfterSeconds: 900,
+      appId: '12345',
+      keboolaUrl: '#mock/data-apps/app-1',
+    },
+  ];
+
+  // Mock all buckets for storage documentation
+  const allBuckets = [
+    {
+      id: 'in.c-oracle_navigator',
+      name: 'c-oracle_navigator',
+      displayName: 'oracle_navigator',
+      stage: 'in',
+      description: 'Raw data from Oracle Navigator ERP system',
+      tables: [
+        { id: 'in.c-oracle_navigator.ORDERS', name: 'ORDERS', description: 'Raw orders from Navigator', columnCount: 15 },
+        { id: 'in.c-oracle_navigator.DISPATCHES', name: 'DISPATCHES', description: 'Dispatch records', columnCount: 22 },
+        { id: 'in.c-oracle_navigator.INVOICES', name: 'INVOICES', description: 'Invoice data', columnCount: 18 },
+      ],
+    },
+    {
+      id: 'in.c-netsuite',
+      name: 'c-netsuite',
+      displayName: 'netsuite',
+      stage: 'in',
+      description: 'NetSuite accounting data',
+      tables: [
+        { id: 'in.c-netsuite.GL_TRANSACTIONS', name: 'GL_TRANSACTIONS', description: 'General ledger transactions', columnCount: 10 },
+        { id: 'in.c-netsuite.ACCOUNTS', name: 'ACCOUNTS', description: 'Chart of accounts', columnCount: 8 },
+      ],
+    },
+    {
+      id: 'out.c-bdm',
+      name: 'c-bdm',
+      displayName: 'bdm',
+      stage: 'out',
+      description: 'Business Data Model — production output',
+      tables: tables.filter(t => t.bucket === 'out.c-bdm').map(t => ({
+        id: t.id,
+        name: t.name,
+        description: t.description,
+        columnCount: t.columns.length,
+      })),
+    },
+    {
+      id: 'out.c-bdm_aux',
+      name: 'c-bdm_aux',
+      displayName: 'bdm_aux',
+      stage: 'out',
+      description: 'BDM auxiliary/staging tables',
+      tables: tables.filter(t => t.bucket === 'out.c-bdm_aux').map(t => ({
+        id: t.id,
+        name: t.name,
+        description: t.description,
+        columnCount: t.columns.length,
+      })),
+    },
+    {
+      id: 'out.c-bi_reporting',
+      name: 'c-bi_reporting',
+      displayName: 'bi_reporting',
+      stage: 'out',
+      description: 'Pre-aggregated tables for BI dashboards',
+      tables: [
+        { id: 'out.c-bi_reporting.RPT_DAILY_REVENUE', name: 'RPT_DAILY_REVENUE', description: 'Daily revenue summary', columnCount: 6 },
+        { id: 'out.c-bi_reporting.RPT_CLIENT_SUMMARY', name: 'RPT_CLIENT_SUMMARY', description: 'Client-level summary stats', columnCount: 9 },
+      ],
+    },
+  ];
+
   return {
     tables,
     edges,
     dateEdges,
     categories,
     lineage,
+    componentConfigs,
+    flows,
+    dataApps,
+    allBuckets,
     lastRefresh: new Date().toISOString(),
     stats: {
       totalColumns: tables.reduce((acc, t) => acc + t.columns.length, 0),

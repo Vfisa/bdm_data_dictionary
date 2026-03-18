@@ -19,7 +19,7 @@ BDM Data Dictionary & ERD Viewer — a React-based Keboola Data App for the Hori
 
 - **PRD**: `PRD.md` — living document, keep updated with all decisions
 - **Progress**: `PROGRESS.md` — step-by-step dev log
-- **Lessons**: `LESSONS.md` — root-cause error analysis (28 entries)
+- **Lessons**: `LESSONS.md` — root-cause error analysis (32 entries)
 - **Changelog**: `CHANGELOG.md` — what shipped per phase
 
 ## Tech Stack
@@ -34,7 +34,7 @@ BDM Data Dictionary & ERD Viewer — a React-based Keboola Data App for the Hori
 | Backend | Express.js | SPA serving + Keboola Storage API proxy |
 | Search | cmdk | Cmd+K command palette with fuzzy search |
 | Icons | lucide-react | Wrap in `<span>` for title/aria attributes |
-| Markdown | react-markdown + remark-gfm + rehype-sanitize | GFM tables/strikethrough + secure rendering for project overview |
+| Markdown | react-markdown + remark-gfm + rehype-sanitize | Shared `MarkdownContent` component for all markdown rendering |
 | Deploy | Keboola JS Data App | nginx + supervisord + setup.sh |
 
 ## Architecture
@@ -49,6 +49,11 @@ Browser → nginx (:8888) → Express (:3000)
                               ├── PUT  /api/tags             ← edit tags → Keboola metadata
                               ├── GET  /api/profile/:id      ← on-demand column profiling
                               ├── GET  /api/preview/:id      ← data preview (CSV parsed)
+                              ├── GET  /api/resource/:name   ← markdown files from resources/ ({{ENV_VAR}} template replacement)
+                              ├── GET  /api/debug/env        ← masked env var dump (tokens redacted)
+                              ├── GET  /api/debug/buckets    ← 3-way bucket description diagnostic
+                              ├── GET  /api/debug/files      ← list injected files + env vars (dev/staging)
+                              ├── /data/in/files/*            ← static serving of Keboola input files (images)
                               ├── POST /api/refresh          ← trigger cache refresh
                               └── GET  /api/health
 ```
@@ -65,22 +70,24 @@ Browser → nginx (:8888) → Express (:3000)
 - `src/pages/ProjectOverviewPage.tsx` — default landing page, renders branch metadata markdown
 - `src/pages/TableBrowserPage.tsx` — table list with filter/sort/group state
 - `src/pages/ErdPage.tsx` — ERD diagram with floating detail panel
-- `src/pages/ProjectDocumentationPage.tsx` — placeholder (coming soon)
+- `src/pages/ProjectDocumentationPage.tsx` — auto-generated project documentation (sources, model, storage, orchestration, transformations, writers/apps)
 
 ### Components
 - `src/components/table-browser/` — StatsDashboard, CategoryFilter, SortControls, TableList, TableExpandedDetail, DataPreviewTable
 - `src/components/table-detail/` — ColumnTable, ColumnProfileDrawer, RelationshipList, LineageSection, TypeBadge, NoValueBadge
 - `src/components/erd/` — ErdCanvas, ErdToolbar, TableNode, useErdLayout
+- `src/components/docs/` — DocSourcesSection, DocDataModelSection, DocStorageSection, DocOrchestrationSection, DocTransformSection, DocTransformCard, DocWritersAppsSection, DocTableOfContents, DocToolbar, useDocSections, doc-export
 - `src/components/search/` — CommandPalette, useSearch
 - `src/components/tags/` — TagEditor
 - `src/components/ui/` — Badge, Button, Input, Tooltip, InlineEditor, ConfirmDialog
 - `src/components/layout/` — Header, Layout, ErrorBoundary
 
 ### Lib
-- `src/lib/constants.ts` — CATEGORY_CONFIG (shortCode, groupLabel), CATEGORY_ORDER, TAG_CONFIG
+- `src/lib/constants.ts` — CATEGORY_CONFIG, CATEGORY_ORDER, TAG_CONFIG, COMPONENT_TYPE_COLORS, TRANSFORM_FOLDER_ORDER
 - `src/lib/human-name.ts` — `toHumanName()` strips BDM prefixes
 - `src/lib/qa-stats.ts` — `computeQAStats()`
 - `src/lib/types.ts` — all TypeScript interfaces
+- `src/lib/markdown-components.tsx` — shared `MarkdownContent` + `markdownComponents` for ReactMarkdown
 - `src/lib/mermaid.ts` — Mermaid ERD generation
 - `src/index.css` — CSS variables (oklch) + React Flow overrides
 
@@ -131,7 +138,8 @@ Browser → nginx (:8888) → Express (:3000)
 - Phase 7: Transformation Lineage: **DONE**
 - Phase 8: Project Overview & Documentation Tabs: **DONE**
 - Phase 9: Full Component Lineage (extractors, writers, apps): **DONE**
-- Phase 10: SQL-based Query Service profiling (planned)
+- Phase 10a: Automatic Project Documentation: **DONE**
+- Phase 10b: SQL-based Query Service profiling (planned)
 
 ## Keboola API Notes
 
@@ -141,3 +149,5 @@ Browser → nginx (:8888) → Express (:3000)
 - Profile endpoint returns `{}` (not 404) when no profile exists
 - Token `#` prefix stripped automatically by server
 - Tags stored as JSON array in metadata key `bdm.tags` (provider: `user`)
+- Bucket list endpoint (`GET /buckets`) does NOT return `metadata[]` array — must fetch individual `GET /buckets/{id}` for `KBC.description`
+- Bucket `description` field is always empty — real descriptions are in `metadata[].key === 'KBC.description'`

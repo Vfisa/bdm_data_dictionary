@@ -106,7 +106,12 @@ function App() {
           />
         )}
         {currentPage === 'docs' && (
-          <ProjectDocumentationPage />
+          <ProjectDocumentationPage
+            metadata={data}
+            isRefreshing={isRefreshing}
+            onRefresh={refresh}
+            onDescriptionUpdated={refetch}
+          />
         )}
       </Layout>
 
