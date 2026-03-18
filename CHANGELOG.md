@@ -1,5 +1,15 @@
 # Changelog
 
+## Phase 10a-ui — Transformation Card Redesign (2026-03-18)
+- **Hybrid header + flow layout**: Transformation name promoted to card header with type badge and Keboola link; description as subtitle; I/O flow diagram with mini type node in center
+- **Collapsible cards**: Each card has chevron toggle, expanded by default. Collapsed view shows compact one-liner with table counts (e.g. `5 in / 1 out`). Syncs with global Expand All/Collapse All
+- **Variables & shared code**: Backend extracts `variables_values` and `shared_code_id` from Keboola transformation configs; resolves shared code names from already-fetched configs; builds shared code Keboola URLs
+- **Dual-action table chips**: Click scrolls in-page to bucket section; small external link icon opens table in Keboola platform (for tables in metadata)
+- **Variables footer**: Settings icon + `NAME=VALUE` pairs in mono font (only when variables exist)
+- **Shared code footer**: Code icon + shared code name + external link to Keboola (only when shared code is used)
+- **Card spacing**: Increased from `space-y-2` to `space-y-4` between transformation cards
+- **Header divider**: Border-top between header and body content, matching other doc section cards
+
 ## Phase 10a-debug — Bucket Description Fix & Debug Endpoints (2026-03-17)
 - **Fixed bucket descriptions on deployed app**: Deployed app was running pre-fallback code; latest code with 3-layer description extraction (field → metadata array → individual bucket detail fetch) resolves the issue
 - **`GET /api/debug/env`**: Masked environment variable dump — sensitive values (tokens, secrets, keys) show only prefix, all others shown in full

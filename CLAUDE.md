@@ -138,7 +138,7 @@ Browser → nginx (:8888) → Express (:3000)
 - Phase 7: Transformation Lineage: **DONE**
 - Phase 8: Project Overview & Documentation Tabs: **DONE**
 - Phase 9: Full Component Lineage (extractors, writers, apps): **DONE**
-- Phase 10a: Automatic Project Documentation: **DONE**
+- Phase 10a: Automatic Project Documentation + Transformation Card Redesign: **DONE**
 - Phase 10b: SQL-based Query Service profiling (planned)
 
 ## Keboola API Notes

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { DocToolbar } from '@/components/docs/DocToolbar'
 import { DocTableOfContents } from '@/components/docs/DocTableOfContents'
 import { DocSourcesSection } from '@/components/docs/DocSourcesSection'
@@ -24,6 +24,14 @@ export function ProjectDocumentationPage({
 }: ProjectDocumentationPageProps) {
   const [allExpanded, setAllExpanded] = useState(false)
   const sections = useDocSections(metadata)
+
+  const tableUrlMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const t of metadata.tables) {
+      if (t.keboolaUrl) map.set(t.id, t.keboolaUrl)
+    }
+    return map
+  }, [metadata.tables])
 
   const handleToggleExpand = useCallback(() => {
     setAllExpanded(prev => !prev)
@@ -99,6 +107,7 @@ export function ProjectDocumentationPage({
               <DocTransformSection
                 transformationFolders={sections.transformationFolders}
                 allExpanded={allExpanded}
+                tableUrlMap={tableUrlMap}
               />
             </section>
 

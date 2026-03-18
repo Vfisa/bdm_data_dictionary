@@ -909,7 +909,7 @@ Strategy 4 requires fetching bucket list + tables-per-bucket at startup.
 | 42 | Section structure | 6 sections: Data Sources, Data Model, Storage & Buckets, Orchestration, Transformations, Writers/Apps/Data Apps |
 | 43 | Markdown rendering strategy | Shared `MarkdownContent` component (extracted from ProjectOverviewPage) — custom ReactMarkdown components, no @tailwindcss/typography plugin |
 | 44 | Transformation grouping | By folder prefix from naming convention (` - ` delimiter). First segment = folder, second = sort key. Known folders: BDM, AUX, BI, TEST, UC. Unmatched = "Other" |
-| 45 | Transformation card layout | 3-column grid (input tables | transformation box | output tables) — always visible, not collapsible. Table names as clickable chips linking to storage bucket anchors |
+| 45 | Transformation card layout | Hybrid header + flow diagram: name in header with type badge and Keboola link, description as subtitle, I/O flow with mini type node, variables/shared code footer. Collapsible (expanded by default), dual-action table chips (scroll in-page + external Keboola link) |
 | 46 | Badge colors | Shared `COMPONENT_TYPE_COLORS` constant: SQL=blue, PY=yellow, dbt=red, R=purple, EXT=green, WR=red, APP=yellow. Used in lineage, docs, orchestration |
 | 47 | Card default state | Data Sources, Writers, Apps cards expanded by default. Storage buckets collapsed by default |
 | 48 | Data Model section | Renders markdown from `resources/data-model.md` via `/api/resource/:name` endpoint. Placeholder message when empty |

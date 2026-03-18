@@ -491,6 +491,25 @@ export function createClient(kbcUrl, kbcToken) {
             }
           }
 
+          // For transformations: extract variables + shared code references
+          const isTransformation = component.type === 'transformation';
+          let variables = undefined;
+          let sharedCodeId = undefined;
+          let sharedCodeComponentId = undefined;
+
+          if (isTransformation) {
+            const varsValues = config.configuration?.variables_values?.values;
+            if (Array.isArray(varsValues) && varsValues.length > 0) {
+              variables = varsValues.map(v => ({ name: v.name, value: v.value }));
+            }
+            const scId = config.configuration?.shared_code_id;
+            const scComponentId = config.configuration?.shared_code_component_id;
+            if (scId) {
+              sharedCodeId = String(scId);
+              sharedCodeComponentId = scComponentId || null;
+            }
+          }
+
           // For writer/application components, capture row-level detail
           const isWriterOrApp = component.type === 'writer' || component.type === 'application';
           let configRows = undefined;
@@ -539,10 +558,25 @@ export function createClient(kbcUrl, kbcToken) {
             outputTables: [...new Set(outputTables)],
             ...(configRows ? { rows: configRows } : {}),
             ...(connectionInfo ? { connectionInfo } : {}),
+            ...(variables ? { variables } : {}),
+            ...(sharedCodeId ? { sharedCodeId, sharedCodeComponentId } : {}),
           });
         }
       } catch (err) {
         console.warn(`Warning: Failed to fetch configs for ${component.id}: ${err.message}`);
+      }
+    }
+
+    // Resolve shared code names from already-fetched configs
+    const sharedCodeNameMap = new Map();
+    for (const c of allConfigs) {
+      if (c.componentId?.includes('shared-code')) {
+        sharedCodeNameMap.set(c.configId, c.configName);
+      }
+    }
+    for (const c of allConfigs) {
+      if (c.sharedCodeId) {
+        c.sharedCodeName = sharedCodeNameMap.get(c.sharedCodeId) || null;
       }
     }
 

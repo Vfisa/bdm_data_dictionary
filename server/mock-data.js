@@ -426,6 +426,15 @@ export function generateMockMetadata() {
       inputTables: ['out.c-bdm.REF_CLIENT', 'out.c-bdm.REF_PRODUCT'],
       outputTables: ['out.c-bdm.FCT_ORDER', 'out.c-bdm.MAP_ORDER_PRODUCT'],
       keboolaUrl: '#mock/transformations/keboola.snowflake-transformation/101',
+      variables: [
+        { name: 'SCHEMA', value: 'RAW' },
+        { name: 'DATE_FROM', value: '2024-01-01' },
+        { name: 'INCLUDE_ARCHIVED', value: 'false' },
+      ],
+      sharedCodeId: 'sc-001',
+      sharedCodeComponentId: 'keboola.shared-code.snowflake',
+      sharedCodeName: 'Utility Functions',
+      sharedCodeUrl: '#mock/transformations/keboola.shared-code.snowflake/sc-001',
     },
     {
       componentId: 'keboola.snowflake-transformation',
@@ -439,6 +448,9 @@ export function generateMockMetadata() {
       inputTables: ['out.c-bdm.FCT_ORDER'],
       outputTables: ['out.c-bdm.FCT_PAYMENT'],
       keboolaUrl: '#mock/transformations/keboola.snowflake-transformation/102',
+      variables: [
+        { name: 'TARGET_CURRENCY', value: 'USD' },
+      ],
     },
     {
       componentId: 'keboola.snowflake-transformation',

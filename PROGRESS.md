@@ -700,3 +700,35 @@ Diagnosis: List endpoint missing descriptions, detail has them.
 - `server/index.js` — added `GET /api/debug/env`, `GET /api/debug/buckets` (with Express 4 async try/catch)
 - `server/metadata-cache.js` — added sample bucket logging during cache build
 - `LESSONS.md` — entries #33 (bucket description API gap) and #34 (Express 4 async error swallowing)
+
+---
+
+## Phase 10a-ui: Transformation Card Redesign
+**Status:** DONE
+**Date:** 2026-03-18
+
+### What Changed
+Redesigned DocTransformCard from a 3-column grid (where the name was squeezed into the center) to a hybrid header + flow diagram layout:
+
+1. **Header section**: Type badge + transformation name + Keboola link — clickable to collapse/expand
+2. **Description subtitle**: Markdown-rendered description below header, separated by border-t divider
+3. **I/O flow diagram**: Input chips → mini outlined type node → output chips (preserved arrow-flow visualization)
+4. **Footer**: Variables (⚙ NAME=VALUE) and shared code (code icon + name + link) — conditional
+
+### Backend Changes
+- Extract `variables_values.values` and `shared_code_id`/`shared_code_component_id` from Keboola transformation configs in `listAllComponentConfigs()`
+- Resolve shared code names from already-fetched shared-code component configs
+- Build shared code Keboola URLs in metadata-cache using `buildKeboolaUrl()`
+
+### New TypeScript Types
+- `TransformVariable` interface (`name`, `value`)
+- Extended `ComponentConfig` with `variables`, `sharedCodeId`, `sharedCodeName`, `sharedCodeComponentId`, `sharedCodeUrl`
+
+### Files Changed
+- `server/keboola-client.js` — extract variables, shared code ID/component/name
+- `server/metadata-cache.js` — build sharedCodeUrl for configs with shared code
+- `server/mock-data.js` — added mock variables + shared code fields to test transformations
+- `src/lib/types.ts` — `TransformVariable` interface, extended `ComponentConfig`
+- `src/pages/ProjectDocumentationPage.tsx` — build `tableUrlMap` from metadata.tables, pass to DocTransformSection
+- `src/components/docs/DocTransformSection.tsx` — thread `tableUrlMap` prop, increased card spacing to `space-y-4`
+- `src/components/docs/DocTransformCard.tsx` — full redesign: collapsible header, description subtitle, I/O flow, variables/shared code footer
