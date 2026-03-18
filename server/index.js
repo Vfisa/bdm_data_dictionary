@@ -77,6 +77,37 @@ app.get('/api/resource/:name', (req, res) => {
 });
 
 // Debug: list injected files and template env vars (dev/staging only)
+/**
+ * Mask a value that looks like a secret: show the first segment before
+ * the second hyphen (e.g. "4444-9726227") then mask the rest.
+ * For non-hyphenated values, show first 4 chars then mask.
+ */
+function maskSecret(val) {
+  if (!val) return '(not set)';
+  // Pattern: "NNNN-NNNNNNN-actualSecret" → keep "NNNN-NNNNNNN-**************"
+  const parts = val.split('-');
+  if (parts.length >= 3) {
+    return parts.slice(0, 2).join('-') + '-' + '*'.repeat(Math.min(parts.slice(2).join('-').length, 20));
+  }
+  // Short or no-hyphen value: show first 4 chars
+  if (val.length <= 6) return '*'.repeat(val.length);
+  return val.slice(0, 4) + '*'.repeat(Math.min(val.length - 4, 20));
+}
+
+const SENSITIVE_PATTERNS = /token|secret|password|key|credential|auth/i;
+
+app.get('/api/debug/env', (_req, res) => {
+  const env = {};
+  for (const [k, v] of Object.entries(process.env)) {
+    if (SENSITIVE_PATTERNS.test(k)) {
+      env[k] = maskSecret(v);
+    } else {
+      env[k] = v;
+    }
+  }
+  res.json({ env });
+});
+
 app.get('/api/debug/files', (_req, res) => {
   const result = {
     envVars: {
