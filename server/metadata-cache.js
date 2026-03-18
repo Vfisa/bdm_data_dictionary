@@ -202,8 +202,19 @@ export class MetadataCache {
         console.log(`MetadataCache: Sample bucket — id=${sample.id}, description=${JSON.stringify(sample.description)}, displayName=${JSON.stringify(sample.displayName)}`);
       }
 
-      // Check if list endpoint returned descriptions
-      const listHasDescriptions = rawBuckets.some(b => b.description);
+      // Helper: extract description from metadata array (key "KBC.description")
+      // The bucket `description` field is always empty; real descriptions are in metadata.
+      const extractBucketDescription = (bucket) => {
+        if (bucket.description) return bucket.description;
+        if (Array.isArray(bucket.metadata)) {
+          const entry = bucket.metadata.find(m => m.key === 'KBC.description');
+          if (entry && entry.value) return entry.value;
+        }
+        return '';
+      };
+
+      // Check if list endpoint has descriptions (either field or metadata)
+      const listHasDescriptions = rawBuckets.some(b => extractBucketDescription(b));
       if (!listHasDescriptions) {
         console.log('MetadataCache: List endpoint missing descriptions — fetching individual bucket details');
       }
@@ -240,7 +251,7 @@ export class MetadataCache {
             name: bucketDetail.name || bucketDetail.displayName || b.id,
             displayName: bucketDetail.displayName || bucketDetail.name || b.id,
             stage,
-            description: bucketDetail.description || '',
+            description: extractBucketDescription(bucketDetail),
             tables,
           };
         })

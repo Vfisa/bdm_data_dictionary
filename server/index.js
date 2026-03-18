@@ -108,6 +108,119 @@ app.get('/api/debug/env', (_req, res) => {
   res.json({ env });
 });
 
+app.get('/api/debug/buckets', async (_req, res) => {
+  try {
+    if (USE_MOCK) {
+      return res.json({ mode: 'mock', message: 'No live API in mock mode' });
+    }
+    if (!cache) {
+      return res.json({ error: 'Cache not initialized — no KBC_TOKEN/KBC_URL' });
+    }
+
+    const client = cache.getClient();
+    const results = {};
+
+    // 1. Raw listBuckets() response (what the list endpoint returns)
+    try {
+      const rawList = await client.listBuckets();
+      results.listEndpoint = {
+        url: 'GET /v2/storage/buckets?include=description,displayName',
+        totalBuckets: rawList.length,
+        sampleKeys: rawList.length > 0 ? Object.keys(rawList[0]) : [],
+        buckets: rawList.map(b => ({
+          id: b.id,
+          name: b.name,
+          displayName: b.displayName || '(missing)',
+          description: b.description || '(empty)',
+          descriptionLength: (b.description || '').length,
+          hasMetadataArray: Array.isArray(b.metadata),
+          metadataCount: Array.isArray(b.metadata) ? b.metadata.length : 0,
+          metadataKeys: Array.isArray(b.metadata) ? b.metadata.map(m => m.key) : [],
+          kbcDescription: Array.isArray(b.metadata)
+            ? (b.metadata.find(m => m.key === 'KBC.description')?.value || '(not in metadata)')
+            : '(no metadata array)',
+        })),
+      };
+    } catch (err) {
+      results.listEndpoint = { error: err.message };
+    }
+
+    // 2. Individual bucket detail (GET /v2/storage/buckets/{id}) for first 3 buckets
+    try {
+      const rawList = await client.listBuckets();
+      const sampleIds = rawList.slice(0, 3).map(b => b.id);
+      const details = [];
+      for (const id of sampleIds) {
+        try {
+          const detail = await client.getBucket(id);
+          details.push({
+            id: detail.id,
+            name: detail.name,
+            displayName: detail.displayName || '(missing)',
+            description: detail.description || '(empty)',
+            descriptionLength: (detail.description || '').length,
+            hasMetadataArray: Array.isArray(detail.metadata),
+            metadataCount: Array.isArray(detail.metadata) ? detail.metadata.length : 0,
+            kbcDescription: Array.isArray(detail.metadata)
+              ? (detail.metadata.find(m => m.key === 'KBC.description')?.value || '(not in metadata)')
+              : '(no metadata array)',
+          });
+        } catch (err) {
+          details.push({ id, error: err.message });
+        }
+      }
+      results.detailEndpoint = {
+        url: 'GET /v2/storage/buckets/{id}',
+        sampled: sampleIds,
+        buckets: details,
+      };
+    } catch (err) {
+      results.detailEndpoint = { error: err.message };
+    }
+
+    // 3. What the metadata cache currently has for allBuckets
+    const metadata = cache.getMetadata();
+    if (metadata && metadata.allBuckets) {
+      results.cachedBuckets = {
+        totalBuckets: metadata.allBuckets.length,
+        buckets: metadata.allBuckets.map(b => ({
+          id: b.id,
+          name: b.name,
+          displayName: b.displayName || '(missing)',
+          description: (b.description || '(empty)').slice(0, 100),
+          descriptionLength: (b.description || '').length,
+          tableCount: b.tables?.length || 0,
+        })),
+      };
+    } else {
+      results.cachedBuckets = { error: 'Cache not loaded or allBuckets missing' };
+    }
+
+    // 4. Summary diagnosis
+    const listDescs = results.listEndpoint?.buckets?.filter(b => b.descriptionLength > 0).length || 0;
+    const detailDescs = results.detailEndpoint?.buckets?.filter(b => b.descriptionLength > 0).length || 0;
+    const cachedDescs = results.cachedBuckets?.buckets?.filter(b => b.descriptionLength > 0).length || 0;
+
+    results.diagnosis = {
+      listEndpointHasDescriptions: listDescs > 0,
+      detailEndpointHasDescriptions: detailDescs > 0,
+      cacheHasDescriptions: cachedDescs > 0,
+      bucketsWithDescriptions: { list: listDescs, detail: detailDescs, cached: cachedDescs },
+      conclusion: listDescs > 0 && cachedDescs > 0
+        ? 'Descriptions flow correctly — check frontend rendering'
+        : listDescs === 0 && detailDescs > 0
+          ? 'List endpoint missing descriptions, detail has them — fallback logic should fire'
+          : listDescs === 0 && detailDescs === 0
+            ? 'No descriptions in API at all — check if descriptions are set in Keboola'
+            : `Unexpected: list=${listDescs}, detail=${detailDescs}, cached=${cachedDescs}`,
+    };
+
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: `Debug buckets failed: ${err.message}`, stack: err.stack });
+  }
+});
+
 app.get('/api/debug/files', (_req, res) => {
   const result = {
     envVars: {
