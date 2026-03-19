@@ -427,6 +427,45 @@ export function createClient(kbcUrl, kbcToken) {
   }
 
   /**
+   * Get the default branch ID.
+   * @returns {Promise<number>} Branch ID
+   */
+  let _defaultBranchId = null;
+  async function getDefaultBranchId() {
+    if (_defaultBranchId) return _defaultBranchId;
+    const branches = await request('dev-branches');
+    const main = branches.find(b => b.isDefault);
+    _defaultBranchId = main?.id || null;
+    return _defaultBranchId;
+  }
+
+  /**
+   * Fetch folder names for all component configurations via search endpoint.
+   * Uses KBC.configuration.folderName metadata key (single batch API call).
+   * @returns {Promise<Map<string, string>>} Map of "componentId:configId" → folderName
+   */
+  async function fetchConfigFolderNames() {
+    try {
+      const branchId = await getDefaultBranchId();
+      if (!branchId) return new Map();
+      const results = await request(
+        `branch/${branchId}/search/component-configurations?metadataKeys[]=KBC.configuration.folderName&include=filteredMetadata`
+      );
+      const map = new Map();
+      for (const item of results) {
+        const folder = item.metadata?.find(m => m.key === 'KBC.configuration.folderName');
+        if (folder?.value) {
+          map.set(`${item.idComponent}:${item.configurationId}`, folder.value);
+        }
+      }
+      return map;
+    } catch (err) {
+      console.warn(`Warning: Failed to fetch config folder names: ${err.message}`);
+      return new Map();
+    }
+  }
+
+  /**
    * List ALL component configurations (extractors, transformations, writers, apps).
    * For each config, extracts input/output table mappings using a waterfall:
    *   1. Explicit storage.output/input.tables (transformations, some apps)
@@ -437,8 +476,11 @@ export function createClient(kbcUrl, kbcToken) {
    * @returns {Promise<Array>} Array of component config objects with inputTables/outputTables
    */
   async function listAllComponentConfigs(bucketTableMap) {
-    // Fetch ALL components (no type filter)
-    const components = await request('components');
+    // Fetch ALL components (no type filter) + folder names in parallel
+    const [components, folderNameMap] = await Promise.all([
+      request('components'),
+      fetchConfigFolderNames(),
+    ]);
 
     const allConfigs = [];
 
@@ -560,6 +602,7 @@ export function createClient(kbcUrl, kbcToken) {
             ...(connectionInfo ? { connectionInfo } : {}),
             ...(variables ? { variables } : {}),
             ...(sharedCodeId ? { sharedCodeId, sharedCodeComponentId } : {}),
+            folderName: folderNameMap.get(`${component.id}:${config.id}`) || null,
           });
         }
       } catch (err) {

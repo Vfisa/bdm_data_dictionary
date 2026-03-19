@@ -151,3 +151,5 @@ Browser → nginx (:8888) → Express (:3000)
 - Tags stored as JSON array in metadata key `bdm.tags` (provider: `user`)
 - Bucket list endpoint (`GET /buckets`) does NOT return `metadata[]` array — must fetch individual `GET /buckets/{id}` for `KBC.description`
 - Bucket `description` field is always empty — real descriptions are in `metadata[].key === 'KBC.description'`
+- Configuration folder names: stored in `KBC.configuration.folderName` metadata key, batch-fetchable via `GET /v2/storage/branch/{branchId}/search/component-configurations?metadataKeys[]=KBC.configuration.folderName&include=filteredMetadata`
+- Only transformation configs have folder metadata; extractors/writers/apps do not

@@ -732,3 +732,28 @@ Redesigned DocTransformCard from a 3-column grid (where the name was squeezed in
 - `src/pages/ProjectDocumentationPage.tsx` — build `tableUrlMap` from metadata.tables, pass to DocTransformSection
 - `src/components/docs/DocTransformSection.tsx` — thread `tableUrlMap` prop, increased card spacing to `space-y-4`
 - `src/components/docs/DocTransformCard.tsx` — full redesign: collapsible header, description subtitle, I/O flow, variables/shared code footer
+
+---
+
+## Phase 10a-folders: Transformation Folder Grouping from API
+**Status:** DONE
+**Date:** 2026-03-19
+
+### Problem
+All 70 transformations were grouped under "Other" in the Documentation tab because `parseTransformFolder()` expected config names like `"BDM - L1 - Order"` but actual names use `"[UAT] REF_CARRIER"` patterns. The folder info was never fetched from the API.
+
+### Discovery
+- Keboola Storage API config responses (`GET /components/{id}/configs`) do NOT include a folder field
+- Folder names are stored in **configuration metadata** under key `KBC.configuration.folderName`
+- Batch-fetchable via: `GET /v2/storage/branch/{branchId}/search/component-configurations?metadataKeys[]=KBC.configuration.folderName&include=filteredMetadata`
+- Only transformation configs have folder metadata; extractors/writers/apps do not
+
+### Changes
+- `server/keboola-client.js` — Added `getDefaultBranchId()` (cached) and `fetchConfigFolderNames()` (single batch call); integrated `folderName` into `listAllComponentConfigs()` output via `Promise.all` with component fetch
+- `src/lib/types.ts` — Added `folderName?: string | null` to `ComponentConfig`
+- `src/components/docs/useDocSections.ts` — Replaced `parseTransformFolder()` name-parsing with direct `config.folderName` usage; added `getFolderSortKey()` for prefix-based ordering
+- `src/lib/constants.ts` — Updated `TRANSFORM_FOLDER_ORDER` to `['AUX', 'BDM', 'BI', 'TEST', 'UC']`
+- `server/mock-data.js` — Added `folderName` to mock transformation configs
+
+### Result
+18 folders now display correctly: AUX/STG - L1 (13), BDM - L2 - Order (9), UC - Client Mapping (6), etc. Sorted by prefix priority.

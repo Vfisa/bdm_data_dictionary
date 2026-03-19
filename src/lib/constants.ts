@@ -151,8 +151,8 @@ export function deriveTypeLabel(componentId: string): string {
   return 'SQL'
 }
 
-/** Transformation folder sort order */
-export const TRANSFORM_FOLDER_ORDER = ['BDM', 'AUX', 'BI', 'TEST', 'UC'] as const
+/** Transformation folder prefix sort order (matched against first segment of folder name) */
+export const TRANSFORM_FOLDER_ORDER = ['AUX', 'BDM', 'BI', 'TEST', 'UC'] as const
 
 /** Category sort priority for Table Browser default sort */
 export const CATEGORY_SORT_PRIORITY: Record<Category, number> = {

@@ -426,6 +426,7 @@ export function generateMockMetadata() {
       inputTables: ['out.c-bdm.REF_CLIENT', 'out.c-bdm.REF_PRODUCT'],
       outputTables: ['out.c-bdm.FCT_ORDER', 'out.c-bdm.MAP_ORDER_PRODUCT'],
       keboolaUrl: '#mock/transformations/keboola.snowflake-transformation/101',
+      folderName: 'BDM - L2 - Order',
       variables: [
         { name: 'SCHEMA', value: 'RAW' },
         { name: 'DATE_FROM', value: '2024-01-01' },
@@ -448,6 +449,7 @@ export function generateMockMetadata() {
       inputTables: ['out.c-bdm.FCT_ORDER'],
       outputTables: ['out.c-bdm.FCT_PAYMENT'],
       keboolaUrl: '#mock/transformations/keboola.snowflake-transformation/102',
+      folderName: 'BDM - L2 - Invoice',
       variables: [
         { name: 'TARGET_CURRENCY', value: 'USD' },
       ],
@@ -464,6 +466,7 @@ export function generateMockMetadata() {
       inputTables: ['in.c-oracle_navigator.EXCHANGE_RATES'],
       outputTables: ['out.c-bdm_aux.AUX_CURRENCY_RATES'],
       keboolaUrl: '#mock/transformations/keboola.snowflake-transformation/103',
+      folderName: 'AUX/STG - L1',
     },
     {
       componentId: 'keboola.python-transformation-v2',
@@ -477,6 +480,7 @@ export function generateMockMetadata() {
       inputTables: ['out.c-bdm.REF_CLIENT', 'in.c-netsuite.CUSTOMERS'],
       outputTables: ['out.c-bdm.MAP_CLIENT_XREF'],
       keboolaUrl: '#mock/transformations/keboola.python-transformation-v2/104',
+      folderName: 'UC - Client Mapping',
     },
     {
       componentId: 'keboola.snowflake-transformation',
@@ -490,6 +494,7 @@ export function generateMockMetadata() {
       inputTables: ['out.c-bdm.FCT_ORDER', 'out.c-bdm.FCT_PAYMENT'],
       outputTables: ['out.c-bi_reporting.RPT_DAILY_ORDERS'],
       keboolaUrl: '#mock/transformations/keboola.snowflake-transformation/105',
+      folderName: 'BI - L3 - Billing Dashboard',
     },
     {
       componentId: 'keboola.app-data-gateway',

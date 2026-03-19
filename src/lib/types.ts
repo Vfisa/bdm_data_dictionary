@@ -130,6 +130,7 @@ export interface ComponentConfig {
   sharedCodeName?: string | null
   sharedCodeComponentId?: string
   sharedCodeUrl?: string
+  folderName?: string | null
 }
 
 /** Flow task (a config reference within a flow) */

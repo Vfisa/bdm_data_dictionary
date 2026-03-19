@@ -1,5 +1,11 @@
 # Changelog
 
+## Phase 10a-folders — Transformation Folder Grouping from API (2026-03-19)
+- **API-driven folder names**: Transformation folders now fetched from Keboola configuration metadata (`KBC.configuration.folderName`) instead of being parsed from config names
+- **Single batch API call**: `GET /v2/storage/branch/{branchId}/search/component-configurations?metadataKeys[]=KBC.configuration.folderName&include=filteredMetadata` — fetches all 70 folder assignments in one request
+- **18 real folders**: AUX/STG - L1, BDM - L2 - Order, UC - Client Mapping, etc. — previously all grouped under "Other" due to naming convention mismatch
+- **Prefix-based sort**: Folders sorted by prefix priority (AUX → BDM → BI → TEST → UC), then alphabetically within prefix
+
 ## Phase 10a-ui — Transformation Card Redesign (2026-03-18)
 - **Hybrid header + flow layout**: Transformation name promoted to card header with type badge and Keboola link; description as subtitle; I/O flow diagram with mini type node in center
 - **Collapsible cards**: Each card has chevron toggle, expanded by default. Collapsed view shows compact one-liner with table counts (e.g. `5 in / 1 out`). Syncs with global Expand All/Collapse All
