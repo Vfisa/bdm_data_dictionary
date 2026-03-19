@@ -4,9 +4,10 @@ import type { TransformationFolder } from './useDocSections'
 interface DocTransformSectionProps {
   transformationFolders: TransformationFolder[]
   allExpanded: boolean
+  tableUrlMap: Map<string, string>
 }
 
-export function DocTransformSection({ transformationFolders, allExpanded }: DocTransformSectionProps) {
+export function DocTransformSection({ transformationFolders, allExpanded, tableUrlMap }: DocTransformSectionProps) {
   return (
     <div>
       <h2 className="text-xl font-bold text-[var(--foreground)] mb-1">
@@ -26,12 +27,13 @@ export function DocTransformSection({ transformationFolders, allExpanded }: DocT
                   ({configs.length} transformation{configs.length !== 1 ? 's' : ''})
                 </span>
               </h3>
-              <div className="space-y-2">
+              <div className="space-y-4">
                 {configs.map((config) => (
                   <DocTransformCard
                     key={config.configId}
                     config={config}
                     allExpanded={allExpanded}
+                    tableUrlMap={tableUrlMap}
                   />
                 ))}
               </div>

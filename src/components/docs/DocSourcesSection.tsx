@@ -46,7 +46,7 @@ function ExtractorGroupCard({ group, allExpanded }: { group: ExtractorGroup; all
         <span title="Data source">
           <Database className="h-4 w-4 shrink-0 text-green-500" aria-hidden="true" />
         </span>
-        <span className="font-semibold text-sm text-[var(--foreground)]">{group.componentName}</span>
+        <span className="text-sm font-medium text-[var(--foreground)]">{group.componentName}</span>
         <span className="text-xs text-[var(--muted-foreground)]">
           ({group.configs.length} config{group.configs.length !== 1 ? 's' : ''})
         </span>

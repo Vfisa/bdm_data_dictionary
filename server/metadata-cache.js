@@ -155,6 +155,13 @@ export class MetadataCache {
         this.kbcUrl, config.componentId, config.configId,
         this._projectId, config.componentType
       );
+      // Build shared code URL for transformations that reference shared code
+      if (config.sharedCodeId && config.sharedCodeComponentId) {
+        config.sharedCodeUrl = buildKeboolaUrl(
+          this.kbcUrl, config.sharedCodeComponentId, config.sharedCodeId,
+          this._projectId, 'transformation'
+        );
+      }
     }
 
     // Fetch flows (orchestration data)

@@ -104,6 +104,12 @@ export interface ConnectionInfo {
   driver: string | null
 }
 
+/** Variable name-value pair from transformation configuration */
+export interface TransformVariable {
+  name: string
+  value: string
+}
+
 /** Component configuration from Keboola */
 export interface ComponentConfig {
   configId: string
@@ -119,6 +125,12 @@ export interface ComponentConfig {
   keboolaUrl: string
   configRows?: ConfigRow[]
   connectionInfo?: ConnectionInfo
+  variables?: TransformVariable[]
+  sharedCodeId?: string
+  sharedCodeName?: string | null
+  sharedCodeComponentId?: string
+  sharedCodeUrl?: string
+  folderName?: string | null
 }
 
 /** Flow task (a config reference within a flow) */
