@@ -30,9 +30,9 @@ export function Layout({
       />
       <main className="flex-1 overflow-hidden" role="main" aria-label={
         currentPage === 'overview' ? 'Project Overview' :
-        currentPage === 'erd' ? 'ERD Diagram' :
+        currentPage === 'erd' ? 'BDM Diagram' :
         currentPage === 'docs' ? 'Project Documentation' :
-        'Table Browser'
+        'BDM Tables'
       }>
         {children}
       </main>

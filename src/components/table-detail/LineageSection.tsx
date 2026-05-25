@@ -1,5 +1,6 @@
 import { CheckCircle2, XCircle, AlertTriangle, Minus, GitBranch } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
+import { COMPONENT_TYPE_COLORS, DEFAULT_TYPE_COLOR } from '@/lib/constants'
 import type { LineageEntry, LineageIndex } from '@/lib/types'
 
 interface LineageSectionProps {
@@ -20,7 +21,7 @@ export function LineageSection({ tableId, lineage }: LineageSectionProps) {
     <div className="space-y-3">
       {totalCount === 0 ? (
         <p className="text-xs text-[var(--muted-foreground)] italic py-1">
-          No transformations reference this table
+          No components reference this table
         </p>
       ) : (
         <>
@@ -71,17 +72,11 @@ function RunStatusIcon({ status }: { status: LineageEntry['lastRunStatus'] }) {
   }
 }
 
-/** Color config for component type badges */
-const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
-  SQL: { bg: 'rgba(59, 130, 246, 0.12)', text: '#3b82f6' },   // blue
-  PY:  { bg: 'rgba(245, 158, 11, 0.12)', text: '#f59e0b' },   // amber
-  dbt: { bg: 'rgba(239, 68, 68, 0.12)',  text: '#ef4444' },    // red
-}
-const DEFAULT_TYPE_COLOR = { bg: 'rgba(107, 114, 128, 0.12)', text: '#6b7280' } // gray
+/** Use shared color config from constants */
 
 /** Component type badge with semantic colors */
 function TypeBadge({ type }: { type: string }) {
-  const colors = TYPE_COLORS[type] || DEFAULT_TYPE_COLOR
+  const colors = COMPONENT_TYPE_COLORS[type] || DEFAULT_TYPE_COLOR
   return (
     <span
       className="text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded shrink-0"

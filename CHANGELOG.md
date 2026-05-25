@@ -1,5 +1,56 @@
 # Changelog
 
+## Phase 10a-folders — Transformation Folder Grouping from API (2026-03-19)
+- **API-driven folder names**: Transformation folders now fetched from Keboola configuration metadata (`KBC.configuration.folderName`) instead of being parsed from config names
+- **Single batch API call**: `GET /v2/storage/branch/{branchId}/search/component-configurations?metadataKeys[]=KBC.configuration.folderName&include=filteredMetadata` — fetches all 70 folder assignments in one request
+- **18 real folders**: AUX/STG - L1, BDM - L2 - Order, UC - Client Mapping, etc. — previously all grouped under "Other" due to naming convention mismatch
+- **Prefix-based sort**: Folders sorted by prefix priority (AUX → BDM → BI → TEST → UC), then alphabetically within prefix
+
+## Phase 10a-ui — Transformation Card Redesign (2026-03-18)
+- **Hybrid header + flow layout**: Transformation name promoted to card header with type badge and Keboola link; description as subtitle; I/O flow diagram with mini type node in center
+- **Collapsible cards**: Each card has chevron toggle, expanded by default. Collapsed view shows compact one-liner with table counts (e.g. `5 in / 1 out`). Syncs with global Expand All/Collapse All
+- **Variables & shared code**: Backend extracts `variables_values` and `shared_code_id` from Keboola transformation configs; resolves shared code names from already-fetched configs; builds shared code Keboola URLs
+- **Dual-action table chips**: Click scrolls in-page to bucket section; small external link icon opens table in Keboola platform (for tables in metadata)
+- **Variables footer**: Settings icon + `NAME=VALUE` pairs in mono font (only when variables exist)
+- **Shared code footer**: Code icon + shared code name + external link to Keboola (only when shared code is used)
+- **Card spacing**: Increased from `space-y-2` to `space-y-4` between transformation cards
+- **Header divider**: Border-top between header and body content, matching other doc section cards
+
+## Phase 10a-debug — Bucket Description Fix & Debug Endpoints (2026-03-17)
+- **Fixed bucket descriptions on deployed app**: Deployed app was running pre-fallback code; latest code with 3-layer description extraction (field → metadata array → individual bucket detail fetch) resolves the issue
+- **`GET /api/debug/env`**: Masked environment variable dump — sensitive values (tokens, secrets, keys) show only prefix, all others shown in full
+- **`GET /api/debug/buckets`**: 3-way diagnostic comparing raw list endpoint, individual detail endpoint, and cached data with auto-generated diagnosis conclusion
+- **Express 4 async fix**: All async debug handlers wrapped in top-level try/catch to prevent silent fallthrough to SPA catch-all
+- **Root cause documented**: Keboola `GET /buckets` list endpoint omits `metadata[]` array; descriptions live in `KBC.description` metadata key, only available from `GET /buckets/{id}` detail endpoint
+
+## Phase 10a — Automatic Project Documentation (2026-03-16)
+- **Full Documentation tab**: Auto-generated project documentation from Keboola metadata — 6 sections: Data Sources, Data Model, Storage & Buckets, Orchestration, Transformations, Writers/Apps/Data Apps
+- **Shared `MarkdownContent` component**: Extracted from ProjectOverviewPage into `src/lib/markdown-components.tsx` — used across all docs sections and overview for consistent markdown rendering (headings, tables, code, blockquotes, lists)
+- **Data Sources section**: Extractor configs grouped by component, expanded by default, markdown descriptions, output table lists
+- **Data Model section**: Renders `resources/data-model.md` via `/api/resource/:name` endpoint with `{{ENV_VAR}}` template replacement; placeholder message when empty
+- **Storage & Buckets section**: ALL project buckets (not just BDM) — collapsible per bucket, grouped by Input/Output stage, table lists with column counts, bucket descriptions visible in collapsed header with `displayName` support
+- **Orchestration section**: Flow cards with phase/task breakdown; task badges use shared `COMPONENT_TYPE_COLORS` (SQL=blue, PY=yellow, etc.)
+- **Transformation section**: Grouped by folder prefix from naming convention (BDM sorted by layers, AUX, BI, TEST, UC, Other); 3-column I/O mapping grid (input tables → transformation box → output tables) with clickable table chips linking to storage bucket anchors
+- **Writers/Apps section**: All card types expanded by default; Data Gateway with connection info table and per-row table list; Data Apps with repo/auth/deployment details; connection details as key/value table (host, schema, warehouse, auth, driver)
+- **Consistent badge colors**: `COMPONENT_TYPE_COLORS` shared across LineageSection and all docs sections
+- **Blue table names**: Input/output table names across all component configs displayed in blue monospace font
+- **Sidebar TOC**: IntersectionObserver scroll-spy with transformation folder sub-items
+- **Toolbar**: Expand All, Print, Markdown export, Refresh
+- **New server endpoint**: `GET /api/resource/:name` serving markdown files from `resources/` directory with `{{ENV_VAR}}` template replacement
+- **Static file serving**: `/data/in/files/*` serves Keboola-injected files (images); auto-detects absolute `/data/in/files` (production) vs relative `./data/in/files` (local dev)
+- **Image support in markdown**: `rehype-sanitize` schema extended to allow relative `src` paths; styled `img` component in MarkdownContent
+- **Debug endpoint**: `GET /api/debug/files` lists injected files across candidate paths + env var values (BDM_FILE_ID, DWH_FILE_ID)
+- **All-buckets API**: `listBuckets()` + `listBucketTableIds()` exposed in metadata cache for full project coverage
+
+## Phase 9 — Full Component Lineage (2026-03-13)
+- **All component types in lineage**: Extractors (EXT, green), writers (WR, red), applications (APP, yellow) now tracked alongside transformations (SQL, PY, dbt, R)
+- **3-strategy output inference**: (1) Explicit `storage.input/output.tables` mappings, (2) row `parameters.outputTable` (Oracle, NetSuite extractors), (3) bucket naming convention `in.c-{componentId}-{configId}`
+- **New server functions**: `listAllComponentConfigs(bucketTableMap)`, `buildBucketTableMap()` in keboola-client.js
+- **ComponentCategory type**: `extractor | transformation | writer | application` added to LineageEntry
+- **Keboola URL routing**: Transformations → `/transformations-v2/`, all others → `/components/`
+- **Tab rename**: "Table Browser" → "BDM Tables", "ERD Diagram" → "BDM Diagram"
+- **Mock data updated**: Added EXT (Salesforce, Oracle) and APP (Data Quality Monitor) entries
+
 ## Phase 8b — Markdown Style Upgrade (2026-03-13)
 - **Hybrid D+B style**: Style D body (rounded table containers, red code spans, indigo blockquote accents, invisible HR spacers) with Style B headings (large clean 32/24/19px) for dark-mode compatibility
 - **Fixed: GFM tables now render**: Added `remark-gfm` plugin to ReactMarkdown (was installed but unused)
@@ -10,7 +61,7 @@
 ## Phase 8 — Project Overview & Documentation Tabs (2026-03-13)
 - **Project Overview tab** (new default landing page): Fetches branch metadata from Keboola API (`/v2/storage/branch/{BRANCH_ID}/metadata`), renders `KBC.projectDescription` as sanitized markdown
 - **Project Documentation tab**: Placeholder page with "Coming soon" empty state
-- **4-tab navigation**: Overview → Table Browser → ERD Diagram → Documentation
+- **4-tab navigation**: Overview → BDM Tables → BDM Diagram → Documentation
 - **New API endpoint**: `GET /api/project-overview` with mock mode support
 - **New server method**: `getBranchMetadata(branchId)` in keboola-client.js
 - **New env var**: `BRANCH_ID` (defaults to `default`, injected by Keboola platform)

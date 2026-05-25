@@ -8,7 +8,7 @@
 
 import { createClient } from './keboola-client.js';
 import { inferRelationships, inferDateConnections, getCategory } from './inference.js';
-import { buildLineageIndex } from './lineage-cache.js';
+import { buildLineageIndex, buildKeboolaUrl } from './lineage-cache.js';
 
 export class MetadataCache {
   /**
@@ -132,19 +132,147 @@ export class MetadataCache {
       console.warn('MetadataCache: Branch metadata fetch failed (non-fatal):', err.message);
     }
 
-    // Build lineage index from transformation configs
+    // Build lineage index from ALL component configs (extractors, transformations, writers, apps)
     let lineage = { producedBy: {}, usedBy: {} };
+    let componentConfigs = [];
     try {
-      const [transformationConfigs, jobMap] = await Promise.all([
-        this.client.listTransformationConfigs(),
+      const [bucketTableMap, jobMap] = await Promise.all([
+        this.client.buildBucketTableMap(),
         this.client.listRecentJobs(),
       ]);
-      lineage = buildLineageIndex(transformationConfigs, jobMap, this.kbcUrl, this._projectId);
+      componentConfigs = await this.client.listAllComponentConfigs(bucketTableMap);
+      lineage = buildLineageIndex(componentConfigs, jobMap, this.kbcUrl, this._projectId);
       const prodCount = Object.keys(lineage.producedBy).length;
       const usedCount = Object.keys(lineage.usedBy).length;
-      console.log(`MetadataCache: Lineage built — ${transformationConfigs.length} transformations, ${prodCount} produced, ${usedCount} used`);
+      console.log(`MetadataCache: Lineage built — ${componentConfigs.length} components, ${prodCount} produced, ${usedCount} used`);
     } catch (err) {
       console.warn('MetadataCache: Lineage build failed (non-fatal):', err.message);
+    }
+
+    // Add keboolaUrl to each component config for frontend links
+    for (const config of componentConfigs) {
+      config.keboolaUrl = buildKeboolaUrl(
+        this.kbcUrl, config.componentId, config.configId,
+        this._projectId, config.componentType
+      );
+      // Build shared code URL for transformations that reference shared code
+      if (config.sharedCodeId && config.sharedCodeComponentId) {
+        config.sharedCodeUrl = buildKeboolaUrl(
+          this.kbcUrl, config.sharedCodeComponentId, config.sharedCodeId,
+          this._projectId, 'transformation'
+        );
+      }
+    }
+
+    // Fetch flows (orchestration data)
+    let flows = [];
+    try {
+      flows = await this.client.listFlows();
+      console.log(`MetadataCache: Flows loaded — ${flows.length} flows`);
+    } catch (err) {
+      console.warn('MetadataCache: Flows fetch failed (non-fatal):', err.message);
+    }
+
+    // Add keboolaUrl to each flow
+    for (const flow of flows) {
+      flow.keboolaUrl = buildKeboolaUrl(
+        this.kbcUrl, flow.componentId, flow.id,
+        this._projectId, 'other'
+      );
+    }
+
+    // Fetch data apps
+    let dataApps = [];
+    try {
+      dataApps = await this.client.listDataApps();
+      // Add keboolaUrl for each data app
+      for (const app of dataApps) {
+        app.keboolaUrl = buildKeboolaUrl(
+          this.kbcUrl, 'keboola.data-apps', app.id,
+          this._projectId, 'other'
+        );
+      }
+      console.log(`MetadataCache: Data apps loaded — ${dataApps.length} apps`);
+    } catch (err) {
+      console.warn('MetadataCache: Data apps fetch failed (non-fatal):', err.message);
+    }
+
+    // Fetch ALL buckets for storage documentation
+    let allBuckets = [];
+    try {
+      const rawBuckets = await this.client.listBuckets();
+      console.log(`MetadataCache: Found ${rawBuckets.length} raw buckets`);
+      // Debug: log first bucket's raw fields to verify description availability
+      if (rawBuckets.length > 0) {
+        const sample = rawBuckets[0];
+        console.log(`MetadataCache: Sample bucket keys: ${Object.keys(sample).join(', ')}`);
+        console.log(`MetadataCache: Sample bucket — id=${sample.id}, description=${JSON.stringify(sample.description)}, displayName=${JSON.stringify(sample.displayName)}`);
+      }
+
+      // Helper: extract description from metadata array (key "KBC.description")
+      // The bucket `description` field is always empty; real descriptions are in metadata.
+      const extractBucketDescription = (bucket) => {
+        if (bucket.description) return bucket.description;
+        if (Array.isArray(bucket.metadata)) {
+          const entry = bucket.metadata.find(m => m.key === 'KBC.description');
+          if (entry && entry.value) return entry.value;
+        }
+        return '';
+      };
+
+      // Check if list endpoint has descriptions (either field or metadata)
+      const listHasDescriptions = rawBuckets.some(b => extractBucketDescription(b));
+      if (!listHasDescriptions) {
+        console.log('MetadataCache: List endpoint missing descriptions — fetching individual bucket details');
+      }
+
+      // Fetch table lists (and optionally bucket details) for all buckets in parallel
+      const bucketResults = await Promise.allSettled(
+        rawBuckets.map(async (b) => {
+          // If list didn't include descriptions, fetch individual bucket detail
+          let bucketDetail = b;
+          if (!listHasDescriptions) {
+            try {
+              bucketDetail = await this.client.getBucket(b.id);
+            } catch {
+              // Non-fatal — use list data as fallback
+            }
+          }
+
+          let tables = [];
+          try {
+            const bucketTables = await this.client.listBucketTableIds(b.id);
+            tables = bucketTables.map(t => ({
+              id: t.id,
+              name: t.name || t.id.split('.').pop(),
+              description: t.description || '',
+              columnCount: t.columns ? t.columns.length : 0,
+            }));
+          } catch {
+            // Non-fatal — empty table list for this bucket
+          }
+          // Derive stage from bucket ID prefix (in.c-xxx → "in", out.c-xxx → "out")
+          const stage = bucketDetail.stage || (b.id.startsWith('out.') ? 'out' : 'in');
+          return {
+            id: b.id,
+            name: bucketDetail.name || bucketDetail.displayName || b.id,
+            displayName: bucketDetail.displayName || bucketDetail.name || b.id,
+            stage,
+            description: extractBucketDescription(bucketDetail),
+            tables,
+          };
+        })
+      );
+
+      allBuckets = bucketResults
+        .filter(r => r.status === 'fulfilled')
+        .map(r => r.value)
+        .sort((a, b) => a.id.localeCompare(b.id));
+
+      const totalTables = allBuckets.reduce((sum, b) => sum + b.tables.length, 0);
+      console.log(`MetadataCache: Buckets loaded — ${allBuckets.length} buckets, ${totalTables} tables total`);
+    } catch (err) {
+      console.warn('MetadataCache: Bucket list failed (non-fatal):', err.message);
     }
 
     // Atomic swap — old data is replaced all at once
@@ -155,6 +283,10 @@ export class MetadataCache {
       categories,
       stats,
       lineage,
+      componentConfigs,
+      flows,
+      dataApps,
+      allBuckets,
       lastRefresh: new Date().toISOString(),
       tableCount: tables.length,
       edgeCount: edges.length,
@@ -168,6 +300,9 @@ export class MetadataCache {
    */
   getMetadata() {
     if (!this._data) return null;
+
+    const kbcUrl = this.kbcUrl ? this.kbcUrl.replace(/\/+$/, '') : '';
+    const pid = this._projectId || '_';
 
     return {
       tables: this._data.tables.map((t) => ({
@@ -183,6 +318,9 @@ export class MetadataCache {
         category: this._data.categories[t.name] || 'OTHER',
         lastImportDate: t.lastImportDate,
         tags: t.tags || [],
+        keboolaUrl: kbcUrl
+          ? `${kbcUrl}/admin/projects/${pid}/storage/buckets/${encodeURIComponent(t.bucket)}/tables/${encodeURIComponent(t.id)}`
+          : '',
       })),
       edges: this._data.edges,
       dateEdges: this._data.dateEdges || [],
@@ -190,6 +328,10 @@ export class MetadataCache {
       lastRefresh: this._data.lastRefresh,
       stats: this._data.stats,
       lineage: this._data.lineage || { producedBy: {}, usedBy: {} },
+      componentConfigs: this._data.componentConfigs || [],
+      flows: this._data.flows || [],
+      dataApps: this._data.dataApps || [],
+      allBuckets: this._data.allBuckets || [],
     };
   }
 

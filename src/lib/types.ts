@@ -26,6 +26,7 @@ export interface TableSummary {
   category: Category
   lastImportDate: string | null
   tags: string[]
+  keboolaUrl: string
 }
 
 /** Table detail with relationships (from /api/table/:id) */
@@ -62,12 +63,16 @@ export interface InferenceStats {
   selfRefSkipped: number
 }
 
-/** Single transformation lineage entry */
+/** Component category for lineage entries */
+export type ComponentCategory = 'extractor' | 'transformation' | 'writer' | 'application'
+
+/** Single component lineage entry */
 export interface LineageEntry {
   configId: string
   configName: string
   componentId: string
-  componentType: string          // "SQL", "PY", "dbt", "R", etc.
+  componentType: string          // "SQL", "PY", "dbt", "R", "EXT", "WR", "APP"
+  componentCategory: ComponentCategory
   lastChangeDate: string | null
   lastRunDate: string | null
   lastRunStatus: 'success' | 'error' | 'warning' | null
@@ -80,6 +85,119 @@ export interface LineageIndex {
   usedBy: Record<string, LineageEntry[]>
 }
 
+/** Row-level config detail for writers/applications */
+export interface ConfigRow {
+  name: string
+  description: string
+  inputTables: string[]
+  incremental: boolean | null
+  tableId: string | null
+  dbName: string | null
+}
+
+/** Connection info for DB writers / data gateway */
+export interface ConnectionInfo {
+  host: string | null
+  schema: string | null
+  warehouse: string | null
+  loginType: string | null
+  driver: string | null
+}
+
+/** Variable name-value pair from transformation configuration */
+export interface TransformVariable {
+  name: string
+  value: string
+}
+
+/** Component configuration from Keboola */
+export interface ComponentConfig {
+  configId: string
+  configName: string
+  componentId: string
+  componentName: string
+  componentType: string
+  description: string
+  inputTables: string[]
+  outputTables: string[]
+  lastChangeDate: string | null
+  version: number
+  keboolaUrl: string
+  configRows?: ConfigRow[]
+  connectionInfo?: ConnectionInfo
+  variables?: TransformVariable[]
+  sharedCodeId?: string
+  sharedCodeName?: string | null
+  sharedCodeComponentId?: string
+  sharedCodeUrl?: string
+  folderName?: string | null
+}
+
+/** Flow task (a config reference within a flow) */
+export interface FlowTask {
+  id: string
+  name: string
+  phaseId: string
+  enabled: boolean
+  componentId: string
+  configId: string
+}
+
+/** Flow phase */
+export interface FlowPhase {
+  id: string
+  name: string
+  description: string
+  dependsOn: string[]
+  hasConditions: boolean
+}
+
+/** Orchestration flow from Keboola */
+export interface Flow {
+  id: string
+  name: string
+  description: string
+  componentId: string
+  isDisabled: boolean
+  phases: FlowPhase[]
+  tasks: FlowTask[]
+  phaseCount: number
+  taskCount: number
+  keboolaUrl: string
+}
+
+/** Data App configuration from Keboola */
+export interface DataApp {
+  id: string
+  name: string
+  description: string
+  type: string
+  gitRepository: string | null
+  gitBranch: string | null
+  authType: string | null
+  deploymentUrl: string | null
+  autoSuspendAfterSeconds: number | null
+  keboolaUrl: string
+}
+
+/** Bucket table entry for storage documentation */
+export interface StorageBucketTable {
+  id: string
+  name: string
+  description: string
+  columnCount: number
+}
+
+/** Storage bucket for documentation */
+export interface StorageBucket {
+  id: string
+  name: string
+  displayName: string
+  stage: string
+  description: string
+  tables: StorageBucketTable[]
+}
+
 /** Full metadata response from /api/metadata */
 export interface MetadataResponse {
   tables: TableSummary[]
@@ -89,6 +207,10 @@ export interface MetadataResponse {
   lastRefresh: string
   stats: InferenceStats
   lineage: LineageIndex
+  componentConfigs: ComponentConfig[]
+  flows: Flow[]
+  dataApps: DataApp[]
+  allBuckets: StorageBucket[]
 }
 
 /** Description update payload for PUT /api/descriptions */

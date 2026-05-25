@@ -748,13 +748,61 @@ All features below were implemented and committed:
 
 - [x] **Project Overview tab** — New default landing page. Fetches branch metadata from Keboola API (`/v2/storage/branch/{BRANCH_ID}/metadata`), extracts `KBC.projectDescription` key, renders as sanitized markdown using `react-markdown` + `rehype-sanitize`
 - [x] **Project Documentation tab** — Placeholder page ("Coming soon") for future documentation features
-- [x] **4-tab navigation** — Expanded from 2 tabs to 4: Overview → Table Browser → ERD Diagram → Documentation
+- [x] **4-tab navigation** — Expanded from 2 tabs to 4: Overview → BDM Tables → BDM Diagram → Documentation
 - [x] **New API endpoint** — `GET /api/project-overview` returns raw branch metadata array; mock mode returns sample markdown
 - [x] **BRANCH_ID env var** — New environment variable (defaults to `"default"`), injected by Keboola platform at runtime
 - [x] **Markdown rendering** — Hand-rolled styled components (h1–h3, p, lists, blockquotes, tables, code blocks) using oklch custom properties — no `@tailwindcss/typography` dependency
 - [x] **Markdown style upgrade (D+B hybrid)** — Style D body (rounded table containers, purple code spans, indigo blockquote accents, invisible HR spacers) with Style B headings (large clean 32/24/19px, dark-mode compatible). Added `remark-gfm` for GFM table/strikethrough support. Style research in `resources/phase-8/STYLE_RESEARCH.md`
 
-### Phase 9 — Query Service Profiling (planned)
+### Phase 9 — Full Component Lineage (DONE)
+
+Expand lineage tracking from transformations-only to **all component types**: extractors, writers, and applications. This gives a complete picture of data flow through the Keboola project.
+
+#### Component Categories & Badge Colors
+
+| Component Type | Short Code | Color | Lineage Direction |
+|----------------|-----------|-------|-------------------|
+| extractor | EXT | Green (`#22c55e`) | producedBy only |
+| transformation | SQL/PY/dbt/R | Blue/Amber/Red (existing) | both |
+| writer | WR | Red (`#ef4444`) | usedBy only |
+| application | APP | Yellow (`#eab308`) | both |
+
+#### Output Table Inference Waterfall
+
+Extractors and apps often don't declare explicit `storage.output.tables` mappings. Four strategies (tried in order):
+
+1. **Explicit `storage.output.tables[].destination`** — same as transformations
+2. **Explicit `storage.input.tables[].source`** — same as transformations
+3. **Explicit `parameters.outputTable`** in row configs — used by DB extractors (Oracle, NetSuite)
+4. **Bucket naming convention** — `in.c-{componentId}-{configId}` → all tables in that bucket belong to this extractor (Salesforce, Freshdesk pattern)
+
+Strategy 4 requires fetching bucket list + tables-per-bucket at startup.
+
+#### Keboola URL Construction
+
+- Transformations: `/admin/projects/{pid}/transformations-v2/{componentId}/{configId}`
+- All others: `/admin/projects/{pid}/components/{componentId}/{configId}`
+
+#### Implementation
+
+- [x] `keboola-client.js`: `listAllComponentConfigs()` — fetches all component types (no filter), runs inference waterfall
+- [x] `lineage-cache.js`: `deriveComponentType()` expanded for EXT/WR/APP; `buildKeboolaUrl()` aware of component category
+- [x] `metadata-cache.js`: calls new `listAllComponentConfigs()` instead of `listTransformationConfigs()`
+- [x] `LineageSection.tsx`: new badge colors (green EXT, red WR, yellow APP)
+- [x] `types.ts`: `componentCategory` field on `LineageEntry`
+- [x] `mock-data.js`: mock entries for EXT/APP types
+- [x] Empty-state text updated: "No components reference this table" (was "No transformations…")
+
+#### API Exploration Findings (2026-03-13)
+
+**Project components:** 4 extractors (Oracle, NetSuite, Salesforce, Freshdesk), 0 writers, 2 app components (Custom Python ×7 configs, Data Gateway ×1 config), plus transformations.
+
+**Extractor patterns discovered:**
+- Oracle + NetSuite: explicit `parameters.outputTable` per row (`"in.c-netsuite.Customer"`)
+- Salesforce + Freshdesk: auto-bucket `in.c-{componentId}-{configId}`, tables inside match row `parameters.object`
+- Custom Python apps labelled as "[EXTRACTOR]" in name — classified as APP regardless
+
+### Phase 10 — Query Service Profiling (planned)
 
 - [ ] **SQL-based exact profiling** — Use Keboola Query Service (`POST /api/v1/branches/{branchId}/workspaces/{workspaceId}/queries`) for full SQL-based profiling over all rows. Requires `KBC_BRANCHID` + `KBC_WORKSPACE_ID` env vars. Async job-based: submit → poll → get results. It has been confirmed Keboola auto-injects those variables: (WORKSPACE_ID, BRANCH_ID)
 
@@ -803,7 +851,7 @@ All features below were implemented and committed:
 
 1. **Auth**: Default Keboola basic auth is currently used. OIDC integration deferred.
 2. ~~**Data profiling API limits**: Keboola data preview returns max 1,000 rows. Sufficient for sampling or need full-scan approach?~~ **Resolved:** Hybrid approach — native profiling API for exact stats (all rows) + data preview for $NOVALUE/samples (1000 rows). Query service for Phase 6.
-3. ~~**Lineage API scope**: Start with transformation-only lineage or include extractors/writers from the start?~~ **Resolved:** Transformation-only lineage in Phase 7. Scoped to input/output mappings from transformation configs. Extractors/writers deferred to backlog.
+3. ~~**Lineage API scope**: Start with transformation-only lineage or include extractors/writers from the start?~~ **Resolved:** Transformation-only lineage in Phase 7, expanded to all component types (extractors, writers, apps) in Phase 9.
 
 ## 14. Resolved Phase 3 Decisions
 
@@ -845,10 +893,31 @@ All features below were implemented and committed:
 
 | # | Question | Decision |
 |---|----------|----------|
-| 34 | Lineage scope | Transformation-only (input/output mappings). Extractors/writers deferred to backlog |
+| 34 | Lineage scope | Phase 7: transformation-only. Phase 9: expanded to all component types (extractors, writers, apps) with 3-strategy output inference |
 | 35 | Lineage section position | After Relationships, before Data Preview (Columns → Relationships → Lineage → Data Preview) |
 | 36 | Transformation click action | Open in Keboola UI (external link, new tab). URL constructed from KBC_URL + componentId + configId |
 | 37 | Show transformation type | Yes, as small badge: `[SQL]`, `[PY]`, `[dbt]`, `[R]` derived from componentId |
 | 38 | Empty lineage state | Show section header with muted message: "No transformations reference this table" |
 | 39 | Lineage data source | Parse all transformation configs' input/output storage mappings at startup. Cached with metadata, same refresh lifecycle |
 | 40 | Refresh button placement | Added to Table Browser toolbar (was ERD-only). Both tabs share the same refresh action |
+
+## 18. Resolved Phase 10a Decisions
+
+| # | Question | Decision |
+|---|----------|----------|
+| 41 | Documentation content source | Auto-generated from Keboola metadata (component configs, flows, buckets, tables). No manual curation needed except Data Model markdown |
+| 42 | Section structure | 6 sections: Data Sources, Data Model, Storage & Buckets, Orchestration, Transformations, Writers/Apps/Data Apps |
+| 43 | Markdown rendering strategy | Shared `MarkdownContent` component (extracted from ProjectOverviewPage) — custom ReactMarkdown components, no @tailwindcss/typography plugin |
+| 44 | Transformation grouping | By folder prefix from naming convention (` - ` delimiter). First segment = folder, second = sort key. Known folders: BDM, AUX, BI, TEST, UC. Unmatched = "Other" |
+| 45 | Transformation card layout | Hybrid header + flow diagram: name in header with type badge and Keboola link, description as subtitle, I/O flow with mini type node, variables/shared code footer. Collapsible (expanded by default), dual-action table chips (scroll in-page + external Keboola link) |
+| 46 | Badge colors | Shared `COMPONENT_TYPE_COLORS` constant: SQL=blue, PY=yellow, dbt=red, R=purple, EXT=green, WR=red, APP=yellow. Used in lineage, docs, orchestration |
+| 47 | Card default state | Data Sources, Writers, Apps cards expanded by default. Storage buckets collapsed by default |
+| 48 | Data Model section | Renders markdown from `resources/data-model.md` via `/api/resource/:name` endpoint. Placeholder message when empty |
+| 49 | Storage section scope | ALL project buckets (not just BDM) — grouped by Input/Output stage, collapsible per bucket with table list |
+| 50 | Sidebar TOC | IntersectionObserver scroll-spy with transformation folder sub-items |
+| 51 | Writer connection details | Key/value table format (host, schema, warehouse, auth, driver) instead of inline text |
+| 52 | Table name styling | Input/output table names in blue monospace font across all component config sections |
+| 53 | Bucket descriptions | Shown in collapsed card header with `line-clamp-2`; `displayName` field added to StorageBucket type |
+| 54 | Static file serving | Auto-detect absolute `/data/in/files` (production) vs relative `./data/in/files` (local dev) using `fs.existsSync()` |
+| 55 | Template replacement | `{{ENV_VAR}}` syntax in markdown resources replaced server-side via regex against `process.env` |
+| 56 | Image sanitization | `rehype-sanitize` schema customized to allow relative `src` paths for self-hosted images |
